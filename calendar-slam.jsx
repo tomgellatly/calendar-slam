@@ -18,6 +18,7 @@ const ATTRS = [
   { key: "stamina", label: "Stamina" },
   { key: "mental", label: "Mental" },
   { key: "touch", label: "Touch / drop shot" },
+  { key: "slice", label: "Slice" },
 ];
 
 // --- The four majors, in calendar order, with surface ------------------------
@@ -31,78 +32,78 @@ const SLAMS = [
 // How much each attribute matters on each surface (the heart of the sim).
 // Clay rewards movement/defence/stamina; grass rewards serve/net; hard is even.
 const SURFACE_WEIGHTS = {
-  Hard: { serve: 1.2, return: 1.1, forehand: 1.1, backhand: 1.0, net: 0.9, movement: 1.0, defence: 1.0, stamina: 1.0, mental: 1.1, touch: 0.8 },
-  Clay: { serve: 0.8, return: 1.2, forehand: 1.1, backhand: 1.0, net: 0.7, movement: 1.3, defence: 1.3, stamina: 1.3, mental: 1.1, touch: 1.0 },
-  Grass: { serve: 1.4, return: 0.9, forehand: 1.0, backhand: 0.9, net: 1.3, movement: 1.0, defence: 0.8, stamina: 0.8, mental: 1.1, touch: 1.1 },
+  Hard: { serve: 1.2, return: 1.1, forehand: 1.1, backhand: 1.0, net: 0.9, movement: 1.0, defence: 1.0, stamina: 1.0, mental: 1.1, touch: 0.8, slice: 0.8 },
+  Clay: { serve: 0.8, return: 1.2, forehand: 1.1, backhand: 1.0, net: 0.7, movement: 1.3, defence: 1.3, stamina: 1.3, mental: 1.1, touch: 1.0, slice: 1.0 },
+  Grass: { serve: 1.4, return: 0.9, forehand: 1.0, backhand: 0.9, net: 1.3, movement: 1.0, defence: 0.8, stamina: 0.8, mental: 1.1, touch: 1.1, slice: 1.3 },
 };
 
 // --- Player pools. Ratings are illustrative estimates, NOT real data. --------
 // Each player: stats, country flag (emoji), and a one-line career fact.
 const POOL_ATP = [
-  { name: "Pete Sampras",       flag: "🇺🇸", fact: "Serve-and-volley king who ruled the grass of the 1990s.", stats: { serve: 97, return: 78, forehand: 90, backhand: 84, net: 95, movement: 86, defence: 80, stamina: 84, mental: 92, touch: 88 } },
-  { name: "Andre Agassi",       flag: "🇺🇸", fact: "The great returner whose ball-striking redefined the baseline.", stats: { serve: 80, return: 96, forehand: 93, backhand: 92, net: 78, movement: 85, defence: 88, stamina: 86, mental: 84, touch: 80 } },
-  { name: "Roger Federer",      flag: "🇨🇭", fact: "The most elegant all-courter the game has ever seen.", stats: { serve: 92, return: 86, forehand: 97, backhand: 84, net: 92, movement: 95, defence: 88, stamina: 90, mental: 93, touch: 96 } },
-  { name: "Rafael Nadal",       flag: "🇪🇸", fact: "The King of Clay, famed for relentless topspin and iron will.", stats: { serve: 85, return: 92, forehand: 98, backhand: 88, net: 82, movement: 96, defence: 97, stamina: 98, mental: 97, touch: 84 } },
-  { name: "Novak Djokovic",     flag: "🇷🇸", fact: "The supreme returner and defender, bending matches to his will.", stats: { serve: 88, return: 99, forehand: 92, backhand: 97, net: 84, movement: 97, defence: 96, stamina: 96, mental: 95, touch: 86 } },
-  { name: "Ivan Lendl",         flag: "🇨🇿", fact: "The ruthless baseliner who industrialised the modern forehand.", stats: { serve: 88, return: 84, forehand: 94, backhand: 86, net: 76, movement: 84, defence: 86, stamina: 92, mental: 90, touch: 74 } },
-  { name: "Boris Becker",       flag: "🇩🇪", fact: "The diving teenage Wimbledon champion with a thunderous serve.", stats: { serve: 95, return: 80, forehand: 88, backhand: 82, net: 93, movement: 82, defence: 78, stamina: 82, mental: 86, touch: 82 } },
-  { name: "Stefan Edberg",      flag: "🇸🇪", fact: "The most graceful serve-and-volleyer of his generation.", stats: { serve: 89, return: 82, forehand: 80, backhand: 88, net: 97, movement: 90, defence: 84, stamina: 84, mental: 85, touch: 90 } },
-  { name: "Bjorn Borg",         flag: "🇸🇪", fact: "The ice-cool baseliner who conquered both clay and grass.", stats: { serve: 86, return: 88, forehand: 92, backhand: 90, net: 80, movement: 94, defence: 93, stamina: 96, mental: 96, touch: 82 } },
-  { name: "John McEnroe",       flag: "🇺🇸", fact: "A touch artist at net with the finest hands in the game.", stats: { serve: 87, return: 86, forehand: 84, backhand: 82, net: 96, movement: 88, defence: 82, stamina: 80, mental: 78, touch: 98 } },
-  { name: "Andy Murray",        flag: "🇬🇧", fact: "A brilliant counterpuncher and one of the best returners around.", stats: { serve: 84, return: 94, forehand: 86, backhand: 90, net: 85, movement: 93, defence: 95, stamina: 92, mental: 84, touch: 90 } },
-  { name: "Stan Wawrinka",      flag: "🇨🇭", fact: "Owner of perhaps the most devastating one-handed backhand ever.", stats: { serve: 88, return: 84, forehand: 90, backhand: 96, net: 80, movement: 82, defence: 82, stamina: 84, mental: 82, touch: 84 } },
-  { name: "Juan M. del Potro",  flag: "🇦🇷", fact: "A gentle giant whose forehand was one of the heaviest in history.", stats: { serve: 91, return: 82, forehand: 98, backhand: 80, net: 78, movement: 78, defence: 80, stamina: 82, mental: 84, touch: 72 } },
-  { name: "Goran Ivanisevic",   flag: "🇭🇷", fact: "A wildcard with a left-handed serve that bordered on unplayable.", stats: { serve: 99, return: 70, forehand: 82, backhand: 76, net: 86, movement: 76, defence: 70, stamina: 78, mental: 74, touch: 76 } },
-  { name: "Gustavo Kuerten",    flag: "🇧🇷", fact: "The joyful Brazilian whose topspin made him a clay-court hero.", stats: { serve: 84, return: 84, forehand: 93, backhand: 86, net: 78, movement: 88, defence: 90, stamina: 90, mental: 86, touch: 88 } },
-  { name: "Marat Safin",        flag: "🇷🇺", fact: "A mercurial talent with raw power off both wings.", stats: { serve: 93, return: 86, forehand: 92, backhand: 90, net: 82, movement: 84, defence: 82, stamina: 80, mental: 70, touch: 80 } },
-  { name: "Jim Courier",        flag: "🇺🇸", fact: "A ferociously fit baseliner who dominated clay in the early 1990s.", stats: { serve: 84, return: 86, forehand: 94, backhand: 82, net: 76, movement: 88, defence: 88, stamina: 95, mental: 88, touch: 76 } },
-  { name: "Thomas Muster",      flag: "🇦🇹", fact: "The unstoppable clay-court machine with relentless topspin.", stats: { serve: 78, return: 88, forehand: 94, backhand: 82, net: 72, movement: 90, defence: 92, stamina: 98, mental: 90, touch: 76 } },
-  { name: "Patrick Rafter",     flag: "🇦🇺", fact: "A serve-and-volley artist who made grass his personal playground.", stats: { serve: 90, return: 80, forehand: 82, backhand: 84, net: 95, movement: 86, defence: 80, stamina: 82, mental: 88, touch: 88 } },
-  { name: "Lleyton Hewitt",     flag: "🇦🇺", fact: "A relentless retriever whose fighting spirit was unmatched.", stats: { serve: 82, return: 94, forehand: 86, backhand: 84, net: 80, movement: 96, defence: 96, stamina: 94, mental: 94, touch: 84 } },
-  { name: "Yevgeny Kafelnikov", flag: "🇷🇺", fact: "A complete all-court player who won on both clay and hard.", stats: { serve: 84, return: 86, forehand: 90, backhand: 88, net: 82, movement: 84, defence: 84, stamina: 86, mental: 82, touch: 80 } },
-  { name: "Michael Chang",      flag: "🇺🇸", fact: "The youngest male Slam champion, famed for extraordinary defence.", stats: { serve: 74, return: 90, forehand: 84, backhand: 84, net: 72, movement: 96, defence: 97, stamina: 98, mental: 92, touch: 86 } },
-  { name: "Tommy Haas",         flag: "🇩🇪", fact: "A stylish all-courter who consistently troubled the very best.", stats: { serve: 90, return: 82, forehand: 90, backhand: 86, net: 84, movement: 86, defence: 82, stamina: 80, mental: 80, touch: 84 } },
-  { name: "David Ferrer",       flag: "🇪🇸", fact: "The tireless workhorse who punched well above his talent level.", stats: { serve: 80, return: 88, forehand: 88, backhand: 84, net: 76, movement: 94, defence: 94, stamina: 99, mental: 92, touch: 78 } },
-  { name: "Robin Soderling",    flag: "🇸🇪", fact: "The only man to beat Nadal at Roland Garros during his peak.", stats: { serve: 90, return: 82, forehand: 95, backhand: 82, net: 78, movement: 80, defence: 80, stamina: 82, mental: 80, touch: 74 } },
-  { name: "Andy Roddick",       flag: "🇺🇸", fact: "A US Open champion with one of the hardest serves in history.", stats: { serve: 97, return: 80, forehand: 90, backhand: 78, net: 80, movement: 82, defence: 78, stamina: 84, mental: 84, touch: 74 } },
-  { name: "Nikolay Davydenko",  flag: "🇷🇺", fact: "A technically pristine baseliner who troubled every top player.", stats: { serve: 80, return: 86, forehand: 88, backhand: 88, net: 78, movement: 88, defence: 86, stamina: 90, mental: 82, touch: 82 } },
+  { name: "Pete Sampras",       flag: "🇺🇸", fact: "Serve-and-volley king who ruled the grass of the 1990s.", stats: { serve: 97, return: 78, forehand: 90, backhand: 84, net: 95, movement: 86, defence: 80, stamina: 84, mental: 92, touch: 88, slice: 88 } },
+  { name: "Andre Agassi",       flag: "🇺🇸", fact: "The great returner whose ball-striking redefined the baseline.", stats: { serve: 80, return: 96, forehand: 93, backhand: 92, net: 78, movement: 85, defence: 88, stamina: 86, mental: 84, touch: 80, slice: 83 } },
+  { name: "Roger Federer",      flag: "🇨🇭", fact: "The most elegant all-courter the game has ever seen.", stats: { serve: 92, return: 86, forehand: 97, backhand: 84, net: 92, movement: 95, defence: 88, stamina: 90, mental: 93, touch: 96, slice: 99 } },
+  { name: "Rafael Nadal",       flag: "🇪🇸", fact: "The King of Clay, famed for relentless topspin and iron will.", stats: { serve: 85, return: 92, forehand: 98, backhand: 88, net: 82, movement: 96, defence: 97, stamina: 98, mental: 97, touch: 84, slice: 85 } },
+  { name: "Novak Djokovic",     flag: "🇷🇸", fact: "The supreme returner and defender, bending matches to his will.", stats: { serve: 88, return: 99, forehand: 92, backhand: 97, net: 84, movement: 97, defence: 96, stamina: 96, mental: 95, touch: 86, slice: 89 } },
+  { name: "Ivan Lendl",         flag: "🇨🇿", fact: "The ruthless baseliner who industrialised the modern forehand.", stats: { serve: 88, return: 84, forehand: 94, backhand: 86, net: 76, movement: 84, defence: 86, stamina: 92, mental: 90, touch: 74, slice: 78 } },
+  { name: "Boris Becker",       flag: "🇩🇪", fact: "The diving teenage Wimbledon champion with a thunderous serve.", stats: { serve: 95, return: 80, forehand: 88, backhand: 82, net: 93, movement: 82, defence: 78, stamina: 82, mental: 86, touch: 82, slice: 84 } },
+  { name: "Stefan Edberg",      flag: "🇸🇪", fact: "The most graceful serve-and-volleyer of his generation.", stats: { serve: 89, return: 82, forehand: 80, backhand: 88, net: 97, movement: 90, defence: 84, stamina: 84, mental: 85, touch: 90, slice: 97 } },
+  { name: "Bjorn Borg",         flag: "🇸🇪", fact: "The ice-cool baseliner who conquered both clay and grass.", stats: { serve: 86, return: 88, forehand: 92, backhand: 90, net: 80, movement: 94, defence: 93, stamina: 96, mental: 96, touch: 82, slice: 84 } },
+  { name: "John McEnroe",       flag: "🇺🇸", fact: "A touch artist at net with the finest hands in the game.", stats: { serve: 87, return: 86, forehand: 84, backhand: 82, net: 96, movement: 88, defence: 82, stamina: 80, mental: 78, touch: 98, slice: 99 } },
+  { name: "Andy Murray",        flag: "🇬🇧", fact: "A brilliant counterpuncher and one of the best returners around.", stats: { serve: 84, return: 94, forehand: 86, backhand: 90, net: 85, movement: 93, defence: 95, stamina: 92, mental: 84, touch: 90, slice: 95 } },
+  { name: "Stan Wawrinka",      flag: "🇨🇭", fact: "Owner of perhaps the most devastating one-handed backhand ever.", stats: { serve: 88, return: 84, forehand: 90, backhand: 96, net: 80, movement: 82, defence: 82, stamina: 84, mental: 82, touch: 84, slice: 87 } },
+  { name: "Juan M. del Potro",  flag: "🇦🇷", fact: "A gentle giant whose forehand was one of the heaviest in history.", stats: { serve: 91, return: 82, forehand: 98, backhand: 80, net: 78, movement: 78, defence: 80, stamina: 82, mental: 84, touch: 72, slice: 76 } },
+  { name: "Goran Ivanisevic",   flag: "🇭🇷", fact: "A wildcard with a left-handed serve that bordered on unplayable.", stats: { serve: 99, return: 70, forehand: 82, backhand: 76, net: 86, movement: 76, defence: 70, stamina: 78, mental: 74, touch: 76, slice: 78 } },
+  { name: "Gustavo Kuerten",    flag: "🇧🇷", fact: "The joyful Brazilian whose topspin made him a clay-court hero.", stats: { serve: 84, return: 84, forehand: 93, backhand: 86, net: 78, movement: 88, defence: 90, stamina: 90, mental: 86, touch: 88, slice: 89 } },
+  { name: "Marat Safin",        flag: "🇷🇺", fact: "A mercurial talent with raw power off both wings.", stats: { serve: 93, return: 86, forehand: 92, backhand: 90, net: 82, movement: 84, defence: 82, stamina: 80, mental: 70, touch: 80, slice: 83 } },
+  { name: "Jim Courier",        flag: "🇺🇸", fact: "A ferociously fit baseliner who dominated clay in the early 1990s.", stats: { serve: 84, return: 86, forehand: 94, backhand: 82, net: 76, movement: 88, defence: 88, stamina: 95, mental: 88, touch: 76, slice: 78 } },
+  { name: "Thomas Muster",      flag: "🇦🇹", fact: "The unstoppable clay-court machine with relentless topspin.", stats: { serve: 78, return: 88, forehand: 94, backhand: 82, net: 72, movement: 90, defence: 92, stamina: 98, mental: 90, touch: 76, slice: 77 } },
+  { name: "Patrick Rafter",     flag: "🇦🇺", fact: "A serve-and-volley artist who made grass his personal playground.", stats: { serve: 90, return: 80, forehand: 82, backhand: 84, net: 95, movement: 86, defence: 80, stamina: 82, mental: 88, touch: 88, slice: 94 } },
+  { name: "Lleyton Hewitt",     flag: "🇦🇺", fact: "A relentless retriever whose fighting spirit was unmatched.", stats: { serve: 82, return: 94, forehand: 86, backhand: 84, net: 80, movement: 96, defence: 96, stamina: 94, mental: 94, touch: 84, slice: 83 } },
+  { name: "Yevgeny Kafelnikov", flag: "🇷🇺", fact: "A complete all-court player who won on both clay and hard.", stats: { serve: 84, return: 86, forehand: 90, backhand: 88, net: 82, movement: 84, defence: 84, stamina: 86, mental: 82, touch: 80, slice: 83 } },
+  { name: "Michael Chang",      flag: "🇺🇸", fact: "The youngest male Slam champion, famed for extraordinary defence.", stats: { serve: 74, return: 90, forehand: 84, backhand: 84, net: 72, movement: 96, defence: 97, stamina: 98, mental: 92, touch: 86, slice: 83 } },
+  { name: "Tommy Haas",         flag: "🇩🇪", fact: "A stylish all-courter who consistently troubled the very best.", stats: { serve: 90, return: 82, forehand: 90, backhand: 86, net: 84, movement: 86, defence: 82, stamina: 80, mental: 80, touch: 84, slice: 85 } },
+  { name: "David Ferrer",       flag: "🇪🇸", fact: "The tireless workhorse who punched well above his talent level.", stats: { serve: 80, return: 88, forehand: 88, backhand: 84, net: 76, movement: 94, defence: 94, stamina: 99, mental: 92, touch: 78, slice: 79 } },
+  { name: "Robin Soderling",    flag: "🇸🇪", fact: "The only man to beat Nadal at Roland Garros during his peak.", stats: { serve: 90, return: 82, forehand: 95, backhand: 82, net: 78, movement: 80, defence: 80, stamina: 82, mental: 80, touch: 74, slice: 77 } },
+  { name: "Andy Roddick",       flag: "🇺🇸", fact: "A US Open champion with one of the hardest serves in history.", stats: { serve: 97, return: 80, forehand: 90, backhand: 78, net: 80, movement: 82, defence: 78, stamina: 84, mental: 84, touch: 74, slice: 76 } },
+  { name: "Nikolay Davydenko",  flag: "🇷🇺", fact: "A technically pristine baseliner who troubled every top player.", stats: { serve: 80, return: 86, forehand: 88, backhand: 88, net: 78, movement: 88, defence: 86, stamina: 90, mental: 82, touch: 82, slice: 83 } },
   // Current era
-  { name: "Jannik Sinner",      flag: "🇮🇹", fact: "The ice-cold Italian No. 1 with flat, relentless ball-striking.", stats: { serve: 90, return: 92, forehand: 95, backhand: 94, net: 82, movement: 92, defence: 90, stamina: 92, mental: 93, touch: 80 } },
-  { name: "Carlos Alcaraz",     flag: "🇪🇸", fact: "The electric all-court prodigy with dazzling variety.", stats: { serve: 88, return: 90, forehand: 96, backhand: 88, net: 90, movement: 97, defence: 92, stamina: 93, mental: 90, touch: 95 } },
-  { name: "Alexander Zverev",   flag: "🇩🇪", fact: "A towering baseliner with a heavy serve and clay-court grit.", stats: { serve: 94, return: 86, forehand: 88, backhand: 92, net: 80, movement: 86, defence: 86, stamina: 88, mental: 80, touch: 78 } },
-  { name: "Daniil Medvedev",    flag: "🇷🇺", fact: "An unorthodox counterpuncher who defends from deep behind the line.", stats: { serve: 88, return: 94, forehand: 86, backhand: 88, net: 76, movement: 90, defence: 95, stamina: 90, mental: 82, touch: 80 } },
-  { name: "Ben Shelton",        flag: "🇺🇸", fact: "A young American powerhouse with an explosive lefty serve.", stats: { serve: 96, return: 80, forehand: 92, backhand: 80, net: 82, movement: 84, defence: 78, stamina: 84, mental: 82, touch: 76 } },
-  { name: "Holger Rune",        flag: "🇩🇰", fact: "A fiery competitor with huge talent and all-court aggression.", stats: { serve: 88, return: 84, forehand: 90, backhand: 86, net: 82, movement: 86, defence: 82, stamina: 82, mental: 78, touch: 82 } },
-  { name: "Felix Auger-Aliassime", flag:"🇨🇦", fact:"A serve-and-forehand powerhouse who thrives on fast surfaces.", stats: { serve: 92, return: 82, forehand: 90, backhand: 82, net: 84, movement: 86, defence: 80, stamina: 84, mental: 80, touch: 78 } },
-  { name: "Stefanos Tsitsipas", flag: "🇬🇷", fact: "A fluid one-handed backhand player with creative shot-making.", stats: { serve: 87, return: 83, forehand: 90, backhand: 88, net: 84, movement: 86, defence: 82, stamina: 84, mental: 80, touch: 88 } },
+  { name: "Jannik Sinner",      flag: "🇮🇹", fact: "The ice-cold Italian No. 1 with flat, relentless ball-striking.", stats: { serve: 90, return: 92, forehand: 95, backhand: 94, net: 82, movement: 92, defence: 90, stamina: 92, mental: 93, touch: 80, slice: 85 } },
+  { name: "Carlos Alcaraz",     flag: "🇪🇸", fact: "The electric all-court prodigy with dazzling variety.", stats: { serve: 88, return: 90, forehand: 96, backhand: 88, net: 90, movement: 97, defence: 92, stamina: 93, mental: 90, touch: 95, slice: 92 } },
+  { name: "Alexander Zverev",   flag: "🇩🇪", fact: "A towering baseliner with a heavy serve and clay-court grit.", stats: { serve: 94, return: 86, forehand: 88, backhand: 92, net: 80, movement: 86, defence: 86, stamina: 88, mental: 80, touch: 78, slice: 83 } },
+  { name: "Daniil Medvedev",    flag: "🇷🇺", fact: "An unorthodox counterpuncher who defends from deep behind the line.", stats: { serve: 88, return: 94, forehand: 86, backhand: 88, net: 76, movement: 90, defence: 95, stamina: 90, mental: 82, touch: 80, slice: 82 } },
+  { name: "Ben Shelton",        flag: "🇺🇸", fact: "A young American powerhouse with an explosive lefty serve.", stats: { serve: 96, return: 80, forehand: 92, backhand: 80, net: 82, movement: 84, defence: 78, stamina: 84, mental: 82, touch: 76, slice: 78 } },
+  { name: "Holger Rune",        flag: "🇩🇰", fact: "A fiery competitor with huge talent and all-court aggression.", stats: { serve: 88, return: 84, forehand: 90, backhand: 86, net: 82, movement: 86, defence: 82, stamina: 82, mental: 78, touch: 82, slice: 83 } },
+  { name: "Felix Auger-Aliassime", flag:"🇨🇦", fact:"A serve-and-forehand powerhouse who thrives on fast surfaces.", stats: { serve: 92, return: 82, forehand: 90, backhand: 82, net: 84, movement: 86, defence: 80, stamina: 84, mental: 80, touch: 78, slice: 80 } },
+  { name: "Stefanos Tsitsipas", flag: "🇬🇷", fact: "A fluid one-handed backhand player with creative shot-making.", stats: { serve: 87, return: 83, forehand: 90, backhand: 88, net: 84, movement: 86, defence: 82, stamina: 84, mental: 80, touch: 88, slice: 91 } },
 ];
 
 const POOL_WTA = [
-  { name: "Serena Williams",    flag: "🇺🇸", fact: "The most dominant force in women's tennis, with a colossal serve.", stats: { serve: 98, return: 90, forehand: 95, backhand: 92, net: 84, movement: 88, defence: 86, stamina: 90, mental: 97, touch: 82 } },
-  { name: "Steffi Graf",        flag: "🇩🇪", fact: "Owner of a fearsome forehand and the only Golden Slam in history.", stats: { serve: 90, return: 88, forehand: 98, backhand: 84, net: 86, movement: 96, defence: 90, stamina: 94, mental: 96, touch: 84 } },
-  { name: "Martina Navratilova",flag: "🇺🇸", fact: "The serve-and-volley pioneer who redefined athleticism on tour.", stats: { serve: 92, return: 84, forehand: 88, backhand: 86, net: 98, movement: 92, defence: 84, stamina: 90, mental: 92, touch: 94 } },
-  { name: "Justine Henin",      flag: "🇧🇪", fact: "A graceful all-courter with arguably the finest backhand in the game.", stats: { serve: 84, return: 90, forehand: 90, backhand: 98, net: 88, movement: 94, defence: 92, stamina: 88, mental: 90, touch: 92 } },
-  { name: "Monica Seles",       flag: "🇷🇸", fact: "A ferocious two-fisted hitter who took the ball impossibly early.", stats: { serve: 84, return: 94, forehand: 95, backhand: 96, net: 76, movement: 84, defence: 86, stamina: 86, mental: 88, touch: 78 } },
-  { name: "Venus Williams",     flag: "🇺🇸", fact: "A grass-court great with a huge serve and explosive movement.", stats: { serve: 94, return: 84, forehand: 90, backhand: 86, net: 86, movement: 94, defence: 84, stamina: 88, mental: 86, touch: 80 } },
-  { name: "Chris Evert",        flag: "🇺🇸", fact: "The metronomic baseliner whose consistency was almost inhuman.", stats: { serve: 78, return: 90, forehand: 90, backhand: 94, net: 74, movement: 88, defence: 96, stamina: 92, mental: 96, touch: 84 } },
-  { name: "Martina Hingis",     flag: "🇨🇭", fact: "A tactical genius who out-thought opponents with guile and angles.", stats: { serve: 78, return: 88, forehand: 84, backhand: 86, net: 90, movement: 92, defence: 90, stamina: 84, mental: 90, touch: 96 } },
-  { name: "Maria Sharapova",    flag: "🇷🇺", fact: "A fierce competitor with flat, penetrating groundstrokes.", stats: { serve: 90, return: 86, forehand: 92, backhand: 92, net: 76, movement: 80, defence: 82, stamina: 86, mental: 94, touch: 74 } },
-  { name: "Kim Clijsters",      flag: "🇧🇪", fact: "A supreme athlete famed for sliding splits and elastic defence.", stats: { serve: 86, return: 90, forehand: 90, backhand: 88, net: 84, movement: 95, defence: 94, stamina: 88, mental: 86, touch: 84 } },
-  { name: "Lindsay Davenport",  flag: "🇺🇸", fact: "A powerful flat hitter who dominated on hard courts.", stats: { serve: 88, return: 84, forehand: 90, backhand: 86, net: 82, movement: 80, defence: 82, stamina: 84, mental: 86, touch: 78 } },
-  { name: "Victoria Azarenka",  flag: "🇧🇾", fact: "A two-handed powerhouse who pressured from every part of the court.", stats: { serve: 84, return: 90, forehand: 90, backhand: 86, net: 78, movement: 90, defence: 90, stamina: 88, mental: 84, touch: 78 } },
-  { name: "Arantxa Sanchez-Vicario", flag:"🇪🇸", fact:"A relentless clay-court fighter with incredible defence.", stats: { serve: 74, return: 90, forehand: 86, backhand: 84, net: 78, movement: 94, defence: 96, stamina: 96, mental: 90, touch: 84 } },
-  { name: "Mary Pierce",        flag: "🇫🇷", fact: "A French Open and Australian Open champion with a powerful game.", stats: { serve: 86, return: 82, forehand: 92, backhand: 84, net: 80, movement: 82, defence: 80, stamina: 82, mental: 82, touch: 78 } },
-  { name: "Amelie Mauresmo",    flag: "🇫🇷", fact: "A versatile all-courter with an exceptional serve-and-volley game.", stats: { serve: 88, return: 84, forehand: 86, backhand: 90, net: 92, movement: 88, defence: 84, stamina: 84, mental: 84, touch: 88 } },
+  { name: "Serena Williams",    flag: "🇺🇸", fact: "The most dominant force in women's tennis, with a colossal serve.", stats: { serve: 98, return: 90, forehand: 95, backhand: 92, net: 84, movement: 88, defence: 86, stamina: 90, mental: 97, touch: 82, slice: 85 } },
+  { name: "Steffi Graf",        flag: "🇩🇪", fact: "Owner of a fearsome forehand and the only Golden Slam in history.", stats: { serve: 90, return: 88, forehand: 98, backhand: 84, net: 86, movement: 96, defence: 90, stamina: 94, mental: 96, touch: 84, slice: 90 } },
+  { name: "Martina Navratilova",flag: "🇺🇸", fact: "The serve-and-volley pioneer who redefined athleticism on tour.", stats: { serve: 92, return: 84, forehand: 88, backhand: 86, net: 98, movement: 92, defence: 84, stamina: 90, mental: 92, touch: 94, slice: 99 } },
+  { name: "Justine Henin",      flag: "🇧🇪", fact: "A graceful all-courter with arguably the finest backhand in the game.", stats: { serve: 84, return: 90, forehand: 90, backhand: 98, net: 88, movement: 94, defence: 92, stamina: 88, mental: 90, touch: 92, slice: 99 } },
+  { name: "Monica Seles",       flag: "🇷🇸", fact: "A ferocious two-fisted hitter who took the ball impossibly early.", stats: { serve: 84, return: 94, forehand: 95, backhand: 96, net: 76, movement: 84, defence: 86, stamina: 86, mental: 88, touch: 78, slice: 83 } },
+  { name: "Venus Williams",     flag: "🇺🇸", fact: "A grass-court great with a huge serve and explosive movement.", stats: { serve: 94, return: 84, forehand: 90, backhand: 86, net: 86, movement: 94, defence: 84, stamina: 88, mental: 86, touch: 80, slice: 83 } },
+  { name: "Chris Evert",        flag: "🇺🇸", fact: "The metronomic baseliner whose consistency was almost inhuman.", stats: { serve: 78, return: 90, forehand: 90, backhand: 94, net: 74, movement: 88, defence: 96, stamina: 92, mental: 96, touch: 84, slice: 89 } },
+  { name: "Martina Hingis",     flag: "🇨🇭", fact: "A tactical genius who out-thought opponents with guile and angles.", stats: { serve: 78, return: 88, forehand: 84, backhand: 86, net: 90, movement: 92, defence: 90, stamina: 84, mental: 90, touch: 96, slice: 98 } },
+  { name: "Maria Sharapova",    flag: "🇷🇺", fact: "A fierce competitor with flat, penetrating groundstrokes.", stats: { serve: 90, return: 86, forehand: 92, backhand: 92, net: 76, movement: 80, defence: 82, stamina: 86, mental: 94, touch: 74, slice: 80 } },
+  { name: "Kim Clijsters",      flag: "🇧🇪", fact: "A supreme athlete famed for sliding splits and elastic defence.", stats: { serve: 86, return: 90, forehand: 90, backhand: 88, net: 84, movement: 95, defence: 94, stamina: 88, mental: 86, touch: 84, slice: 85 } },
+  { name: "Lindsay Davenport",  flag: "🇺🇸", fact: "A powerful flat hitter who dominated on hard courts.", stats: { serve: 88, return: 84, forehand: 90, backhand: 86, net: 82, movement: 80, defence: 82, stamina: 84, mental: 86, touch: 78, slice: 81 } },
+  { name: "Victoria Azarenka",  flag: "🇧🇾", fact: "A two-handed powerhouse who pressured from every part of the court.", stats: { serve: 84, return: 90, forehand: 90, backhand: 86, net: 78, movement: 90, defence: 90, stamina: 88, mental: 84, touch: 78, slice: 80 } },
+  { name: "Arantxa Sanchez-Vicario", flag:"🇪🇸", fact:"A relentless clay-court fighter with incredible defence.", stats: { serve: 74, return: 90, forehand: 86, backhand: 84, net: 78, movement: 94, defence: 96, stamina: 96, mental: 90, touch: 84, slice: 83 } },
+  { name: "Mary Pierce",        flag: "🇫🇷", fact: "A French Open and Australian Open champion with a powerful game.", stats: { serve: 86, return: 82, forehand: 92, backhand: 84, net: 80, movement: 82, defence: 80, stamina: 82, mental: 82, touch: 78, slice: 80 } },
+  { name: "Amelie Mauresmo",    flag: "🇫🇷", fact: "A versatile all-courter with an exceptional serve-and-volley game.", stats: { serve: 88, return: 84, forehand: 86, backhand: 90, net: 92, movement: 88, defence: 84, stamina: 84, mental: 84, touch: 88, slice: 95 } },
   // Current era
-  { name: "Aryna Sabalenka",    flag: "🇧🇾", fact: "The current world No. 1, hitting with overwhelming power.", stats: { serve: 92, return: 88, forehand: 95, backhand: 92, net: 80, movement: 86, defence: 84, stamina: 88, mental: 88, touch: 78 } },
-  { name: "Iga Swiatek",        flag: "🇵🇱", fact: "A clay-court phenomenon with heavy topspin and relentless movement.", stats: { serve: 86, return: 92, forehand: 96, backhand: 88, net: 80, movement: 95, defence: 93, stamina: 92, mental: 90, touch: 86 } },
-  { name: "Coco Gauff",         flag: "🇺🇸", fact: "A lightning-quick defender with a booming serve and big future.", stats: { serve: 90, return: 90, forehand: 84, backhand: 92, net: 82, movement: 96, defence: 94, stamina: 90, mental: 86, touch: 84 } },
-  { name: "Elena Rybakina",     flag: "🇰🇿", fact: "A grass-court force with one of the biggest serves on tour.", stats: { serve: 95, return: 84, forehand: 92, backhand: 86, net: 80, movement: 84, defence: 82, stamina: 86, mental: 86, touch: 78 } },
-  { name: "Jessica Pegula",     flag: "🇺🇸", fact: "A clean, consistent ball-striker who takes time away from rivals.", stats: { serve: 84, return: 90, forehand: 90, backhand: 90, net: 82, movement: 88, defence: 90, stamina: 88, mental: 86, touch: 84 } },
-  { name: "Naomi Osaka",        flag: "🇯🇵", fact: "A hard-court champion with a thunderous serve and forehand.", stats: { serve: 94, return: 84, forehand: 94, backhand: 86, net: 78, movement: 82, defence: 80, stamina: 84, mental: 84, touch: 76 } },
-  { name: "Simona Halep",       flag: "🇷🇴", fact: "A clay and grass champion with exceptional movement and defence.", stats: { serve: 80, return: 90, forehand: 88, backhand: 86, net: 80, movement: 94, defence: 94, stamina: 90, mental: 88, touch: 86 } },
-  { name: "Angelique Kerber",   flag: "🇩🇪", fact: "A left-handed defensive master who excelled on every surface.", stats: { serve: 80, return: 92, forehand: 84, backhand: 90, net: 78, movement: 92, defence: 96, stamina: 90, mental: 86, touch: 84 } },
-  { name: "Petra Kvitova",      flag: "🇨🇿", fact: "A two-time Wimbledon champion with a devastating lefty game.", stats: { serve: 88, return: 82, forehand: 88, backhand: 88, net: 86, movement: 86, defence: 80, stamina: 84, mental: 82, touch: 82 } },
+  { name: "Aryna Sabalenka",    flag: "🇧🇾", fact: "The current world No. 1, hitting with overwhelming power.", stats: { serve: 92, return: 88, forehand: 95, backhand: 92, net: 80, movement: 86, defence: 84, stamina: 88, mental: 88, touch: 78, slice: 83 } },
+  { name: "Iga Swiatek",        flag: "🇵🇱", fact: "A clay-court phenomenon with heavy topspin and relentless movement.", stats: { serve: 86, return: 92, forehand: 96, backhand: 88, net: 80, movement: 95, defence: 93, stamina: 92, mental: 90, touch: 86, slice: 85 } },
+  { name: "Coco Gauff",         flag: "🇺🇸", fact: "A lightning-quick defender with a booming serve and big future.", stats: { serve: 90, return: 90, forehand: 84, backhand: 92, net: 82, movement: 96, defence: 94, stamina: 90, mental: 86, touch: 84, slice: 86 } },
+  { name: "Elena Rybakina",     flag: "🇰🇿", fact: "A grass-court force with one of the biggest serves on tour.", stats: { serve: 95, return: 84, forehand: 92, backhand: 86, net: 80, movement: 84, defence: 82, stamina: 86, mental: 86, touch: 78, slice: 81 } },
+  { name: "Jessica Pegula",     flag: "🇺🇸", fact: "A clean, consistent ball-striker who takes time away from rivals.", stats: { serve: 84, return: 90, forehand: 90, backhand: 90, net: 82, movement: 88, defence: 90, stamina: 88, mental: 86, touch: 84, slice: 85 } },
+  { name: "Naomi Osaka",        flag: "🇯🇵", fact: "A hard-court champion with a thunderous serve and forehand.", stats: { serve: 94, return: 84, forehand: 94, backhand: 86, net: 78, movement: 82, defence: 80, stamina: 84, mental: 84, touch: 76, slice: 79 } },
+  { name: "Simona Halep",       flag: "🇷🇴", fact: "A clay and grass champion with exceptional movement and defence.", stats: { serve: 80, return: 90, forehand: 88, backhand: 86, net: 80, movement: 94, defence: 94, stamina: 90, mental: 88, touch: 86, slice: 89 } },
+  { name: "Angelique Kerber",   flag: "🇩🇪", fact: "A left-handed defensive master who excelled on every surface.", stats: { serve: 80, return: 92, forehand: 84, backhand: 90, net: 78, movement: 92, defence: 96, stamina: 90, mental: 86, touch: 84, slice: 89 } },
+  { name: "Petra Kvitova",      flag: "🇨🇿", fact: "A two-time Wimbledon champion with a devastating lefty game.", stats: { serve: 88, return: 82, forehand: 88, backhand: 88, net: 86, movement: 86, defence: 80, stamina: 84, mental: 82, touch: 82, slice: 85 } },
 ];
 
 // --- The field: real current tour players. Each has a base level and
@@ -138,9 +139,9 @@ const FIELD_WTA = [
 // different as you draft — making the "am I balanced?" decision feel real even
 // though the underlying maths is subtler. Not used in any match calculation.
 const DISPLAY_WEIGHTS = {
-  Clay:  { serve: 0.2, return: 1.4, forehand: 1.3, backhand: 1.0, net: 0.2, movement: 1.8, defence: 1.9, stamina: 1.8, mental: 1.1, touch: 1.2 },
-  Grass: { serve: 2.0, return: 0.5, forehand: 1.0, backhand: 0.7, net: 1.9, movement: 0.9, defence: 0.4, stamina: 0.4, mental: 1.1, touch: 1.4 },
-  Hard:  { serve: 1.3, return: 1.2, forehand: 1.2, backhand: 1.1, net: 0.8, movement: 1.0, defence: 1.0, stamina: 1.0, mental: 1.2, touch: 0.7 },
+  Clay:  { serve: 0.2, return: 1.4, forehand: 1.3, backhand: 1.0, net: 0.2, movement: 1.8, defence: 1.9, stamina: 1.8, mental: 1.1, touch: 1.2, slice: 1.0 },
+  Grass: { serve: 2.0, return: 0.5, forehand: 1.0, backhand: 0.7, net: 1.9, movement: 0.9, defence: 0.4, stamina: 0.4, mental: 1.1, touch: 1.4, slice: 1.6 },
+  Hard:  { serve: 1.3, return: 1.2, forehand: 1.2, backhand: 1.1, net: 0.8, movement: 1.0, defence: 1.0, stamina: 1.0, mental: 1.2, touch: 0.7, slice: 0.7 },
 };
 
 // Returns a 0-100 bar value. Each drafted shot contributes a clearly visible,
@@ -200,27 +201,44 @@ const ROUNDS = ["Round 1", "Round 2", "Round 3", "Round 4", "Quarter-final", "Se
 
 // Build a 7-man draw for a major. Early rounds (1-4) pull realistic top-100
 // names; the back end (QF/SF/F) draws from the top 10, ordered so the toughest
-// surface threat is the likeliest final. Returns ordered opponents per round.
-function buildDraw(slam, rand, field, drawPool) {
+// surface threat is the likeliest final. If a rival is supplied and this is
+// their specialist surface, they're placed as the SF or Final opponent so the
+// player actually meets them deep in the draw. Returns ordered opponents.
+function buildDraw(slam, rand, field, drawPool, rival) {
   const withLevel = (arr) =>
-    arr.map((p) => ({ ...p, level: p.base + p.surf[slam.surface] }));
+    arr.map((p) => ({ ...p, level: p.base + (p.surf?.[slam.surface] ?? 0) }));
 
   const lower = withLevel(drawPool).sort(() => rand() - 0.5);
   const top = withLevel(field).sort((a, b) => a.level - b.level);
 
   const draw = [];
   // Rounds 1-3: lower-ranked tour players
-  for (let r = 0; r < 3; r++) draw.push(lower[r]);
+  for (let r = 0; r < 3; r++) draw.push(lower[r % lower.length]);
   // Round 4: a strong lower player or a weaker top-10 name
-  const r4Pool = [lower[3], top[0], top[1]];
+  const r4Pool = [lower[3 % lower.length], top[0], top[1]];
   draw.push(r4Pool[Math.floor(rand() * r4Pool.length)]);
-  // QF / SF / Final: the genuine contenders, with a championship-week boost so
-  // the back half plays at peak. Keeps the calendar slam genuinely rare.
+  // QF / SF / Final: the genuine contenders, with a small championship-week
+  // boost so the back half plays near peak (kept modest now winProb is steeper).
   const top5 = top.slice(-5);
   const boost = (p, by) => ({ ...p, level: p.level + by });
   draw.push(boost(top5[Math.floor(rand() * 2)], 1));        // QF
-  draw.push(boost(top5[2 + Math.floor(rand() * 2)], 2));    // SF
-  draw.push(boost(top[top.length - 1], 3));                 // Final: surface king at his best
+  draw.push(boost(top5[2 + Math.floor(rand() * 2)], 1));    // SF
+  draw.push(boost(top[top.length - 1], 2));                 // Final: surface king
+
+  // Inject the rival deep in the draw on their specialist surface. They become
+  // a genuine threat the player must beat to win this major.
+  if (rival && rival.surface === slam.surface) {
+    const rivalOpp = {
+      name: rival.name,
+      level: (rival.level ?? 85) + 2,
+      weapon: rival.weapon,
+      style: rival.style,
+      flag: rival.flag,
+      isRival: true,
+    };
+    // Rival appears as the Final (60%) or Semi-final (40%) obstacle.
+    draw[rand() < 0.6 ? 6 : 5] = rivalOpp;
+  }
   return draw;
 }
 
@@ -229,6 +247,63 @@ const TOURS = {
   atp: { pool: POOL_ATP, field: FIELD_ATP, draw: DRAW_ATP, label: "ATP", sub: "Men's Tour" },
   wta: { pool: POOL_WTA, field: FIELD_WTA, draw: DRAW_WTA, label: "WTA", sub: "Women's Tour" },
 };
+
+// --- Sound engine ------------------------------------------------------------
+// Synthesised via Web Audio (no asset files, works offline). A short "thock"
+// for shots/taps and a crowd-cheer swell for slam wins. Respects a mute flag.
+const Sound = (() => {
+  let ctx = null;
+  let muted = false;
+  function ac() {
+    if (typeof window === "undefined") return null;
+    if (!ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      ctx = new AC();
+    }
+    if (ctx.state === "suspended") ctx.resume();
+    return ctx;
+  }
+  function setMuted(m) { muted = m; }
+  function isMuted() { return muted; }
+  // Short percussive racket "thock".
+  function shot() {
+    if (muted) return;
+    const c = ac(); if (!c) return;
+    const t = c.currentTime;
+    const o = c.createOscillator();
+    const g = c.createGain();
+    o.type = "triangle";
+    o.frequency.setValueAtTime(420, t);
+    o.frequency.exponentialRampToValueAtTime(150, t + 0.07);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.16, t + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.11);
+    o.connect(g); g.connect(c.destination);
+    o.start(t); o.stop(t + 0.12);
+  }
+  // Crowd cheer: filtered noise swell.
+  function cheer() {
+    if (muted) return;
+    const c = ac(); if (!c) return;
+    const t = c.currentTime;
+    const dur = 1.4;
+    const buf = c.createBuffer(1, c.sampleRate * dur, c.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * 0.6;
+    const src = c.createBufferSource(); src.buffer = buf;
+    const bp = c.createBiquadFilter();
+    bp.type = "bandpass"; bp.frequency.value = 900; bp.Q.value = 0.7;
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.32, t + 0.25);
+    g.gain.setValueAtTime(0.32, t + 0.7);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    src.connect(bp); bp.connect(g); g.connect(c.destination);
+    src.start(t); src.stop(t + dur);
+  }
+  return { shot, cheer, setMuted, isMuted };
+})();
 
 function mulberry32(seed) {
   return function () {
@@ -304,26 +379,53 @@ function playMatch(pSet, rand) {
 
 const fmtScore = (sets) => sets.map(([a, b]) => `${a}-${b}`).join(" ");
 
+// Describe how close a match actually was, from the real set scores, so the
+// written summary always tallies with the scoreboard. Counts tight sets
+// (tie-breaks and 7-5s) and whether it went the distance.
+function matchCloseness(sets) {
+  const tight = sets.filter(([a, b]) => Math.max(a, b) === 7).length; // 7-6 or 7-5
+  const tiebreaks = sets.filter(([a, b]) => Math.min(a, b) === 6 && Math.max(a, b) === 7).length;
+  const total = sets.length;
+  const distance = total >= 5; // best-of-5 went to a decider
+  if (tiebreaks >= 2 || (tight >= 3)) return { word: "an epic", adj: "razor-thin", wentLong: true };
+  if (tight >= 2 || (tight >= 1 && distance)) return { word: "a tight", adj: "hard-fought", wentLong: distance };
+  if (distance) return { word: "a grinding", adj: "gruelling", wentLong: true };
+  const margin = sets.reduce((s, [a, b]) => s + Math.abs(a - b), 0);
+  if (margin >= 10) return { word: "a routine", adj: "comfortable", wentLong: false };
+  return { word: "a solid", adj: "controlled", wentLong: false };
+}
+
+// Parse a "6-4 7-6 6-3" score string back into set pairs.
+function parseScore(scoreStr) {
+  return (scoreStr || "").split(" ").filter(Boolean).map(s => s.split("-").map(Number));
+}
+function matchClosenessFromScore(scoreStr) {
+  return matchCloseness(parseScore(scoreStr));
+}
+
 // Simulate one major: seven rounds against the real draw, each best-of-5 with
 // per-set noise. Records the full path with real set scores. `usedReasons` is a
 // Set shared across majors so loss explanations never repeat.
-function simulateMajor(build, slam, rand, usedReasons, field, drawPool) {
-  const draw = buildDraw(slam, rand, field, drawPool);
+function simulateMajor(build, slam, rand, usedReasons, field, drawPool, rival) {
+  const draw = buildDraw(slam, rand, field, drawPool, rival);
   const myForm = surfaceScore(build, slam.surface);
   const path = [];
 
   for (let r = 0; r < ROUNDS.length; r++) {
     const opp = draw[r];
-    // average set probability for this match
-    const noise = (rand() - 0.5) * 10;
+    // average set probability for this match. Noise narrowed (±8 → fewer flukey
+    // upsets) so genuine quality wins out more often — the "earned" feel.
+    const noise = (rand() - 0.5) * 8;
     const pSet = 1 / (1 + Math.exp(-((myForm + noise - opp.level) / 6)));
     const m = playMatch(pSet, rand);
     const won = m.mySets === 3;
+    const close = matchCloseness(m.sets);
     path.push({
       round: ROUNDS[r],
       name: opp.name,
       won,
-      score: won ? fmtScore(m.sets) : fmtScore(m.sets),
+      isRival: !!opp.isRival,
+      score: fmtScore(m.sets),
     });
 
     if (!won) {
@@ -333,22 +435,33 @@ function simulateMajor(build, slam, rand, usedReasons, field, drawPool) {
       // pick a variant not already used this year
       let reason = options.find((o) => !usedReasons.has(o)) || options[0];
       usedReasons.add(reason);
+      // Prefix with a closeness phrase drawn from the real scoreline so the
+      // narrative always matches the scoreboard.
+      const lead = close.wentLong
+        ? `In ${close.word} battle that went the distance, `
+        : `In ${close.word} contest, `;
       return {
         wonTitle: false,
         lostRound: ROUNDS[r],
         opponent: opp.name,
         weapon: opp.weapon,
         setScore: fmtScore(m.sets),
-        reason,
+        reason: lead + reason,
+        closeness: close,
+        lostToRival: !!opp.isRival,
         path,
       };
     }
   }
-  const note = WIN_NOTES[Math.floor(rand() * WIN_NOTES.length)];
+  // Win note should reflect how the final actually went.
+  const note = path[6] && matchClosenessFromScore(path[6].score).wentLong
+    ? "came through an epic final to seal it"
+    : WIN_NOTES[Math.floor(rand() * WIN_NOTES.length)];
   return {
     wonTitle: true,
     finalOpp: draw[6].name,
     finalScore: path[6].score,
+    beatRival: !!draw[6].isRival,
     note,
     path,
   };
@@ -359,7 +472,7 @@ function simulateMajor(build, slam, rand, usedReasons, field, drawPool) {
 const ATTR_ZONE = {
   serve: "serve", return: "baseline", forehand: "baselineR", backhand: "baselineL",
   net: "net", movement: "court", defence: "deep", stamina: "court",
-  mental: "whole", touch: "mid",
+  mental: "whole", touch: "mid", slice: "mid",
 };
 
 // --- Helpers -----------------------------------------------------------------
@@ -381,26 +494,30 @@ function surfaceScore(build, surface) {
     fullDen += w[a.key];
     const v = build[a.key];
     if (v == null) {
-      // empty slot counts as a severe gap (rating 30) and can be the weak link
-      num += 30 * w[a.key];
-      if (w[a.key] >= 1.0) weakest = Math.min(weakest, 30);
+      // empty slot counts as a severe gap (rating 28) and can be the weak link
+      num += 28 * w[a.key];
+      if (w[a.key] >= 1.0) weakest = Math.min(weakest, 28);
       continue;
     }
     num += v.rating * w[a.key];
     if (w[a.key] >= 1.1) weakest = Math.min(weakest, v.rating);
   }
   const avg = num / fullDen;
-  // Pull the average toward the weakest surface-critical shot.
-  return avg * 0.72 + weakest * 0.28;
+  // Pull the average toward the weakest surface-critical shot. A heavier pull
+  // (0.35) means one soft pick in a key attribute drags a surface down hard —
+  // so an all-rounder of genuine 90s is rewarded, a lopsided build is not.
+  return avg * 0.65 + weakest * 0.35;
 }
 
-// Convert a surface score into a win probability for that major. Tuned hard:
-// the field is brutal, so you need genuinely elite, balanced ratings to clear
-// 50% on all four surfaces. ~84 is roughly a coin-flip; below that you fade.
+// Convert a surface score into a win probability for that major. Tuned for an
+// "earned" feel: the curve is steep and centred at 86, so a genuinely elite,
+// balanced build (high 80s/90s across the surface-critical shots) clears 50%
+// comfortably and wins often, while a merely-good build fades fast. ~86 is a
+// coin-flip; 90+ is a strong favourite; below ~80 you rarely survive the field.
 function winProb(score) {
-  const x = (score - 84) / 6; // tighter band, higher floor than before
-  const p = 1 / (1 + Math.exp(-x * 2.6));
-  return Math.max(0.005, Math.min(0.985, p));
+  const x = (score - 86) / 5.5;
+  const p = 1 / (1 + Math.exp(-x * 2.9));
+  return Math.max(0.004, Math.min(0.99, p));
 }
 
 // ============================================================================
@@ -418,6 +535,7 @@ const ZONE_OF = {
   stamina:  { zones: ["wings"], surfaceHint: "Clay" },
   mental:   { zones: ["whole"], surfaceHint: "Hard" },
   touch:    { zones: ["midCourt"], surfaceHint: "Grass" },
+  slice:    { zones: ["midCourt", "netZone"], surfaceHint: "Grass" },
 };
 
 // Zone colours: each zone type glows in the colour of the surface it helps.
@@ -517,6 +635,7 @@ const SURF_EMOJI = { Clay: "🟧", Grass: "🟩", Hard: "🟦" };
 function ShareCard({ active, ranSim, build, tourLabel, onClose }) {
   const [copied, setCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [showBuild, setShowBuild] = useState(false);
   if (!active) return null;
 
   const squares = SLAMS.map((s) => {
@@ -579,7 +698,7 @@ function ShareCard({ active, ranSim, build, tourLabel, onClose }) {
       ctx.fillText(active.tier.note, 80, 530);
 
       // Slam chips
-      const SLAM_COLS = { ao: "#2b7de9", rg: "#e07a3f", wim: "#5a2d82", uso: "#1a8fd0" };
+      const SLAM_COLS = { ao: "#2b7de9", rg: "#e07a3f", wim: "#5a2d82", uso: "#0e3f80" };
       SLAMS.forEach((s, i) => {
         const leg = active.perSlam.find((p) => p.key === s.key);
         const won = ranSim ? leg.wonTitle : leg.win;
@@ -641,6 +760,24 @@ function ShareCard({ active, ranSim, build, tourLabel, onClose }) {
         </div>
 
         <div className="cs-share-mode">{ranSim ? `Simulated vs the ${tourLabel} field` : "Quick projection"}</div>
+
+        <button className="cs-share-build-toggle" onClick={() => setShowBuild(v => !v)}>
+          {showBuild ? "Hide build ▴" : "Show your build ▾"}
+        </button>
+        {showBuild && (
+          <div className="cs-share-build">
+            {ATTRS.map((a) => (
+              <div key={a.key} className="cs-share-build-row">
+                <span className="cs-share-build-attr">{a.label}</span>
+                <span className="cs-share-build-val">
+                  {build[a.key]
+                    ? <>{build[a.key].flag} {build[a.key].player} · <strong>{build[a.key].rating}</strong></>
+                    : "— empty —"}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
 
         <div className="cs-share-actions">
           <button className="cs-cta cs-share-copy" onClick={copy}>
@@ -751,16 +888,16 @@ function getOlympics(year) { return OLYMPICS[year] || null; }
 // Returns { wonGold, wonMedal, result: 'Gold'|'Silver'|'Bronze'|'Eliminated' }.
 function simulateOlympics(build, surface, rand) {
   const myForm = surfaceScore(build, surface);
-  // Olympic field is slightly weaker than slam level but still tough.
-  // QF, SF, Final brackets.
-  const opponents = [76, 80, 86]; // QF, SF, Final strength
+  // Olympic field is real top-tier: QF/SF/Final climb toward slam-final level,
+  // so gold is earned, not automatic.
+  const opponents = [84, 88, 92]; // QF, SF, Final strength
   let survived = true;
   let roundsWon = 0;
   for (const oppLevel of opponents) {
     let mySets = 0, oppSets = 0;
     // Best of 3
     while (mySets < 2 && oppSets < 2) {
-      const noise = (rand() - 0.5) * 12;
+      const noise = (rand() - 0.5) * 10;
       const pSet = 1 / (1 + Math.exp(-((myForm + noise - oppLevel) / 6)));
       if (rand() < pSet) mySets++; else oppSets++;
     }
@@ -773,11 +910,11 @@ function simulateOlympics(build, surface, rand) {
     return { wonGold: false, medal: "Silver 🥈" };
   }
   if (roundsWon === 1) {
-    // Lost in SF — bronze medal match (best of 3, easier opponent)
-    const bronzeOpp = 78;
+    // Lost in SF — bronze medal match (best of 3, slightly easier opponent)
+    const bronzeOpp = 85;
     let ms = 0, os = 0;
     while (ms < 2 && os < 2) {
-      const noise = (rand() - 0.5) * 12;
+      const noise = (rand() - 0.5) * 10;
       const pSet = 1 / (1 + Math.exp(-((myForm + noise - bronzeOpp) / 6)));
       if (rand() < pSet) ms++; else os++;
     }
@@ -790,21 +927,21 @@ function simulateOlympics(build, surface, rand) {
 
 // --- Name generator ----------------------------------------------------------
 const NAMES = {
-  "🇪🇸": { country: "Spain",       first: ["Carlos","Rafael","Pablo","Jorge","Javier","Alejandro","Sergio","Miguel"], last: ["Garcia","Lopez","Martinez","Fernandez","Romero","Navarro","Torres","Molina"] },
-  "🇮🇹": { country: "Italy",       first: ["Lorenzo","Matteo","Marco","Federico","Luca","Giovanni","Andrea","Filippo"], last: ["Rossi","Ferrari","Ricci","Conti","Esposito","Bianchi","Gallo","Moretti"] },
-  "🇩🇪": { country: "Germany",     first: ["Felix","Lukas","Niklas","Jonas","Julian","Maximilian","Florian","Fabian"], last: ["Müller","Schmidt","Weber","Becker","Hoffmann","Wagner","Fischer","Braun"] },
-  "🇷🇺": { country: "Russia",      first: ["Andrei","Dmitri","Ivan","Sergei","Pavel","Alexei","Nikolai","Viktor"], last: ["Ivanov","Petrov","Volkov","Sokolov","Lebedev","Kozlov","Novikov","Morozov"] },
-  "🇫🇷": { country: "France",      first: ["Lucas","Thomas","Hugo","Nathan","Théo","Antoine","Mathieu","Pierre"], last: ["Martin","Dubois","Laurent","Bernard","Leroy","Moreau","Simon","Girard"] },
-  "🇦🇷": { country: "Argentina",   first: ["Franco","Tomás","Nicolás","Matías","Santiago","Leandro","Rodrigo","Ezequiel"], last: ["Gonzalez","Rodriguez","Fernandez","Perez","Alvarez","Romero","Medina","Vega"] },
-  "🇧🇷": { country: "Brazil",      first: ["Thiago","Felipe","Gustavo","Rafael","Bruno","Lucas","Gabriel","Eduardo"], last: ["Silva","Santos","Oliveira","Pereira","Alves","Costa","Lima","Ferreira"] },
-  "🇺🇸": { country: "USA",         first: ["Tyler","Jordan","Austin","Brandon","Kevin","Chris","Dylan","Ryan"], last: ["Johnson","Williams","Brown","Davis","Miller","Wilson","Moore","Anderson"] },
-  "🇬🇧": { country: "Great Britain",first: ["Jack","Oliver","Harry","Charlie","George","Ethan","Liam","James"], last: ["Smith","Jones","Taylor","Brown","Wilson","Evans","Thomas","Roberts"] },
-  "🇦🇺": { country: "Australia",   first: ["Liam","Noah","Ethan","Mason","Jack","Ryan","Riley","Kyle"], last: ["Smith","Jones","Williams","Brown","Wilson","Taylor","Anderson","Thomas"] },
-  "🇨🇿": { country: "Czech Rep.",  first: ["Jakub","Tomas","Jan","Petr","Martin","Pavel","Michal","Ondrej"], last: ["Novak","Dvorak","Cerny","Blaha","Horak","Kral","Pospisil","Stepanek"] },
-  "🇷🇸": { country: "Serbia",      first: ["Novak","Stefan","Filip","Nikola","Marko","Milan","Igor","Luka"], last: ["Jovic","Milic","Petrovic","Nikolic","Markovic","Simic","Ilic","Djordjevic"] },
-  "🇨🇦": { country: "Canada",      first: ["Ethan","Logan","Lucas","Nathan","Liam","Owen","Felix","Alexis"], last: ["Martin","Roy","Tremblay","Gagnon","Bouchard","Auger","Lapointe","Cote"] },
-  "🇯🇵": { country: "Japan",       first: ["Kei","Sho","Ryota","Hiroki","Yuto","Ryu","Daiki","Sota"], last: ["Nishikori","Nakashima","Ito","Yamamoto","Suzuki","Tanaka","Watanabe","Sato"] },
-  "🇵🇱": { country: "Poland",      first: ["Hubert","Jan","Piotr","Marek","Kamil","Michal","Tomasz","Lukasz"], last: ["Kowalski","Wisniewski","Wojcik","Kowalczyk","Kaminski","Lewandowski","Zielinski","Szymanski"] },
+  "🇪🇸": { country: "Spain",       first: ["Pablo","Jorge","Javier","Alejandro","Sergio","Diego","Adrián","Ismael"], last: ["Garcia","Lopez","Martinez","Romero","Navarro","Molina","Castillo","Reyes"] },
+  "🇮🇹": { country: "Italy",       first: ["Marco","Federico","Giovanni","Andrea","Filippo","Davide","Riccardo","Simone"], last: ["Rossi","Ricci","Conti","Esposito","Gallo","Moretti","Greco","Bruno"] },
+  "🇩🇪": { country: "Germany",     first: ["Lukas","Niklas","Jonas","Julian","Maximilian","Florian","Fabian","Tobias"], last: ["Schmidt","Weber","Hoffmann","Wagner","Fischer","Braun","Krause","Werner"] },
+  "🇷🇺": { country: "Russia",      first: ["Dmitri","Pavel","Alexei","Nikolai","Viktor","Roman","Maxim","Anton"], last: ["Ivanov","Sokolov","Lebedev","Romanov","Egorov","Fedorov","Orlov","Belov"] },
+  "🇫🇷": { country: "France",      first: ["Théo","Antoine","Mathieu","Pierre","Romain","Clément","Maxime","Adrien"], last: ["Dubois","Laurent","Leroy","Moreau","Girard","Lefebvre","Mercier","Faure"] },
+  "🇦🇷": { country: "Argentina",   first: ["Franco","Matías","Santiago","Leandro","Rodrigo","Ezequiel","Joaquín","Bautista"], last: ["Gimenez","Sosa","Acosta","Medina","Vega","Ortiz","Rios","Aguirre"] },
+  "🇧🇷": { country: "Brazil",      first: ["Thiago","Felipe","Bruno","Gabriel","Eduardo","Rafael","Caio","Vinicius"], last: ["Souza","Almeida","Barbosa","Cardoso","Rocha","Ribeiro","Carvalho","Mendes"] },
+  "🇺🇸": { country: "USA",         first: ["Tyler","Jordan","Austin","Brandon","Kevin","Dylan","Cole","Trevor"], last: ["Johnson","Brooks","Hayes","Parker","Mitchell","Bennett","Reed","Coleman"] },
+  "🇬🇧": { country: "Great Britain",first: ["Oliver","Harry","Charlie","George","Ethan","Archie","Freddie","Toby"], last: ["Hughes","Walker","Turner","Hall","Ward","Cooper","Gray","Holt"] },
+  "🇦🇺": { country: "Australia",   first: ["Mason","Riley","Kyle","Cooper","Lachlan","Hayden","Brodie","Flynn"], last: ["Hayes","Carter","Mills","Lawson","Dixon","Reid","Fletcher","Brennan"] },
+  "🇨🇿": { country: "Czech Rep.",  first: ["Petr","Pavel","Michal","Ondrej","Vojtech","Radek","Lukas","Marek"], last: ["Dvorak","Cerny","Horak","Kral","Benes","Marek","Kucera","Vesely"] },
+  "🇷🇸": { country: "Serbia",      first: ["Stefan","Filip","Nikola","Marko","Milan","Igor","Vuk","Lazar"], last: ["Milic","Markovic","Simic","Ilic","Lukic","Pavlovic","Savic","Tomic"] },
+  "🇨🇦": { country: "Canada",      first: ["Logan","Owen","Mason","Carter","Liam","Nathan","Evan","Cole"], last: ["Roy","Tremblay","Gagnon","Bouchard","Lapointe","Cote","Belanger","Caron"] },
+  "🇯🇵": { country: "Japan",       first: ["Sho","Ryota","Hiroki","Yuto","Ryu","Daiki","Sota","Haruto"], last: ["Yamada","Kobayashi","Kato","Yoshida","Yamamoto","Inoue","Mori","Hayashi"] },
+  "🇵🇱": { country: "Poland",      first: ["Piotr","Marek","Kamil","Michal","Tomasz","Bartosz","Mateusz","Pawel"], last: ["Kowalski","Wojcik","Kaminski","Zielinski","Szymanski","Mazur","Krawczyk","Pawlak"] },
 };
 
 const FLAG_KEYS = Object.keys(NAMES);
@@ -855,20 +992,28 @@ function generateRival(playerBuild, playerTour, rng) {
     Grass: { style: "serve",    surface: "Grass", weapon: "an unplayable grass-court serve" },
     Hard:  { style: "return",   surface: "Hard",  weapon: "aggressive all-court ball-striking" },
   };
-  return { ...rival, ...styles[weakestSurf], slamCount: 0, h2hWins: 0, h2hLosses: 0, weakSurf: weakestSurf };
+  return {
+    ...rival, ...styles[weakestSurf],
+    slamCount: 0, h2hWins: 0, h2hLosses: 0,
+    weakSurf: weakestSurf,   // the surface they specialise in (your weakest)
+    level: 86,               // base field-level strength
+  };
 }
 
 // --- Age decay curve ---------------------------------------------------------
-// Returns attribute reductions per season based on age.
+// Returns attribute reductions per season based on age. Tuned so a career
+// naturally winds down by the mid-30s: peak to ~27, gentle decline to 30,
+// real erosion from 31, steep past 33.
 function ageDecay(age, longevity) {
-  // Longevity bonus delays decay. Each +1 longevity adds ~1 year of peak.
+  // Longevity bonus delays decay. Each +1 longevity adds ~0.8 years of peak.
   const adjustedAge = age - longevity * 0.8;
-  if (adjustedAge <= 25) return {};
-  if (adjustedAge <= 27) return { stamina: -1 };
-  if (adjustedAge <= 29) return { stamina: -1, movement: -1 };
-  if (adjustedAge <= 31) return { stamina: -2, movement: -1, defence: -1 };
-  if (adjustedAge <= 33) return { stamina: -2, movement: -2, defence: -1, mental: -1 };
-  return { stamina: -3, movement: -2, defence: -2, serve: -1, mental: -1 };
+  if (adjustedAge <= 24) return {};
+  if (adjustedAge <= 26) return { stamina: -1 };
+  if (adjustedAge <= 28) return { stamina: -2, movement: -1 };
+  if (adjustedAge <= 30) return { stamina: -2, movement: -2, defence: -1, serve: -1 };
+  if (adjustedAge <= 32) return { stamina: -3, movement: -2, defence: -2, serve: -1, forehand: -1 };
+  if (adjustedAge <= 34) return { stamina: -3, movement: -3, defence: -2, serve: -2, forehand: -1, backhand: -1, mental: -1 };
+  return { stamina: -4, movement: -3, defence: -3, serve: -2, forehand: -2, backhand: -2, mental: -1 };
 }
 
 // Injury risk rises with age and heavy training history.
@@ -879,13 +1024,24 @@ function injuryRisk(age, longevity, heavyTrainingSeason) {
   return Math.min(0.55, base + decay + fatigue);
 }
 
-// Should we prompt retirement? True if avg surface score < retirement threshold
-// for two consecutive seasons, or age >= 39.
-const RETIRE_THRESHOLD = 62;
+// Retirement logic. Forced at 35 (career naturally winds down by mid-30s).
+// Earlier, we prompt when the build can no longer realistically win a major —
+// i.e. the player's best surface win probability has fallen below a threshold
+// for two straight seasons.
+const RETIRE_AGE = 35;
+const SLAM_HOPE_THRESHOLD = 0.12; // best-surface winProb below this = unlikely to win again
+function bestSurfaceWinProb(build) {
+  return Math.max(...["Clay","Grass","Hard"].map(s => winProb(surfaceScore(build, s))));
+}
 function shouldRetire(stats, consecutiveLowSeasons, age) {
-  if (age >= 39) return true;
-  const avg = ["Clay","Grass","Hard"].reduce((s,surf) => s + surfaceScore(stats, surf), 0) / 3;
-  return avg < RETIRE_THRESHOLD && consecutiveLowSeasons >= 2;
+  if (age >= RETIRE_AGE) return true;
+  // No realistic slam hope for two consecutive seasons.
+  return bestSurfaceWinProb(stats) < SLAM_HOPE_THRESHOLD && consecutiveLowSeasons >= 2;
+}
+// True when the build almost certainly can't win another major — used to surface
+// a clear "your slam-winning days are behind you" retirement suggestion.
+function slamHopeGone(build) {
+  return bestSurfaceWinProb(build) < SLAM_HOPE_THRESHOLD;
 }
 
 // Pick 3 distinct upgrades for the off-season choice.
@@ -948,20 +1104,24 @@ function applyDecay(build, decay) {
   return applyEffects(build, decay);
 }
 
-// Simulate rival's season. They're a surface specialist, so they only seriously
-// contend on their home surface. On average about 1 slam every 3-4 seasons.
-function rivalSeason(rival, year, rng) {
+// Simulate the rival's own slam haul for a season. They're a surface specialist
+// who seriously contends mainly on their home surface. `playerWonOnRival` is how
+// many slams the player won by beating the rival in the final this season — those
+// can't also be rival titles. Net ~0.4–0.6 slams/season at peak.
+function rivalSeason(rival, year, rng, playerBeatRivalCount = 0) {
   if (!rival) return 0;
   let wins = 0;
   for (const slam of SLAMS) {
-    // Rival only has a real chance on their specialist surface
-    const isHomeSlam = slam.surface === rival.weakSurf; // weakSurf = the surface they counter you on
-    const baseChance = isHomeSlam ? 0.18 : 0.04;
-    // Rival peaks around years 3-7 of your career
-    const peak = Math.max(0, 1 - Math.abs(year - 5) * 0.07);
-    if (rng() < baseChance * (0.7 + peak * 0.6)) wins++;
+    const isHomeSlam = slam.surface === rival.weakSurf;
+    const baseChance = isHomeSlam ? 0.30 : 0.06;
+    // Rival peaks around years 4-9 of your career (same generation, slightly
+    // later bloom), so they don't dominate early or linger forever.
+    const peak = Math.max(0, 1 - Math.abs(year - 6) * 0.09);
+    if (rng() < baseChance * (0.5 + peak * 0.8)) wins++;
   }
-  return wins;
+  // Don't double-count: if the player beat the rival in a final, the rival
+  // didn't win that one.
+  return Math.max(0, wins - playerBeatRivalCount);
 }
 
 // ============================================================================
@@ -981,9 +1141,13 @@ export default function CalendarSlam() {
   const [showCard, setShowCard] = useState(false);
   const [isTouch, setIsTouch] = useState(false);
   const [previewKey, setPreviewKey] = useState(null);
-  const [reveal, setReveal] = useState({ slam: 0, round: 0, done: false });
+  const [reveal, setReveal] = useState({ slam: 0, round: 0, done: false, scoreShown: true });
   const [difficulty, setDifficulty] = useState("normal");
   const [eliteUsed, setEliteUsed] = useState(false);
+  const [playerSkipUsed, setPlayerSkipUsed] = useState(false);
+  const [nameRolling, setNameRolling] = useState(false);
+  const [trophyDetail, setTrophyDetail] = useState(null);
+  const [soundOn, setSoundOn] = useState(true);
 
   // Career mode state
   const [playerName, setPlayerName] = useState("");
@@ -1018,10 +1182,26 @@ export default function CalendarSlam() {
 
   // Career: generate a player identity (called on player-create screen).
   function generatePlayerIdentity() {
-    const rng = mulberry32(Date.now() & 0xffffffff);
-    const p = generatePlayer(rng);
-    setPlayerName(p.name);
-    setPlayerFlag(p.flag);
+    const rng = mulberry32((Date.now() & 0xffffffff) ^ Math.floor(Math.random() * 1e9));
+    const final = generatePlayer(rng);
+    if (reduce) {
+      setPlayerName(final.name); setPlayerFlag(final.flag);
+      return;
+    }
+    // Roll through a handful of random names, then settle on the final one.
+    setNameRolling(true);
+    let ticks = 0;
+    const iv = setInterval(() => {
+      const r = mulberry32((Date.now() & 0xffffffff) ^ (ticks * 2654435761));
+      const p = generatePlayer(r);
+      setPlayerName(p.name); setPlayerFlag(p.flag);
+      ticks++;
+      if (ticks > 11) {
+        clearInterval(iv);
+        setPlayerName(final.name); setPlayerFlag(final.flag);
+        setNameRolling(false);
+      }
+    }, 70);
   }
 
   // Auto-generate on mount when arriving at player-create screen.
@@ -1042,7 +1222,7 @@ export default function CalendarSlam() {
       setPlayerName(name); setPlayerFlag(flag);
     }
     setCareerSeason(1);
-    setCareerAge(careerStartAge);
+    setCareerAge(20);
     setCareerLongevity(0);
     setCareerSlamCount(0);
     setCareerSeasons([]);
@@ -1202,25 +1382,31 @@ export default function CalendarSlam() {
     const wonThisSeason = slamResults.filter(r => !r.isOlympics && r.wonTitle).length;
     const newTotal = careerSlamCount + wonThisSeason;
     setCareerSlamCount(newTotal);
-    // Create rival on first season if not yet set
+    // The rival emerges a couple of seasons in (end of season 2 → active from
+    // season 3), so they're an established same-generation force, not there from
+    // day one. Name is freshly random each career.
     let activeRival = careerRival;
-    if (!activeRival && gameMode === "career") {
-      const rivalRng = mulberry32((careerSeason * 99991) & 0xffffffff);
+    if (!activeRival && gameMode === "career" && careerSeason >= 2) {
+      const rivalRng = mulberry32(((Date.now() & 0xffffffff) ^ (careerSeason * 2654435761)) >>> 0);
       activeRival = generateRival(build, tour, rivalRng);
       setCareerRival(activeRival);
       setShowRivalModal(true); // trigger newspaper intro
     }
 
-    // Track rival's season results
-    const rivalRng2 = mulberry32((careerSeason * 31337 + 99) & 0xffffffff);
-    const rivalWins = rivalSeason(activeRival, careerSeason, rivalRng2);
+    // Count this season's head-to-heads from the actual sim paths.
+    const playerBeatRival = activeRival ? slamResults.filter(r =>
+      !r.isOlympics && r.wonTitle && r.beatRival).length : 0;
+    const playerLostToRival = activeRival ? slamResults.filter(r =>
+      !r.isOlympics && !r.wonTitle && r.lostToRival).length : 0;
+
+    // Track rival's own slam haul (excluding any the player took off them).
+    const rivalRng2 = mulberry32(((Date.now() & 0xffffffff) ^ (careerSeason * 40503 + 99)) >>> 0);
+    const rivalWins = rivalSeason(activeRival, careerSeason, rivalRng2, playerBeatRival);
     const updatedRival = activeRival ? {
       ...activeRival,
       slamCount: activeRival.slamCount + rivalWins,
-      h2hLosses: activeRival.h2hLosses + slamResults.filter(r =>
-        !r.wonTitle && r.opponent === activeRival.name).length,
-      h2hWins: activeRival.h2hWins + slamResults.filter(r =>
-        r.wonTitle && r.path?.[r.path.length - 1]?.name === activeRival.name).length,
+      h2hLosses: activeRival.h2hLosses + playerBeatRival,   // rival's losses to you
+      h2hWins: activeRival.h2hWins + playerLostToRival,     // rival's wins over you
     } : null;
     if (updatedRival) setCareerRival(updatedRival);
 
@@ -1245,12 +1431,13 @@ export default function CalendarSlam() {
     };
     setCareerSeasons(prev => [...prev, seasonRecord]);
 
-    // Check consecutive low seasons for retirement prompt
-    const avgScore = ["Clay","Grass","Hard"].reduce((s,surf) => s + surfaceScore(build, surf), 0) / 3;
-    const isLow = avgScore < RETIRE_THRESHOLD;
+    // Check for fading slam hope across consecutive seasons → retirement prompt.
+    const isLow = slamHopeGone(build);
     const newLow = isLow ? consecutiveLowSeasons + 1 : 0;
     setConsecutiveLowSeasons(newLow);
-    if (shouldRetire(build, newLow, careerAge + 1)) {
+    const nextAge = careerAge + 1;
+    // Force retirement at the age cap, or prompt when slam hope has gone.
+    if (nextAge >= RETIRE_AGE || shouldRetire(build, newLow, nextAge)) {
       setRetirementPrompt(true);
     }
 
@@ -1270,30 +1457,30 @@ export default function CalendarSlam() {
     setOffseasonInjury(injury);
     setOffseasonPendingBuild(build);
 
-    // Generate season report and press quotes — reuse olympicsEvent from above
+    // Generate the season report with one bespoke quote baked straight in
+    // (no separate picker screen). The quote is chosen from this season's story.
     const oRes = olympicsEvent ? { medal: olympicsEvent.medal, wonGold: olympicsEvent.wonTitle, city: olympicsEvent.olympicsData?.city } : null;
-    const report = generateSeasonReport(careerSeason, careerAge, slamResults, wonThisSeason, newTotal, updatedRival || activeRival, null, oRes);
     const quotes = generatePressQuotes(wonThisSeason, updatedRival || activeRival, careerAge, slamResults, oRes, newTotal);
-    setSeasonSummary({ ...report, quotes });
-    setChosenQuote(null);
+    const bakedQuote = quotes[0];
+    const report = generateSeasonReport(careerSeason, careerAge, slamResults, wonThisSeason, newTotal, updatedRival || activeRival, bakedQuote, oRes);
+    setSeasonSummary({ ...report });
 
-    // Spawn fictional next-gen players. Seed 3 from season 1 to immediately
-    // freshen the draw, then add more each season at rising probability.
+    // Spawn fictional next-gen players. Seed 3 from season 1, then add 1–2 every
+    // season so the tour visibly turns over and gen players reach the draw fast.
     if (careerSeason === 1) {
-      const seedRng = mulberry32((careerSeason * 11113) & 0xffffffff);
+      const seedRng = mulberry32(((Date.now() & 0xffffffff) ^ 11113) >>> 0);
       const seedPlayers = [1, 2, 3].map(() => spawnGenerationalPlayer(1, seedRng));
       setGenerationalPlayers(seedPlayers);
     } else {
-      const spawnRng = mulberry32((careerSeason * 88887) & 0xffffffff);
-      const spawnChance = Math.min(0.85, 0.45 + (careerSeason - 2) * 0.07);
-      if (spawnRng() < spawnChance) {
-        const newPlayer = spawnGenerationalPlayer(careerSeason, spawnRng);
-        setGenerationalPlayers(prev => [...prev, newPlayer]);
-      }
+      const spawnRng = mulberry32(((Date.now() & 0xffffffff) ^ (careerSeason * 88887)) >>> 0);
+      // Always add at least one new player each season; sometimes two.
+      const count = spawnRng() < 0.5 ? 2 : 1;
+      const fresh = Array.from({ length: count }, () => spawnGenerationalPlayer(careerSeason, spawnRng));
+      setGenerationalPlayers(prev => [...prev, ...fresh]);
     }
 
-    // Show the press quote screen first, then move to offseason after
-    setPressPhase(true);
+    // Straight to the off-season — no separate press-quote picker.
+    setPressPhase(false);
     setPhase("offseason");
   }
 
@@ -1312,7 +1499,7 @@ export default function CalendarSlam() {
     setCareerSeason(s => s + 1);
     setCareerAge(a => a + 1);
     setRanSim(false);
-    setReveal({ slam: 0, round: 0, done: false });
+    setReveal({ slam: 0, round: 0, done: false, scoreShown: false });
     setEliteUsed(false);
     setRound(0);
     setRetirementPrompt(false);
@@ -1323,8 +1510,44 @@ export default function CalendarSlam() {
     setPhase("result");
   }
 
+  useEffect(() => { Sound.setMuted(!soundOn); }, [soundOn]);
+
   // Career: retire and show the hall of fame summary.
   function retire() { setPhase("retirement"); }
+
+  // Coach's read on where to invest, from the build's weakest surface and the
+  // most damaging slam result this season (e.g. an early Wimbledon exit → grass).
+  function coachAssessment() {
+    const b = offseasonPendingBuild || build;
+    if (!b || Object.keys(b).length === 0) return null;
+    const lastSeason = careerSeasons[careerSeasons.length - 1];
+    const results = lastSeason?.results?.filter(r => !r.isOlympics) || [];
+    // Surface scores, weakest first.
+    const surfScores = ["Clay", "Grass", "Hard"].map(s => ({ s, v: surfaceScore(b, s) }));
+    surfScores.sort((a, b2) => a.v - b2.v);
+    const weakestSurf = surfScores[0].s;
+    // Did an early exit happen on a particular surface this season?
+    const earlyExit = results.find(r => !r.wonTitle &&
+      ["Round 1", "Round 2", "Round 3"].includes(r.lostRound));
+    const surfName = { Clay: "clay", Grass: "grass", Hard: "hard-court" };
+    // The single weakest surface-critical attribute to call out.
+    const w = SURFACE_WEIGHTS[weakestSurf];
+    let worstAttr = null, worstVal = 999;
+    for (const a of ATTRS) {
+      const val = b[a.key]?.rating ?? 0;
+      if (w[a.key] >= 1.1 && val < worstVal) { worstVal = val; worstAttr = a; }
+    }
+    let line;
+    if (earlyExit) {
+      line = `That early exit at ${earlyExit.name} stung. Your ${surfName[earlyExit.surface]} game is where we're losing matches — let's target it this off-season.`;
+    } else {
+      line = `Your ${surfName[weakestSurf]} results are the soft spot in your game. If we want more deep runs, that's where the work goes.`;
+    }
+    if (worstAttr && worstVal < 86) {
+      line += ` Your ${worstAttr.label.toLowerCase()} (${worstVal}) is the shot holding that surface back.`;
+    }
+    return { weakestSurf, line, worstAttr: worstAttr?.label };
+  }
 
   useEffect(() => {
     const m = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -1353,11 +1576,20 @@ export default function CalendarSlam() {
     setBuild({});
     setRound(0);
     setRanSim(false);
-    setReveal({ slam: 0, round: 0, done: false });
+    setReveal({ slam: 0, round: 0, done: false, scoreShown: false });
     setShowCard(false);
     setEliteUsed(false);
+    setPlayerSkipUsed(false);
     setPhase("draft");
     spinNext([], false);
+  }
+
+  // Draft: skip the currently spun player once per draft — re-spins a fresh one.
+  function skipPlayer() {
+    if (spinning || playerSkipUsed || !current) return;
+    setPlayerSkipUsed(true);
+    const usedNames = Object.values(build).filter(Boolean).map((b) => b.player);
+    spinNext(usedNames.concat(current.name), eliteUsed);
   }
 
   // Choose which sub-pool to spin from given challenge mode and elite status.
@@ -1416,6 +1648,7 @@ export default function CalendarSlam() {
 
   function pickAttr(attrKey) {
     if (spinning || !current) return;
+    Sound.shot();
     const isElitePick = difficulty === "challenge" && !eliteUsed &&
       elitePool.some((p) => p.name === current.name);
     const nextEliteUsed = eliteUsed || isElitePick;
@@ -1436,7 +1669,11 @@ export default function CalendarSlam() {
       setPhase("result");
     } else {
       setRound(newRound);
-      spinNext(drawnIds.concat(current.name), nextEliteUsed);
+      // Exclude every player already used in the FRESH build (not the stale
+      // memoised drawnIds, which hasn't updated yet this tick) so no player is
+      // ever drawn twice and the card you see is always the card you lock.
+      const usedNames = Object.values(next).filter(Boolean).map((b) => b.player);
+      spinNext(usedNames, nextEliteUsed);
     }
   }
 
@@ -1475,6 +1712,41 @@ export default function CalendarSlam() {
     const careerYear = gameMode === "career" ? 2025 + careerSeason : null;
     const olympicsData = careerYear ? getOlympics(careerYear) : null;
 
+    // --- Evolving field & draw (career mode) ---------------------------------
+    // As seasons pass, today's tour stars age out. By ~5 seasons in, the oldest
+    // names fade (drop in level, then disappear) and are replaced by the
+    // procedurally generated next generation, so the tour feels alive and the
+    // 90s-born players don't linger past their time.
+    const gens = generationalPlayers.filter(p => p.debutSeason <= careerSeason);
+    let activeField = T.field;
+    let activeDraw = T.draw;
+    if (gameMode === "career") {
+      const seasonsIn = careerSeason - 1;
+      // Each season, the lowest-rated established names decline; after a few
+      // seasons they retire out of the field entirely, replaced by gen players.
+      const fade = Math.min(T.field.length - 4, Math.floor(seasonsIn / 2));
+      const sortedField = [...T.field].sort((a, b) => b.base - a.base);
+      const survivors = sortedField.slice(0, sortedField.length - fade)
+        .map((p, i) => ({ ...p, base: p.base - Math.min(6, Math.floor(seasonsIn / 3)) }));
+      // Promote the strongest generational players into the field.
+      const promoted = gens
+        .filter(p => p.base >= 76 || careerSeason >= 4)
+        .slice(0, fade + 2)
+        .map(p => ({ ...p, base: p.base + Math.min(8, seasonsIn) }));
+      activeField = [...survivors, ...promoted].slice(0, Math.max(10, survivors.length));
+      // Draw pool also takes in the remaining gen players.
+      activeDraw = [...T.draw, ...gens];
+    }
+
+    // Rival as a field-level threat (career mode), with a real level.
+    let rivalForDraw = null;
+    if (gameMode === "career" && careerRival) {
+      rivalForDraw = {
+        ...careerRival,
+        level: 86 + Math.min(6, careerSeason), // strengthens as the career goes on
+      };
+    }
+
     const events = [];
     for (const s of SLAMS) {
       events.push(s);
@@ -1493,44 +1765,70 @@ export default function CalendarSlam() {
 
     const perSlam = events.map((s) => {
       if (s.isOlympics) {
-        // Best-of-3 olympic sim
-        const oResult = simulateOlympics(build, s.surface, rand);
-        // Convert to a path-like structure for the reveal UI
+        // Best-of-3 Olympic bracket with REAL opponent names drawn from the
+        // current field, climbing toward slam-final strength. Gold is earned.
+        const myForm = surfaceScore(build, s.surface);
+        const fieldByLevel = [...activeField]
+          .map(p => ({ ...p, level: p.base + (p.surf?.[s.surface] ?? 0) }))
+          .sort((a, b) => a.level - b.level);
+        const oppPicks = [
+          fieldByLevel[Math.max(0, fieldByLevel.length - 5)],
+          fieldByLevel[Math.max(0, fieldByLevel.length - 3)],
+          fieldByLevel[fieldByLevel.length - 1],
+        ];
+        const oppStrengths = [84, 88, 92];
+        const rounds = ["Quarter-final", "Semi-final", "Final"];
         const path = [];
-        const rounds = ["Quarter-final","Semi-final","Final"];
-        const oppStrengths = [76, 80, 86];
+        let roundsWon = 0;
         for (let i = 0; i < 3; i++) {
           let mySets = 0, oppSets = 0;
           while (mySets < 2 && oppSets < 2) {
-            const noise = (rand() - 0.5) * 12;
-            const pSet = 1 / (1 + Math.exp(-((surfaceScore(build, s.surface) + noise - oppStrengths[i]) / 6)));
+            const noise = (rand() - 0.5) * 10;
+            const pSet = 1 / (1 + Math.exp(-((myForm + noise - oppStrengths[i]) / 6)));
             if (rand() < pSet) mySets++; else oppSets++;
           }
           const wonSet = mySets === 2;
-          path.push({ round: rounds[i], name: "Field opponent", won: wonSet, score: `${mySets}-${oppSets}` });
-          if (!wonSet) break;
+          path.push({
+            round: rounds[i],
+            name: oppPicks[i]?.name || "the field",
+            won: wonSet,
+            score: `${mySets}-${oppSets}`,
+          });
+          if (wonSet) roundsWon++; else break;
         }
-        const wonGold = oResult.wonGold;
+        let medal, wonGold = false;
+        if (roundsWon === 3) { medal = "Gold 🥇"; wonGold = true; }
+        else if (roundsWon === 2) medal = "Silver 🥈";
+        else {
+          // bronze playoff
+          let ms = 0, os = 0;
+          const bronzeName = fieldByLevel[Math.max(0, fieldByLevel.length - 4)]?.name || "the field";
+          while (ms < 2 && os < 2) {
+            const noise = (rand() - 0.5) * 10;
+            const pSet = 1 / (1 + Math.exp(-((myForm + noise - 85) / 6)));
+            if (rand() < pSet) ms++; else os++;
+          }
+          medal = roundsWon === 1 && ms === 2 ? "Bronze 🥉"
+            : roundsWon === 1 ? "4th place"
+            : "Eliminated";
+        }
+        const lastOpp = path[path.length - 1];
         return {
           ...s,
           wonTitle: wonGold,
-          medal: oResult.medal,
+          medal,
           path,
-          finalOpp: "the field",
-          finalScore: path[path.length-1]?.score || "",
+          finalOpp: lastOpp?.name || "the field",
+          finalScore: lastOpp?.score || "",
           note: wonGold ? "delivered a gold-medal performance" : "",
           lostRound: !wonGold ? (path.find(p => !p.won)?.round || "Final") : null,
-          opponent: "the field",
-          setScore: path[path.length-1]?.score || "",
-          reason: wonGold ? null : "the competition was fierce",
-          weapon: "world-class competition",
+          opponent: lastOpp?.name || "the field",
+          setScore: lastOpp?.score || "",
+          reason: wonGold ? null : "the Olympic field proved too strong on the day",
+          weapon: "the world's best",
         };
       }
-      // Merge generational players into the draw pool for career mode
-      const augmentedDraw = gameMode === "career" && generationalPlayers.length > 0
-        ? [...T.draw, ...generationalPlayers.filter(p => p.debutSeason <= careerSeason)]
-        : T.draw;
-      const r = simulateMajor(build, s, rand, usedReasons, T.field, augmentedDraw);
+      const r = simulateMajor(build, s, rand, usedReasons, activeField, activeDraw, rivalForDraw);
       if (r.wonTitle) won++;
       return { ...s, ...r };
     });
@@ -1538,34 +1836,50 @@ export default function CalendarSlam() {
     // Count grand slam titles (not Olympics)
     const slamWon = perSlam.filter(s => !s.isOlympics && s.wonTitle).length;
     return { perSlam, won: slamWon, tier: tierFor(slamWon), olympicsData };
-  }, [phase, build, ranSim, seed, gameMode, careerSeason, generationalPlayers]);
+  }, [phase, build, ranSim, seed, gameMode, careerSeason, generationalPlayers, careerRival]);
 
   // Kick off a fresh live simulation: reset reveal, new seed, run sim.
   function startSim() {
-    setReveal({ slam: 0, round: 0, done: false });
+    setReveal({ slam: 0, round: 0, done: false, scoreShown: false });
     setSeed(Math.floor(Math.random() * 1e9));
     setRanSim(true);
   }
 
   function skipSim() {
     const total = simResults ? simResults.perSlam.length : SLAMS.length;
-    setReveal({ slam: total, round: 0, done: true });
+    setReveal({ slam: total, round: 0, done: true, scoreShown: true });
   }
 
-  // Drive the live reveal: step through each event's rounds, then the next.
+  // Drive the live reveal. Each round reveals in two beats: the opponent's name
+  // appears first (scoreShown:false), then ~260ms later the score lands, then it
+  // advances. This makes you register WHO you're playing before the result.
   useEffect(() => {
     if (!ranSim || !simResults || reveal.done) return;
     const slam = simResults.perSlam[reveal.slam];
     if (!slam) { setReveal((r) => ({ ...r, done: true })); return; }
     const lastRound = slam.path.length - 1;
-    const delay = reduce ? 0 : 480;
+    const nameBeat = reduce ? 0 : 260;
+    const advanceBeat = reduce ? 0 : 360;
+
+    if (!reveal.scoreShown) {
+      // Beat 1 just happened (name showing). After a short pause, land the score.
+      const t = setTimeout(() => {
+        Sound.shot();
+        setReveal((r) => ({ ...r, scoreShown: true }));
+      }, nameBeat);
+      return () => clearTimeout(t);
+    }
+    // If this score just resolved a WON event, cheer.
+    const isLastRound = reveal.round >= lastRound;
+    if (isLastRound && slam.wonTitle) Sound.cheer();
+    // Score is shown — advance to the next round (or next event), name-first.
     const t = setTimeout(() => {
       setReveal((r) => {
-        if (r.round < lastRound) return { ...r, round: r.round + 1 };
+        if (r.round < lastRound) return { ...r, round: r.round + 1, scoreShown: false };
         if (r.slam + 1 >= simResults.perSlam.length) return { ...r, done: true };
-        return { slam: r.slam + 1, round: 0, done: false };
+        return { slam: r.slam + 1, round: 0, done: false, scoreShown: false };
       });
-    }, reveal.round < lastRound ? delay : delay * 1.6);
+    }, reveal.round < lastRound ? advanceBeat : advanceBeat * 1.5);
     return () => clearTimeout(t);
   }, [ranSim, simResults, reveal, reduce]);
 
@@ -1574,11 +1888,22 @@ export default function CalendarSlam() {
       <style>{CSS}</style>
 
       <header className="cs-head">
-        <div className="cs-wordmark">
+        <button className="cs-wordmark cs-wordmark-btn" onClick={() => {
+          if (phase === "mode") return;
+          if (window.confirm("Return to the home screen? Any unfinished season will be lost.")) {
+            setPhase("mode");
+            setRanSim(false);
+            setReveal({ slam: 0, round: 0, done: false, scoreShown: false });
+          }
+        }} title="Return to home">
           <span className="cs-wordmark-calendar">Calendar</span>
           <span className="cs-wordmark-slam">Slam</span>
-        </div>
+        </button>
         <div className="cs-head-right">
+          <button className="cs-sound-toggle" onClick={() => setSoundOn(v => !v)}
+            title={soundOn ? "Mute sound" : "Unmute sound"} aria-label="Toggle sound">
+            {soundOn ? "🔊" : "🔇"}
+          </button>
           {phase !== "mode" && phase !== "tour" && phase !== "player-create" && (
             <button className="cs-tour-switch" onClick={() => setPhase("tour")}
               title="Switch tour">
@@ -1615,7 +1940,7 @@ export default function CalendarSlam() {
             <button className="cs-mode-btn career" onClick={() => { setGameMode("career"); setPhase("tour"); }}>
               <span className="cs-mode-icon">🏆</span>
               <span className="cs-mode-label">Career Mode</span>
-              <span className="cs-mode-desc">Guide your player across 15-20 seasons. Hire coaches, survive injuries, build a rivalry, and write your legacy.</span>
+              <span className="cs-mode-desc">Guide your player from age 20 to retirement. Hire coaches, survive injuries, build a rivalry, and write your legacy before time catches up.</span>
             </button>
           </div>
         </section>
@@ -1679,11 +2004,11 @@ export default function CalendarSlam() {
 
           {playerNameMode === "generate" ? (
             <div className="cs-create-generated">
-              <div className="cs-gen-player">
+              <div className={`cs-gen-player ${nameRolling ? "rolling" : ""}`}>
                 <span className="cs-gen-flag">{playerFlag}</span>
                 <span className="cs-gen-name">{playerName || "Generating…"}</span>
               </div>
-              <button className="cs-text-btn" onClick={generatePlayerIdentity}>↻ Generate another</button>
+              <button className="cs-text-btn" onClick={generatePlayerIdentity} disabled={nameRolling}>↻ Generate another</button>
             </div>
           ) : (
             <div className="cs-create-custom">
@@ -1710,15 +2035,10 @@ export default function CalendarSlam() {
           )}
 
           <div className="cs-create-field">
-            <label className="cs-create-label">Starting age</label>
-            <div className="cs-age-btns">
-              {[18, 19, 20, 21, 22].map(a => (
-                <button key={a}
-                  className={`cs-age-btn ${careerStartAge === a ? "active" : ""}`}
-                  onClick={() => setCareerStartAge(a)}>{a}</button>
-              ))}
+            <div className="cs-start-note">
+              <span className="cs-start-age">Age 20</span>
+              <p className="cs-create-hint">You start at 20, already a rising force on tour. Careers peak in the mid-20s and wind down by 35 — make every season count.</p>
             </div>
-            <p className="cs-create-hint">Younger = more seasons but a slower peak. Older = ready sooner.</p>
           </div>
 
           <button className="cs-cta" onClick={startCareer}
@@ -1738,7 +2058,7 @@ export default function CalendarSlam() {
               </h1>
               <p className="cs-lede">
                 Spin legends from different eras and draft their iconic weapons into your player's game.
-                You have <strong>10 picks</strong> — choose wisely. This build will carry through your career,
+                You have <strong>11 picks</strong> — choose wisely. This build will carry through your career,
                 shaped by coaches, injuries and the passage of time.
               </p>
               <div className="cs-surfaces">
@@ -1830,6 +2150,16 @@ export default function CalendarSlam() {
                 <div className="cs-card-hint">
                   {spinning ? "Spinning…" : "Take one shot for your build"}
                 </div>
+                {!spinning && (
+                  <button
+                    className="cs-skip-player-btn"
+                    onClick={skipPlayer}
+                    disabled={playerSkipUsed}
+                    title={playerSkipUsed ? "You've used your skip" : "Skip this player (once per draft)"}
+                  >
+                    {playerSkipUsed ? "Skip used" : "↻ Skip this player"}
+                  </button>
+                )}
               </div>
               <CourtDiagram build={build} hovered={hovered} />
             </div>
@@ -1985,10 +2315,7 @@ export default function CalendarSlam() {
                   <div className="cs-live-banner">
                     <span className="cs-live-dot" />
                     Playing {simResults.perSlam[reveal.slam]?.name}…
-                    <button className="cs-skip-btn" onClick={skipSim}>Skip ⏭</button>
-                  </div>
-                  <div className="cs-skip-float">
-                    <button className="cs-skip-btn cs-skip-float-btn" onClick={skipSim}>Skip to results ⏭</button>
+                    <button className="cs-skip-btn" onClick={skipSim}>Skip to results ⏭</button>
                   </div>
                 </>
               )}
@@ -2034,19 +2361,27 @@ export default function CalendarSlam() {
                       )}
 
                       <ol className="cs-path-list cs-path-live">
-                        {s.path.slice(0, roundsToShow).map((p, i) => (
-                          <li key={i} className={p.won ? "won" : "lost"}>
-                            <span className="cs-path-round">{p.round}</span>
-                            <span className="cs-path-opp">
-                              {p.won ? "def." : "lost to"} {p.name}
-                            </span>
-                            <span className="cs-path-score">{p.score}</span>
-                          </li>
-                        ))}
-                        {isCurrent && !resolved && (
+                        {s.path.slice(0, roundsToShow).map((p, i) => {
+                          // The most-recently revealed row of the CURRENT event waits
+                          // a beat: show the opponent name, then land the score.
+                          const isFreshRow = isCurrent && i === roundsToShow - 1 && !reveal.scoreShown && !reveal.done;
+                          return (
+                            <li key={i} className={isFreshRow ? "fresh" : (p.won ? "won" : "lost")}>
+                              <span className="cs-path-round">{p.round}</span>
+                              <span className="cs-path-opp">
+                                {isFreshRow ? `vs ${p.name}` : `${p.won ? "def." : "lost to"} ${p.name}`}
+                                {p.isRival && <span className="cs-rival-tag"> ⚔ rival</span>}
+                              </span>
+                              <span className="cs-path-score">
+                                {isFreshRow ? <span className="cs-score-loading">· · ·</span> : p.score}
+                              </span>
+                            </li>
+                          );
+                        })}
+                        {isCurrent && !resolved && reveal.scoreShown && roundsToShow < s.path.length && (
                           <li className="cs-path-playing">
-                            <span className="cs-path-round">{ROUNDS[roundsToShow]}</span>
-                            <span className="cs-path-opp">playing…</span>
+                            <span className="cs-path-round">{(s.path[roundsToShow]?.round) || ROUNDS[roundsToShow]}</span>
+                            <span className="cs-path-opp">up next…</span>
                             <span className="cs-path-score">—</span>
                           </li>
                         )}
@@ -2086,20 +2421,21 @@ export default function CalendarSlam() {
             </>
           )}
 
-          <details className="cs-breakdown">
-            <summary>Show your build ▾</summary>
-            <div className="cs-build-list">
-              {ATTRS.map((a) => (
-                <div key={a.key} className="cs-build-row">
-                  <span>{a.label}</span>
-                  <span className="cs-build-val">
-                    {build[a.key] ? `${build[a.key].rating} — ${build[a.key].player}` : "— empty —"}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </details>
-
+          {ranSim && (
+            <details className="cs-breakdown">
+              <summary>Show your build ▾</summary>
+              <div className="cs-build-list">
+                {ATTRS.map((a) => (
+                  <div key={a.key} className="cs-build-row">
+                    <span>{a.label}</span>
+                    <span className="cs-build-val">
+                      {build[a.key] ? `${build[a.key].rating} — ${build[a.key].player}` : "— empty —"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </details>
+          )}
           {gameMode === "single" ? (
             <button className="cs-cta" onClick={() => { setPhase("mode"); }}>Play again →</button>
           ) : null}
@@ -2109,38 +2445,7 @@ export default function CalendarSlam() {
       {/* OFFSEASON (career mode) */}
       {phase === "offseason" && (
         <section className="cs-offseason">
-
-          {/* PRESS QUOTE PHASE — shown first, before the upgrade choices */}
-          {pressPhase && seasonSummary ? (
-            <>
-              <div className="cs-press-report">
-                <div className="cs-press-header">
-                  <span className="cs-press-masthead">THE TENNIS TRIBUNE</span>
-                  <span className="cs-press-edition">Season {careerSeason} Review · {2025 + careerSeason}</span>
-                </div>
-                <h2 className="cs-press-headline">{seasonSummary.headline}</h2>
-                <p className="cs-press-body">{seasonSummary.body}</p>
-              </div>
-
-              <div className="cs-quote-section">
-                <h3 className="cs-upgrade-title">The press are waiting.</h3>
-                <p className="cs-upgrade-sub">How do you sum up your {2025 + careerSeason}?</p>
-                <div className="cs-quote-grid">
-                  {seasonSummary.quotes.map((q, i) => (
-                    <button key={i}
-                      className={`cs-quote-btn ${chosenQuote === q ? "chosen" : ""}`}
-                      onClick={() => setChosenQuote(q)}>
-                      "{q}"
-                    </button>
-                  ))}
-                </div>
-                <button className="cs-cta cs-press-continue"
-                  onClick={() => setPressPhase(false)}>
-                  {chosenQuote ? "Continue to off-season →" : "Skip →"}
-                </button>
-              </div>
-            </>
-          ) : (
+          <>
             <>
               {/* TROPHY CABINET */}
               {careerSlamCount > 0 && (
@@ -2149,11 +2454,16 @@ export default function CalendarSlam() {
                   <div className="cs-trophy-row">
                     {careerSeasons.flatMap(s =>
                       s.results?.filter(r => !r.isOlympics && r.wonTitle).map(r => (
-                        <div key={`${s.season}-${r.key}`} className={`cs-trophy slam-${r.key}`} title={`${r.name} ${s.year}`}>
+                        <button key={`${s.season}-${r.key}`} className={`cs-trophy slam-${r.key}`}
+                          title={`${r.name} ${s.year} — tap for detail`}
+                          onClick={() => setTrophyDetail({
+                            name: r.name, year: s.year, finalOpp: r.finalOpp,
+                            finalScore: r.finalScore, surface: r.surface, beatRival: r.beatRival,
+                          })}>
                           <span className="cs-trophy-icon">🏆</span>
                           <span className="cs-trophy-name">{r.short || r.name?.split(" ").pop()}</span>
                           <span className="cs-trophy-year">{s.year}</span>
-                        </div>
+                        </button>
                       ))
                     )}
                     {careerSeasons.flatMap(s =>
@@ -2233,6 +2543,18 @@ export default function CalendarSlam() {
 
               <div className="cs-upgrade-section">
                 <h3 className="cs-upgrade-title">Off-season investment</h3>
+                {(() => {
+                  const coach = coachAssessment();
+                  return coach ? (
+                    <div className="cs-coach-card">
+                      <span className="cs-coach-avatar">🎾</span>
+                      <div className="cs-coach-body">
+                        <span className="cs-coach-name">Your coach</span>
+                        <p className="cs-coach-line">"{coach.line}"</p>
+                      </div>
+                    </div>
+                  ) : null;
+                })()}
                 <p className="cs-upgrade-sub">Tap once to preview, tap again to confirm.</p>
                 <div className="cs-upgrade-grid">
                   {offseasonUpgrades.map(u => {
@@ -2287,15 +2609,19 @@ export default function CalendarSlam() {
 
               {retirementPrompt && (
                 <div className="cs-retirement-prompt">
-                  <p>Your peak years may be behind you. Retire now and celebrate your legacy?</p>
+                  <p>{careerAge + 1 >= RETIRE_AGE
+                    ? "At 35, your body is telling you it's time. This will be your final season — finish on your terms, or retire now and celebrate your legacy."
+                    : "Your slam-winning days look to be behind you. Retire now and celebrate your legacy, or push on for one more shot?"}</p>
                   <div className="cs-retire-actions">
                     <button className="cs-cta" onClick={retire}>Retire →</button>
-                    <button className="cs-text-btn" onClick={() => setRetirementPrompt(false)}>Keep going</button>
+                    {careerAge + 1 < RETIRE_AGE && (
+                      <button className="cs-text-btn" onClick={() => setRetirementPrompt(false)}>Keep going</button>
+                    )}
                   </div>
                 </div>
               )}
             </>
-          )}
+          </>
         </section>
       )}
 
@@ -2377,6 +2703,27 @@ export default function CalendarSlam() {
           onClose={() => setShowRivalModal(false)}
         />
       )}
+
+      {trophyDetail && (
+        <div className="cs-modal" onClick={() => setTrophyDetail(null)}>
+          <div className="cs-trophy-detail" onClick={e => e.stopPropagation()}>
+            <button className="cs-modal-x" onClick={() => setTrophyDetail(null)} aria-label="Close">×</button>
+            <span className="cs-trophy-detail-icon">🏆</span>
+            <h3 className="cs-trophy-detail-title">{trophyDetail.name}</h3>
+            <span className="cs-trophy-detail-year">{trophyDetail.year} · {trophyDetail.surface} court</span>
+            <div className="cs-trophy-detail-final">
+              <span className="cs-trophy-detail-label">Final</span>
+              <span className="cs-trophy-detail-opp">
+                def. {trophyDetail.finalOpp}{trophyDetail.beatRival ? " ⚔" : ""}
+              </span>
+              <span className="cs-trophy-detail-score">{trophyDetail.finalScore}</span>
+            </div>
+            {trophyDetail.beatRival && (
+              <p className="cs-trophy-detail-note">You beat your great rival to lift this one.</p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -2415,6 +2762,9 @@ body { background: #1f6b3f; margin: 0; }
 }
 .cs-head { display:flex; align-items:baseline; gap:16px; flex-wrap:wrap; border-bottom:2.5px solid var(--chalk); padding-bottom:12px; }
 .cs-wordmark { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:28px; letter-spacing:.5px; line-height:1; display:flex; align-items:baseline; gap:7px; text-transform:uppercase; }
+.cs-wordmark-btn { background:none; border:none; padding:0; margin:0; cursor:pointer; }
+.cs-wordmark-btn:hover .cs-wordmark-slam { filter:brightness(1.12); }
+.cs-wordmark-btn:focus-visible { outline:3px solid var(--ball); outline-offset:4px; border-radius:4px; }
 .cs-wordmark-calendar { color:var(--chalk); font-weight:700; letter-spacing:.06em; }
 .cs-wordmark-slam { color:var(--ball); font-weight:900; font-style:italic; letter-spacing:-.01em; font-size:1.18em; text-shadow:2px 2px 0 rgba(14,42,26,.5), 0 0 18px rgba(216,240,0,.35); }
 .cs-tag { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--dim); font-weight:600; }
@@ -2464,6 +2814,8 @@ body { background: #1f6b3f; margin: 0; }
 
 /* header nav */
 .cs-head-right { display:flex; flex-direction:column; align-items:flex-end; gap:3px; margin-left:auto; }
+.cs-sound-toggle { background:rgba(246,251,239,.1); border:1.5px solid var(--line); border-radius:20px; font-size:14px; padding:3px 10px; cursor:pointer; line-height:1.4; }
+.cs-sound-toggle:hover { background:rgba(216,240,0,.15); border-color:var(--ball); }
 .cs-tour-switch { background:rgba(246,251,239,.1); border:1.5px solid var(--line); border-radius:20px; color:var(--chalk); font-size:12px; font-weight:700; letter-spacing:.06em; padding:5px 12px; cursor:pointer; transition:background .18s, border-color .18s; }
 .cs-tour-switch:hover { background:rgba(216,240,0,.15); border-color:var(--ball); }
 
@@ -2471,7 +2823,7 @@ body { background: #1f6b3f; margin: 0; }
 .cs-surface-chip.slam-ao  { background:linear-gradient(135deg,#1a5fb8,#2b7de9); border:none; box-shadow:0 3px 0 rgba(0,0,0,.3); }
 .cs-surface-chip.slam-rg  { background:linear-gradient(135deg,#b84a1a,#e07a3f); border:none; box-shadow:0 3px 0 rgba(0,0,0,.3); }
 .cs-surface-chip.slam-wim { background:linear-gradient(135deg,#3d1a6b,#5a2d82); border:none; box-shadow:0 3px 0 rgba(0,0,0,.3); }
-.cs-surface-chip.slam-uso { background:linear-gradient(135deg,#0e6fa0,#1a8fd0); border:none; box-shadow:0 3px 0 rgba(0,0,0,.3); }
+.cs-surface-chip.slam-uso { background:linear-gradient(135deg,#0a2e63,#1456b0); border:none; box-shadow:0 3px 0 rgba(0,0,0,.3); }
 .slam-ao  .cs-chip-surface, .slam-rg  .cs-chip-surface,
 .slam-wim .cs-chip-surface, .slam-uso .cs-chip-surface { color:rgba(255,255,255,.78); }
 
@@ -2585,6 +2937,10 @@ body { background: #1f6b3f; margin: 0; }
 @keyframes cs-rowin { from{opacity:0} to{opacity:1} }
 .cs-path-playing { opacity:.7; font-style:italic; }
 .cs-path-playing .cs-path-opp { color:var(--ball-soft) !important; }
+.cs-path-list li.fresh { animation:cs-rowin .2s ease; }
+.cs-path-list li.fresh .cs-path-opp { color:var(--chalk); font-weight:700; }
+.cs-score-loading { color:var(--ball-soft); letter-spacing:2px; animation:cs-blink .7s ease-in-out infinite; }
+.cs-rival-tag { color:var(--clay); font-weight:800; font-size:11px; letter-spacing:.04em; }
 @media (prefers-reduced-motion: reduce) {
   .cs-live-dot, .cs-leg.playing, .cs-path-live li { animation:none; }
 }
@@ -2593,7 +2949,7 @@ body { background: #1f6b3f; margin: 0; }
 .cs-leg.slam-ao { border-left-color:#2b7de9; }
 .cs-leg.slam-rg { border-left-color:#e07a3f; }
 .cs-leg.slam-wim { border-left-color:#5a2d82; }
-.cs-leg.slam-uso { border-left-color:#1a8fd0; }
+.cs-leg.slam-uso { border-left-color:#1456b0; }
 .cs-leg.cs-leg-olympics { border-left-color:#ffd700; background:rgba(255,215,0,.07); }
 .cs-leg.cs-leg-olympics .cs-leg-name { color:#ffd700; }
 .cs-leg.cs-leg-olympics.win { background:rgba(255,215,0,.14); }
@@ -2601,11 +2957,16 @@ body { background: #1f6b3f; margin: 0; }
 .cs-tier-eyebrow { font-size:10px; letter-spacing:.18em; text-transform:uppercase; font-weight:800; color:var(--dim); margin-bottom:4px; }
 .cs-sim-prompt { text-align:center; margin-bottom:22px; display:flex; flex-direction:column; align-items:center; gap:12px; }
 .cs-sim-prompt p { font-size:14px; color:var(--dim); max-width:46ch; margin:0 auto; line-height:1.5; }
-.cs-sim-btn { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:16px; letter-spacing:.06em; text-transform:uppercase; background:transparent; color:var(--chalk); border:2px solid var(--chalk); border-radius:4px; padding:12px 24px; cursor:pointer; transition:background .18s, color .18s; }
-.cs-sim-btn:hover { background:var(--chalk); color:var(--grass-deep); }
+.cs-sim-btn { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:16px; letter-spacing:.06em; text-transform:uppercase; background:rgba(246,251,239,.12); color:var(--chalk); border:none; border-radius:6px; padding:14px 26px; cursor:pointer; transition:transform .12s, filter .18s; box-shadow:0 3px 0 rgba(14,42,26,.4); }
+.cs-sim-btn:hover { transform:translateY(-2px); box-shadow:0 5px 0 rgba(14,42,26,.4); filter:brightness(1.08); }
+.cs-sim-btn:active { transform:translateY(1px); box-shadow:0 1px 0 rgba(14,42,26,.4); }
 .cs-sim-btn:focus-visible { outline:3px solid var(--ball); outline-offset:3px; }
-.cs-share-btn { border-color:var(--ball); color:var(--ball); }
-.cs-share-btn:hover { background:var(--ball); color:var(--ink); border-color:var(--ball); }
+/* End/continue season — solid yellow primary */
+.cs-career-next { width:100%; background:var(--ball); color:var(--ink); }
+.cs-career-next:hover { background:var(--ball-soft); }
+/* Share — solid green-blue accent */
+.cs-share-btn { background:var(--hard); color:#fff; }
+.cs-share-btn:hover { background:#46b0e8; color:#fff; }
 
 .cs-leg-sim { display:flex; flex-direction:column; gap:3px; margin-top:4px; }
 .cs-sim-champ { color:var(--ball-soft); font-weight:800; font-size:14px; }
@@ -2649,6 +3010,10 @@ body { background: #1f6b3f; margin: 0; }
 .cs-create-tab { background:rgba(246,251,239,.07); border:1.5px solid var(--line-soft); border-radius:20px; color:var(--dim); font-size:13px; font-weight:700; padding:7px 22px; cursor:pointer; transition:.18s; }
 .cs-create-tab.active { background:var(--ball); border-color:var(--ball); color:var(--ink); }
 .cs-create-generated { display:flex; align-items:center; gap:16px; margin-bottom:24px; }
+.cs-gen-player.rolling .cs-gen-name { animation:cs-roll .07s linear infinite; color:var(--ball-soft); }
+.cs-gen-player.rolling .cs-gen-flag { animation:cs-roll .07s linear infinite; }
+@keyframes cs-roll { 0%{opacity:.5; transform:translateY(-1px)} 50%{opacity:1} 100%{opacity:.5; transform:translateY(1px)} }
+@media (prefers-reduced-motion: reduce){ .cs-gen-player.rolling .cs-gen-name, .cs-gen-player.rolling .cs-gen-flag { animation:none; } }
 .cs-gen-flag { font-size:42px; }
 .cs-gen-name { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:32px; color:var(--chalk); text-transform:uppercase; }
 .cs-create-custom { display:flex; flex-direction:column; gap:14px; margin-bottom:24px; }
@@ -2658,7 +3023,8 @@ body { background: #1f6b3f; margin: 0; }
 .cs-create-input:focus, .cs-create-select:focus { outline:none; border-color:var(--ball); }
 .cs-create-hint { font-size:12px; color:var(--dim); margin-top:4px; }
 .cs-age-btns { display:flex; gap:8px; flex-wrap:wrap; }
-.cs-age-btn { background:rgba(246,251,239,.07); border:1.5px solid var(--line-soft); border-radius:8px; color:var(--dim); font-size:18px; font-weight:800; padding:10px 20px; cursor:pointer; transition:.18s; }
+.cs-start-note { display:flex; flex-direction:column; gap:6px; }
+.cs-start-age { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:28px; color:var(--ball); text-transform:uppercase; }.cs-age-btn { background:rgba(246,251,239,.07); border:1.5px solid var(--line-soft); border-radius:8px; color:var(--dim); font-size:18px; font-weight:800; padding:10px 20px; cursor:pointer; transition:.18s; }
 .cs-age-btn.active { background:var(--ball); border-color:var(--ball); color:var(--ink); }
 
 /* Off-season */
@@ -2677,6 +3043,11 @@ body { background: #1f6b3f; margin: 0; }
 .cs-injury-desc { font-size:13px; color:var(--dim); line-height:1.4; }
 .cs-injury-effects { font-size:12px; color:var(--clay); font-weight:700; margin-top:2px; }
 .cs-upgrade-section { margin-bottom:28px; }
+.cs-coach-card { display:flex; gap:12px; align-items:flex-start; background:rgba(216,240,0,.08); border:1px solid var(--ball); border-radius:8px; padding:12px 14px; margin:8px 0 14px; }
+.cs-coach-avatar { font-size:26px; line-height:1; flex:0 0 auto; }
+.cs-coach-body { display:flex; flex-direction:column; gap:2px; }
+.cs-coach-name { font-size:10px; letter-spacing:.16em; text-transform:uppercase; font-weight:800; color:var(--ball-soft); }
+.cs-coach-line { font-size:14px; line-height:1.5; color:var(--chalk); margin:0; font-style:italic; }
 .cs-upgrade-title { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:20px; text-transform:uppercase; color:var(--chalk); margin:0 0 4px; }
 .cs-upgrade-sub { font-size:13px; color:var(--dim); margin:0 0 14px; }
 .cs-upgrade-grid { display:flex; flex-direction:column; gap:10px; }
@@ -2693,7 +3064,6 @@ body { background: #1f6b3f; margin: 0; }
 .cs-retirement-prompt { background:rgba(210,105,63,.1); border:1.5px solid rgba(210,105,63,.4); border-radius:8px; padding:16px; margin-top:16px; }
 .cs-retirement-prompt p { font-size:14px; color:var(--chalk); margin:0 0 12px; }
 .cs-retire-actions { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
-.cs-career-next { width:100%; }
 
 /* Retirement screen */
 .cs-retirement { padding-top:28px; text-align:center; }
@@ -2776,9 +3146,20 @@ body { background: #1f6b3f; margin: 0; }
 .cs-trophy-row { display:flex; gap:8px; flex-wrap:wrap; }
 .cs-trophy { display:flex; flex-direction:column; align-items:center; gap:2px; padding:8px 10px; border-radius:8px; min-width:52px; }
 .cs-trophy.slam-ao  { background:linear-gradient(135deg,#1a5fb8,#2b7de9); }
-.cs-trophy.slam-rg  { background:linear-gradient(135deg,#b84a1a,#e07a3f); }
+button.cs-trophy { border:none; font-family:inherit; cursor:pointer; transition:transform .12s; }
+button.cs-trophy:hover { transform:translateY(-3px); }
+button.cs-trophy:focus-visible { outline:3px solid var(--ball); outline-offset:2px; }
+.cs-trophy-detail { background:var(--grass-dark); border:2.5px solid var(--ball); border-radius:12px; padding:28px 26px; max-width:360px; width:90%; text-align:center; position:relative; box-shadow:0 18px 50px rgba(0,0,0,.5); }
+.cs-trophy-detail-icon { font-size:48px; display:block; margin-bottom:6px; }
+.cs-trophy-detail-title { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:26px; text-transform:uppercase; margin:0 0 4px; color:var(--chalk); }
+.cs-trophy-detail-year { font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--dim); font-weight:700; }
+.cs-trophy-detail-final { display:flex; flex-direction:column; gap:4px; margin:18px 0 0; padding:14px; background:rgba(14,42,26,.4); border-radius:8px; }
+.cs-trophy-detail-label { font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--dim); font-weight:800; }
+.cs-trophy-detail-opp { font-size:16px; font-weight:700; color:var(--chalk); }
+.cs-trophy-detail-score { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:24px; color:var(--ball-soft); letter-spacing:.04em; }
+.cs-trophy-detail-note { font-size:13px; color:var(--clay); font-weight:600; margin:12px 0 0; }.cs-trophy.slam-rg  { background:linear-gradient(135deg,#b84a1a,#e07a3f); }
 .cs-trophy.slam-wim { background:linear-gradient(135deg,#3d1a6b,#5a2d82); }
-.cs-trophy.slam-uso { background:linear-gradient(135deg,#0e6fa0,#1a8fd0); }
+.cs-trophy.slam-uso { background:linear-gradient(135deg,#0a2e63,#1456b0); }
 .cs-trophy.cs-trophy-gold { background:linear-gradient(135deg,#b8860b,#ffd700); }
 .cs-trophy-icon { font-size:20px; }
 .cs-trophy-name { font-size:9px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:rgba(255,255,255,.9); }
@@ -2811,11 +3192,18 @@ body { background: #1f6b3f; margin: 0; }
 
 /* share slam buttons — solid fills, stacked */
 .cs-share-trail { display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
-.cs-share-slam-btn { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:8px; }
+.cs-share-build-toggle { background:rgba(246,251,239,.1); border:1px solid var(--line); color:var(--chalk); font-weight:700; font-size:12px; letter-spacing:.06em; text-transform:uppercase; padding:8px 14px; border-radius:6px; cursor:pointer; margin-bottom:10px; width:100%; }
+.cs-share-build-toggle:hover { background:rgba(216,240,0,.14); border-color:var(--ball); }
+.cs-share-build { display:flex; flex-direction:column; gap:1px; margin-bottom:14px; background:rgba(14,42,26,.3); border-radius:6px; padding:6px 10px; }
+.cs-share-build-row { display:flex; justify-content:space-between; gap:10px; font-size:12.5px; padding:5px 0; border-bottom:1px solid var(--line-soft); }
+.cs-share-build-row:last-child { border-bottom:none; }
+.cs-share-build-attr { font-weight:700; color:var(--chalk); }
+.cs-share-build-val { color:var(--dim); text-align:right; }
+.cs-share-build-val strong { color:var(--ball-soft); }.cs-share-slam-btn { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:8px; }
 .cs-share-slam-btn.slam-ao  { background:linear-gradient(135deg,#1a5fb8,#2b7de9); }
 .cs-share-slam-btn.slam-rg  { background:linear-gradient(135deg,#b84a1a,#e07a3f); }
 .cs-share-slam-btn.slam-wim { background:linear-gradient(135deg,#3d1a6b,#5a2d82); }
-.cs-share-slam-btn.slam-uso { background:linear-gradient(135deg,#0e6fa0,#1a8fd0); }
+.cs-share-slam-btn.slam-uso { background:linear-gradient(135deg,#0a2e63,#1456b0); }
 .cs-share-slam-name { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:15px; text-transform:uppercase; color:#fff; min-width:130px; }
 .cs-share-slam-result { font-size:20px; }
 .cs-share-slam-detail { font-size:12px; color:rgba(255,255,255,.8); font-weight:600; flex:1; text-align:right; }
@@ -2862,8 +3250,8 @@ body { background: #1f6b3f; margin: 0; }
   .cs-attr-grid { grid-template-columns:repeat(2,1fr); }
   /* keep stage as a row on mobile so the sticky header stays short */
   .cs-stage { flex-direction:row; align-items:stretch; gap:12px; }
-  .cs-court { width:70px; flex:0 0 70px; }
-  .cs-figure { width:70px; flex:0 0 70px; }
+  .cs-court { width:104px; flex:0 0 104px; filter:drop-shadow(0 2px 8px rgba(0,0,0,.35)); }
+  .cs-figure { width:104px; flex:0 0 104px; }
   .cs-card { padding:14px 16px; }
   .cs-card-name { font-size:22px; }
   .cs-card-fact { font-size:12px; display:none; }
