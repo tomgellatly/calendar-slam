@@ -384,115 +384,104 @@ function winProb(score) {
 // ============================================================================
 
 // Maps each attribute to one or more court zones to highlight.
+// Which court zone each attribute lights up, and what surface colour it gets.
 const ZONE_OF = {
-  serve: ["serveBox"],
-  return: ["deepBase"],
-  forehand: ["baseR"],
-  backhand: ["baseL"],
-  net: ["netZone"],
-  movement: ["wings"],
-  defence: ["deepBase"],
-  stamina: ["wings"],
-  mental: ["whole"],
-  touch: ["midCourt"],
+  serve:    { zones: ["serveBox"], surfaceHint: "Grass" },
+  return:   { zones: ["deepBase"], surfaceHint: "Clay" },
+  forehand: { zones: ["baseR"], surfaceHint: "Clay" },
+  backhand: { zones: ["baseL"], surfaceHint: "Clay" },
+  net:      { zones: ["netZone"], surfaceHint: "Grass" },
+  movement: { zones: ["wings", "deepBase"], surfaceHint: "Clay" },
+  defence:  { zones: ["deepBase"], surfaceHint: "Clay" },
+  stamina:  { zones: ["wings"], surfaceHint: "Clay" },
+  mental:   { zones: ["whole"], surfaceHint: "Hard" },
+  touch:    { zones: ["midCourt"], surfaceHint: "Grass" },
 };
 
-// Which parts of the player silhouette each attribute lights up.
-// Parts: head, torso, racketArm, offArm, racket, hips, legs, feet, whole.
-const BODY_ZONE = {
-  serve: ["racketArm", "racket", "torso"],
-  return: ["offArm", "racketArm", "racket"],
-  forehand: ["racketArm", "racket", "torso"],
-  backhand: ["offArm", "racketArm", "racket", "torso"],
-  net: ["racketArm", "racket", "torso"],
-  movement: ["legs", "feet"],
-  defence: ["legs", "hips", "feet"],
-  stamina: ["legs", "hips", "torso"],
-  mental: ["head"],
-  touch: ["racket"],
+// Zone colours: each zone type glows in the colour of the surface it helps.
+const ZONE_COLOUR = {
+  serveBox:  "var(--grass)",   // grass = serve zone
+  netZone:   "var(--grass)",
+  deepBase:  "var(--clay)",    // clay = baseline/return
+  baseL:     "var(--clay)",
+  baseR:     "var(--clay)",
+  wings:     "var(--clay)",
+  midCourt:  "var(--ball)",    // ball yellow = touch/finesse
+  whole:     "var(--hard)",    // hard blue = mental (all-court)
 };
 
-function Figure({ build, hovered }) {
-  const filled = {};
-  for (const a of ATTRS) {
-    if (build[a.key]) for (const z of BODY_ZONE[a.key]) filled[z] = true;
-  }
-  const hot = hovered ? BODY_ZONE[hovered] : [];
-  const cls = (z) =>
-    `cs-bp${filled[z] ? " filled" : ""}${hot.includes(z) ? " hot" : ""}`;
-  const wholeHot = hovered === "stamina";
-
-  return (
-    <svg className={`cs-figure ${wholeHot ? "pulse" : ""}`} viewBox="0 0 220 300" aria-hidden="true">
-      {/* back leg */}
-      <path className={cls("legs")} d="M96 150 C92 168 84 186 74 206 C66 222 54 240 44 258 C40 266 36 274 38 280 C40 285 48 285 52 280 C62 266 72 250 82 234 C92 218 100 200 106 180 C110 168 110 158 106 150 Z" />
-      <path className={cls("feet")} d="M44 256 C36 262 30 272 28 280 C27 286 32 289 40 288 C50 286 58 282 60 276 C61 270 56 264 50 262 C47 260 45 258 44 256 Z" />
-      {/* front leg */}
-      <path className={cls("legs")} d="M118 150 C124 170 128 190 132 212 C135 230 137 250 137 270 C137 278 140 283 146 283 C153 283 156 277 155 269 C153 248 150 226 146 206 C142 184 138 166 132 150 Z" />
-      <path className={cls("feet")} d="M133 268 C131 276 132 283 138 286 C146 289 156 287 160 281 C163 276 159 270 152 268 C145 266 138 266 133 268 Z" />
-      {/* hips */}
-      <path className={cls("hips")} d="M92 132 C104 126 122 126 132 134 C137 144 138 154 136 162 C124 168 108 168 96 164 C90 158 89 144 92 132 Z" />
-      {/* torso */}
-      <path className={cls("torso")} d="M94 64 C104 56 122 56 130 66 C134 84 135 104 134 122 C133 134 130 144 124 150 C112 154 100 153 92 148 C88 138 88 122 88 104 C88 86 90 72 94 64 Z" />
-      {/* off arm */}
-      <path className={cls("offArm")} d="M96 76 C84 80 74 90 70 104 C67 116 70 128 78 134 C84 137 90 133 90 126 C89 116 92 106 100 100 C108 94 118 92 126 96 C130 92 128 84 120 80 C112 76 102 74 96 76 Z" />
-      {/* racket arm */}
-      <path className={cls("racketArm")} d="M128 64 C142 60 156 66 164 80 C170 92 170 106 166 118 C163 126 156 128 150 124 C146 120 147 110 148 100 C148 90 142 82 132 80 C124 78 120 76 120 70 C121 64 124 64 128 64 Z" />
-      <path className={cls("racketArm")} d="M158 96 C168 82 176 66 180 52 C182 44 178 38 172 40 C166 42 164 50 160 62 C156 74 150 86 146 96 C150 100 154 100 158 96 Z" />
-      {/* racket */}
-      <g className={cls("racket")}>
-        <ellipse cx="186" cy="34" rx="22" ry="28" fill="none" strokeWidth="5" />
-        <ellipse cx="186" cy="34" rx="14" ry="19" fill="none" strokeWidth="1.5" opacity="0.5" />
-        <path d="M178 58 L170 76 M192 58 L184 76" strokeWidth="5" fill="none" />
-      </g>
-      {/* neck + head */}
-      <path className={cls("torso")} d="M106 50 C106 58 112 62 119 62 C126 62 128 54 127 48 L127 42 L107 42 Z" />
-      <path className={cls("head")} d="M105 24 C105 12 116 8 124 12 C132 16 134 28 130 38 C127 46 118 48 111 44 C106 41 104 32 105 24 Z" />
-    </svg>
-  );
+// Which surface an attribute most helps (for the hint pip on each shot button).
+function attrSurfaceHint(attrKey) {
+  return ZONE_OF[attrKey]?.surfaceHint || "Hard";
 }
 
-function Court({ build, hovered }) {
-  // A zone is "filled" if any attribute mapping to it has been drafted.
+function CourtDiagram({ build, hovered }) {
   const filledZones = {};
   for (const a of ATTRS) {
-    if (build[a.key]) for (const z of ZONE_OF[a.key]) filledZones[z] = true;
+    if (build[a.key]) {
+      for (const z of (ZONE_OF[a.key]?.zones || [])) filledZones[z] = true;
+    }
   }
-  const hotZones = hovered ? ZONE_OF[hovered] : [];
-  const cls = (z) =>
-    `cs-zone${filledZones[z] ? " filled" : ""}${hotZones.includes(z) ? " hot" : ""}`;
+  const hotZones = hovered ? (ZONE_OF[hovered]?.zones || []) : [];
+
+  const zoneStyle = (z) => {
+    if (hotZones.includes(z)) return { fill: ZONE_COLOUR[z], opacity: 0.78, transition: "fill .22s, opacity .22s" };
+    if (filledZones[z]) return { fill: ZONE_COLOUR[z], opacity: 0.32, transition: "fill .22s, opacity .22s" };
+    return { fill: "transparent", transition: "fill .22s, opacity .22s" };
+  };
+
+  const line = { stroke: "rgba(246,251,239,.55)", strokeWidth: 1.5 };
+  const outerLine = { stroke: "rgba(246,251,239,.85)", strokeWidth: 2 };
 
   return (
-    <svg className="cs-court" viewBox="0 0 200 320" aria-hidden="true">
-      {/* whole-court glow (mental) */}
-      <rect className={cls("whole")} x="14" y="8" width="172" height="304" rx="2" />
-
+    <svg className="cs-court" viewBox="0 0 160 260" aria-hidden="true">
       {/* court surface */}
-      <rect x="14" y="8" width="172" height="304" fill="none" stroke="var(--ink)" strokeWidth="2" />
+      <rect x="8" y="6" width="144" height="248" rx="2" fill="rgba(14,42,26,.55)" />
 
-      {/* zones (drawn under the lines) */}
-      <rect className={cls("deepBase")} x="14" y="8" width="172" height="58" />
-      <rect className={cls("deepBase")} x="14" y="254" width="172" height="58" />
-      <rect className={cls("baseL")} x="14" y="66" width="86" height="60" />
-      <rect className={cls("baseR")} x="100" y="66" width="86" height="60" />
-      <rect className={cls("serveBox")} x="14" y="126" width="172" height="0.1" />
-      <rect className={cls("serveBox")} x="46" y="126" width="108" height="34" />
-      <rect className={cls("serveBox")} x="46" y="160" width="108" height="34" />
-      <rect className={cls("midCourt")} x="14" y="126" width="172" height="68" />
-      <rect className={cls("netZone")} x="14" y="150" width="172" height="20" />
-      <rect className={cls("wings")} x="14" y="8" width="14" height="304" />
-      <rect className={cls("wings")} x="172" y="8" width="14" height="304" />
+      {/* zone fills (drawn before lines) */}
+      <rect x="8"   y="6"   width="144" height="46" style={zoneStyle("deepBase")} />
+      <rect x="8"   y="208" width="144" height="46" style={zoneStyle("deepBase")} />
+      <rect x="8"   y="52"  width="72"  height="50" style={zoneStyle("baseL")} />
+      <rect x="80"  y="52"  width="72"  height="50" style={zoneStyle("baseR")} />
+      <rect x="34"  y="102" width="92"  height="28" style={zoneStyle("serveBox")} />
+      <rect x="34"  y="130" width="92"  height="28" style={zoneStyle("serveBox")} />
+      <rect x="8"   y="116" width="144" height="28" style={zoneStyle("netZone")} />
+      <rect x="8"   y="102" width="144" height="56" style={zoneStyle("midCourt")} />
+      <rect x="8"   y="6"   width="12"  height="248" style={zoneStyle("wings")} />
+      <rect x="140" y="6"   width="12"  height="248" style={zoneStyle("wings")} />
+      {/* whole court glow (mental) */}
+      <rect x="8" y="6" width="144" height="248" rx="2" style={zoneStyle("whole")} />
 
-      {/* court lines */}
-      <line x1="14" y1="160" x2="186" y2="160" stroke="var(--ink)" strokeWidth="2.5" strokeDasharray="4 3" />
-      <line x1="14" y1="66" x2="186" y2="66" stroke="var(--line)" strokeWidth="1.5" />
-      <line x1="14" y1="254" x2="186" y2="254" stroke="var(--line)" strokeWidth="1.5" />
-      <line x1="46" y1="66" x2="46" y2="254" stroke="var(--line)" strokeWidth="1.5" />
-      <line x1="154" y1="66" x2="154" y2="254" stroke="var(--line)" strokeWidth="1.5" />
-      <line x1="46" y1="126" x2="154" y2="126" stroke="var(--line)" strokeWidth="1.5" />
-      <line x1="46" y1="194" x2="154" y2="194" stroke="var(--line)" strokeWidth="1.5" />
-      <line x1="100" y1="8" x2="100" y2="66" stroke="var(--line)" strokeWidth="1.5" />
-      <line x1="100" y1="254" x2="100" y2="312" stroke="var(--line)" strokeWidth="1.5" />
+      {/* court outer border */}
+      <rect x="8" y="6" width="144" height="248" rx="2" fill="none" {...outerLine} />
+
+      {/* baseline / service lines */}
+      <line x1="8"  y1="52"  x2="152" y2="52"  {...line} />
+      <line x1="8"  y1="208" x2="152" y2="208" {...line} />
+      <line x1="34" y1="52"  x2="34"  y2="208" {...line} />
+      <line x1="126"y1="52"  x2="126" y2="208" {...line} />
+      <line x1="34" y1="102" x2="126" y2="102" {...line} />
+      <line x1="34" y1="158" x2="126" y2="158" {...line} />
+      <line x1="80" y1="52"  x2="80"  y2="102" {...line} />
+      <line x1="80" y1="158" x2="80"  y2="208" {...line} />
+      <line x1="8"  y1="52"  x2="8"   y2="52"  {...line} />
+
+      {/* NET — thick white line with posts */}
+      <rect x="4" y="126" width="152" height="8" rx="1"
+        fill="rgba(246,251,239,.9)" />
+      <rect x="4"   y="120" width="5" height="20" rx="1" fill="rgba(246,251,239,.9)" />
+      <rect x="151" y="120" width="5" height="20" rx="1" fill="rgba(246,251,239,.9)" />
+
+      {/* centre service mark */}
+      <line x1="80" y1="126" x2="80" y2="134" stroke="rgba(246,251,239,.55)" strokeWidth="1.5" />
+
+      {/* ball in play indicator when hovering (subtle tennis ball) */}
+      {hovered && (
+        <circle cx="80" cy="130" r="5"
+          fill="var(--ball)" opacity="0.9">
+          <animate attributeName="r" values="4;6;4" dur="1.2s" repeatCount="indefinite" />
+        </circle>
+      )}
     </svg>
   );
 }
@@ -505,6 +494,7 @@ const SURF_EMOJI = { Clay: "🟧", Grass: "🟩", Hard: "🟦" };
 
 function ShareCard({ active, ranSim, build, tourLabel, onClose }) {
   const [copied, setCopied] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   if (!active) return null;
 
   const squares = SLAMS.map((s) => {
@@ -526,9 +516,82 @@ function ShareCard({ active, ranSim, build, tourLabel, onClose }) {
       navigator.clipboard.writeText(shareText);
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
-    } catch (e) {
-      setCopied(false);
-    }
+    } catch (e) { setCopied(false); }
+  }
+
+  // Draw a share image on an offscreen canvas and download it.
+  function downloadImage() {
+    setDownloading(true);
+    try {
+      const W = 1080, H = 1080;
+      const c = document.createElement("canvas");
+      c.width = W; c.height = H;
+      const ctx = c.getContext("2d");
+
+      // Background — grass green with stripes
+      ctx.fillStyle = "#1f6b3f";
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = "rgba(246,251,239,.025)";
+      for (let x = 0; x < W; x += 76) ctx.fillRect(x, 0, 38, H);
+
+      // Top wordmark
+      ctx.fillStyle = "#f6fbef";
+      ctx.font = "bold 52px Arial Narrow, Arial, sans-serif";
+      ctx.letterSpacing = "4px";
+      ctx.fillText("CALENDAR SLAM", 80, 100);
+
+      // Score
+      const scoreCol = active.won === 4 ? "#d8f000" : "#f6fbef";
+      ctx.fillStyle = scoreCol;
+      ctx.font = "bold 200px Arial Narrow, Arial, sans-serif";
+      ctx.fillText(`${active.won}/4`, 80, 360);
+
+      // Tier name
+      ctx.fillStyle = scoreCol;
+      ctx.font = "bold 72px Arial Narrow, Arial, sans-serif";
+      ctx.fillText(active.tier.name.toUpperCase(), 80, 460);
+
+      // Note
+      ctx.fillStyle = "rgba(246,251,239,.65)";
+      ctx.font = "36px Arial, sans-serif";
+      ctx.fillText(active.tier.note, 80, 530);
+
+      // Slam chips
+      const SLAM_COLS = { ao: "#2b7de9", rg: "#e07a3f", wim: "#5a2d82", uso: "#1a8fd0" };
+      SLAMS.forEach((s, i) => {
+        const leg = active.perSlam.find((p) => p.key === s.key);
+        const won = ranSim ? leg.wonTitle : leg.win;
+        const x = 80 + i * 240;
+        ctx.fillStyle = SLAM_COLS[s.key];
+        ctx.beginPath();
+        ctx.roundRect(x, 610, 210, 110, 12);
+        ctx.fill();
+        ctx.fillStyle = won ? "#d8f000" : "rgba(246,251,239,.5)";
+        ctx.font = "bold 44px Arial Narrow, Arial, sans-serif";
+        ctx.fillText(s.name.split(" ").slice(-1)[0].toUpperCase(), x + 14, 664);
+        ctx.font = "52px serif";
+        ctx.fillText(won ? "🏆" : "❌", x + 14, 710);
+      });
+
+      // Mode line
+      ctx.fillStyle = "rgba(246,251,239,.55)";
+      ctx.font = "32px Arial, sans-serif";
+      ctx.fillText(ranSim ? `Simulated vs the ${tourLabel} field` : "Quick projection", 80, 800);
+
+      // URL
+      ctx.fillStyle = "#d8f000";
+      ctx.font = "bold 36px Arial Narrow, Arial, sans-serif";
+      ctx.fillText("calendarslam.com", 80, H - 60);
+
+      c.toBlob((blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = "calendar-slam-result.png";
+        a.click();
+        URL.revokeObjectURL(url);
+        setDownloading(false);
+      }, "image/png");
+    } catch (e) { setDownloading(false); }
   }
 
   return (
@@ -542,10 +605,14 @@ function ShareCard({ active, ranSim, build, tourLabel, onClose }) {
           {SLAMS.map((s) => {
             const leg = active.perSlam.find((p) => p.key === s.key);
             const won = ranSim ? leg.wonTitle : leg.win;
+            const detail = ranSim
+              ? (won ? `Champion · beat ${leg.finalOpp}` : `Out: ${leg.lostRound}${leg.opponent ? ` · lost to ${leg.opponent}` : ""}`)
+              : (won ? "Champion" : `${leg.prob}% form`);
             return (
-              <div key={s.key} className={`cs-share-leg s-${s.surface.toLowerCase()} ${won ? "won" : ""}`}>
-                <span className="cs-share-emoji">{won ? "🏆" : SURF_EMOJI[s.surface]}</span>
-                <span className="cs-share-slam">{s.short}</span>
+              <div key={s.key} className={`cs-share-slam-btn slam-${s.key} ${won ? "won" : "lost"}`}>
+                <span className="cs-share-slam-name">{s.name}</span>
+                <span className="cs-share-slam-result">{won ? "🏆" : "❌"}</span>
+                <span className="cs-share-slam-detail">{detail}</span>
               </div>
             );
           })}
@@ -553,9 +620,14 @@ function ShareCard({ active, ranSim, build, tourLabel, onClose }) {
 
         <div className="cs-share-mode">{ranSim ? `Simulated vs the ${tourLabel} field` : "Quick projection"}</div>
 
-        <button className="cs-cta cs-share-copy" onClick={copy}>
-          {copied ? "Copied ✓" : "Copy result"}
-        </button>
+        <div className="cs-share-actions">
+          <button className="cs-cta cs-share-copy" onClick={copy}>
+            {copied ? "Copied ✓" : "Copy text"}
+          </button>
+          <button className="cs-cta cs-share-img" onClick={downloadImage} disabled={downloading}>
+            {downloading ? "…" : "⬇ Save image"}
+          </button>
+        </div>
         <pre className="cs-share-preview">{shareText}</pre>
       </div>
     </div>
@@ -601,8 +673,10 @@ export default function CalendarSlam() {
   const [seed, setSeed] = useState(1);
   const [showCard, setShowCard] = useState(false);
   const [isTouch, setIsTouch] = useState(false);
-  const [previewKey, setPreviewKey] = useState(null); // touch: armed shot awaiting confirm
-  const [reveal, setReveal] = useState({ slam: 0, round: 0, done: false }); // live sim progress
+  const [previewKey, setPreviewKey] = useState(null);
+  const [reveal, setReveal] = useState({ slam: 0, round: 0, done: false });
+  const [difficulty, setDifficulty] = useState("normal"); // "normal" | "challenge"
+  const [eliteUsed, setEliteUsed] = useState(false); // challenge: has the elite pick been taken?
 
   const T = TOURS[tour];
   const POOL = T.pool;
@@ -614,6 +688,14 @@ export default function CalendarSlam() {
     const touch = window.matchMedia("(hover: none), (pointer: coarse)").matches;
     setIsTouch(touch);
   }, []);
+
+  // In challenge mode, the pool splits: top 5 players by average rating are
+  // "elite" and can only be drawn ONCE per game. All others are "journeymen."
+  const { elitePool, journeyPool } = useMemo(() => {
+    const avg = (p) => Object.values(p.stats).reduce((s, v) => s + v, 0) / ATTRS.length;
+    const sorted = [...POOL].sort((a, b) => avg(b) - avg(a));
+    return { elitePool: sorted.slice(0, 5), journeyPool: sorted.slice(5) };
+  }, [POOL]);
 
   const drawnIds = useMemo(
     () => Object.values(build).filter(Boolean).map((b) => b.player),
@@ -628,15 +710,23 @@ export default function CalendarSlam() {
     setRanSim(false);
     setReveal({ slam: 0, round: 0, done: false });
     setShowCard(false);
+    setEliteUsed(false);
     setPhase("draft");
-    spin([]);
+    spinNext([], false);
   }
 
-  function spin(exclude) {
+  // Choose which sub-pool to spin from given challenge mode and elite status.
+  function spinNext(exclude, eliteAlreadyUsed) {
     setSpinning(true);
     setPreviewKey(null);
     setHovered(null);
-    const final = rngPick(POOL, exclude);
+    let pool;
+    if (difficulty === "challenge") {
+      pool = eliteAlreadyUsed ? journeyPool : POOL; // before elite used: any; after: journeymen only
+    } else {
+      pool = POOL;
+    }
+    const final = rngPick(pool, exclude);
     if (reduce) {
       setCurrent(final);
       setSpinning(false);
@@ -644,7 +734,7 @@ export default function CalendarSlam() {
     }
     let ticks = 0;
     const iv = setInterval(() => {
-      setCurrent(rngPick(POOL));
+      setCurrent(rngPick(pool));
       ticks++;
       if (ticks > 12) {
         clearInterval(iv);
@@ -653,6 +743,9 @@ export default function CalendarSlam() {
       }
     }, 55);
   }
+
+  // Keep old spin() as alias for initial spin (elite not yet used)
+  function spin(exclude) { spinNext(exclude, eliteUsed); }
 
   // Which attributes are still open AND present a meaningful pick on this card.
   function openAttrs() {
@@ -678,9 +771,18 @@ export default function CalendarSlam() {
 
   function pickAttr(attrKey) {
     if (spinning || !current) return;
+    const isElitePick = difficulty === "challenge" && !eliteUsed &&
+      elitePool.some((p) => p.name === current.name);
+    const nextEliteUsed = eliteUsed || isElitePick;
+    if (isElitePick) setEliteUsed(true);
     const next = {
       ...build,
-      [attrKey]: { rating: current.stats[attrKey], player: current.name, flag: current.flag },
+      [attrKey]: {
+        rating: current.stats[attrKey],
+        player: current.name,
+        flag: current.flag,
+        elite: isElitePick,
+      },
     };
     setBuild(next);
     const newRound = round + 1;
@@ -689,7 +791,7 @@ export default function CalendarSlam() {
       setPhase("result");
     } else {
       setRound(newRound);
-      spin(drawnIds.concat(current.name));
+      spinNext(drawnIds.concat(current.name), nextEliteUsed);
     }
   }
 
@@ -765,19 +867,36 @@ export default function CalendarSlam() {
 
       <header className="cs-head">
         <div className="cs-wordmark">Calendar Slam</div>
-        <div className="cs-tag">build a champion, shot by shot</div>
+        <div className="cs-head-right">
+          {phase !== "tour" && (
+            <button className="cs-tour-switch" onClick={() => setPhase("tour")}
+              title="Switch tour">
+              {T.label} ⇄
+            </button>
+          )}
+          <div className="cs-tag">build a champion, shot by shot</div>
+        </div>
       </header>
 
       {phase === "tour" && (
         <section className="cs-tourpick">
-          <NetGraphic />
           <h1 className="cs-h1">
             Build a<br /><em>tennis god.</em>
           </h1>
           <p className="cs-lede">
             Spin real players, draft their iconic weapons, and chase the rarest
-            prize in the sport: all four majors in a single year. Choose your tour.
+            prize in the sport: all four majors in a single year.
           </p>
+          <div className="cs-surfaces cs-tour-slams">
+            {SLAMS.map((s) => (
+              <div key={s.key} className={`cs-surface-chip slam-${s.key}`}>
+                <span className="cs-chip-name">{s.name}</span>
+                <span className="cs-chip-surface">{s.surface}</span>
+              </div>
+            ))}
+          </div>
+          <NetGraphic />
+          <p className="cs-tour-prompt">Choose your tour to begin</p>
           <div className="cs-tour-btns">
             <button
               className="cs-tour-btn atp"
@@ -824,9 +943,23 @@ export default function CalendarSlam() {
             ))}
           </div>
 
+          <div className="cs-difficulty">
+            <span className="cs-diff-label">Mode</span>
+            <button
+              className={`cs-diff-btn ${difficulty === "normal" ? "active" : ""}`}
+              onClick={() => setDifficulty("normal")}
+            >Normal</button>
+            <button
+              className={`cs-diff-btn ${difficulty === "challenge" ? "active" : ""}`}
+              onClick={() => setDifficulty("challenge")}
+            >Challenge</button>
+            {difficulty === "challenge" && (
+              <span className="cs-diff-hint">One elite pick, nine journeymen</span>
+            )}
+          </div>
+
           <div className="cs-intro-actions">
             <button className="cs-cta" onClick={startDraft}>Start drafting →</button>
-            <button className="cs-text-btn" onClick={() => setPhase("tour")}>← Change tour</button>
           </div>
         </section>
       )}
@@ -840,6 +973,11 @@ export default function CalendarSlam() {
                 <span key={a.key} className={`cs-dot ${build[a.key] ? "on" : ""}`} />
               ))}
             </div>
+            {difficulty === "challenge" && (
+              <span className={`cs-challenge-badge ${eliteUsed ? "used" : "avail"}`}>
+                {eliteUsed ? "Elite used" : "★ Elite pick available"}
+              </span>
+            )}
           </div>
 
           <div className="cs-sticky">
@@ -857,7 +995,7 @@ export default function CalendarSlam() {
                   {spinning ? "Spinning…" : "Take one shot for your build"}
                 </div>
               </div>
-              <Figure build={build} hovered={hovered} />
+              <CourtDiagram build={build} hovered={hovered} />
             </div>
 
             <div className="cs-meters" role="group" aria-label="Surface readiness so far">
@@ -892,6 +1030,8 @@ export default function CalendarSlam() {
               const taken = build[a.key] != null;
               const val = current.stats[a.key];
               const armed = isTouch && previewKey === a.key;
+              const hint = attrSurfaceHint(a.key);
+              const hintClass = `cs-hint-${hint.toLowerCase()}`;
               return (
                 <button
                   key={a.key}
@@ -904,7 +1044,15 @@ export default function CalendarSlam() {
                   onBlur={isTouch ? undefined : () => setHovered(null)}
                   title={taken ? `Filled by ${build[a.key].player}` : `Draft ${a.label}`}
                 >
-                  <span className="cs-attr-label">{a.label}</span>
+                  <div className="cs-attr-top">
+                    <span className="cs-attr-label">{a.label}</span>
+                    {!taken && (
+                      <span className={`cs-surface-badge cs-hint-${hint.toLowerCase()}`}>
+                        {hint[0]}
+                      </span>
+                    )}
+                    {taken && build[a.key].elite && <span className="cs-elite-badge">★</span>}
+                  </div>
                   {taken ? (
                     <span className="cs-attr-locked">
                       <span className="cs-attr-lock">🔒 Locked</span>
@@ -926,46 +1074,42 @@ export default function CalendarSlam() {
             {TOTAL_ROUNDS - filledCount} shots left to fill. The bars show how your
             build is shaping up on each surface — {isTouch ? "tap a shot to preview, tap again to pick." : "hover a shot to preview its effect."}
           </p>
+          {current && current.fact && (
+            <div className="cs-mobile-fact">
+              <span className="cs-mobile-fact-flag">{current.flag}</span>
+              <span className="cs-mobile-fact-name">{current.name}</span>
+              <span className="cs-mobile-fact-text">{current.fact}</span>
+            </div>
+          )}
         </section>
       )}
 
       {phase === "result" && results && (
         <section className="cs-result">
           {!ranSim && (
-            <div className={`cs-tier ${results.tier.glow ? "glow" : ""}`}>
-              <div className="cs-tier-eyebrow">Projected</div>
-              <div className="cs-tier-count">{results.won} / 4</div>
-              <div className="cs-tier-name">{results.tier.name}</div>
-              <div className="cs-tier-note">{results.tier.note}</div>
-            </div>
-          )}
-
-          {!ranSim && (
-            <div className="cs-gauntlet">
-              {results.perSlam.map((s) => (
-                <div key={s.key} className={`cs-leg s-${s.surface.toLowerCase()} ${s.win ? "win" : "loss"}`}>
-                  <div className="cs-leg-top">
-                    <span className="cs-leg-name">{s.name}</span>
-                    <span className="cs-leg-surface">{s.surface}</span>
-                  </div>
-                  <div className="cs-leg-bar-track">
-                    <div className="cs-leg-bar" style={{ width: `${s.prob}%` }} />
-                  </div>
-                  <div className="cs-leg-bottom">
-                    <span>{s.win ? "Champion" : "Eliminated"}</span>
-                    <span>{s.prob}% form</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {!ranSim && (
-            <div className="cs-sim-prompt">
-              <p>This is the quick projection. Want the real test? Play it out round by round against the field, live. It's harder, and the field is unforgiving.</p>
-              <button className="cs-sim-btn" onClick={startSim}>
-                ▶ Simulate match by match
+            <div className="cs-begin-season">
+              <div className="cs-begin-copy">
+                <h2 className="cs-begin-title">Your player is ready.</h2>
+                <p className="cs-begin-sub">Send them out against the {T.label} field. Melbourne, Paris, London, New York.</p>
+              </div>
+              <button className="cs-cta cs-begin-btn" onClick={startSim}>
+                Begin the season →
               </button>
+              <details className="cs-breakdown cs-breakdown-pre">
+                <summary>Review your build first ▾</summary>
+                <div className="cs-build-list">
+                  {ATTRS.map((a) => (
+                    <div key={a.key} className="cs-build-row">
+                      <span>{a.label}</span>
+                      <span className="cs-build-val">
+                        {build[a.key]
+                          ? `${build[a.key].flag} ${build[a.key].player} · ${build[a.key].rating}`
+                          : "— empty —"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </details>
             </div>
           )}
 
@@ -1057,14 +1201,6 @@ export default function CalendarSlam() {
             </>
           )}
 
-          {!ranSim && (
-            <div className="cs-sim-prompt" style={{ marginTop: "-6px" }}>
-              <button className="cs-sim-btn cs-share-btn" onClick={() => setShowCard(true)}>
-                ↗ Share result
-              </button>
-            </div>
-          )}
-
           <details className="cs-breakdown">
             <summary>Show your build ▾</summary>
             <div className="cs-build-list">
@@ -1083,10 +1219,10 @@ export default function CalendarSlam() {
         </section>
       )}
 
-      {showCard && (
+      {showCard && simResults && (
         <ShareCard
-          active={ranSim ? simResults : results}
-          ranSim={ranSim}
+          active={simResults}
+          ranSim={true}
           build={build}
           tourLabel={T.label}
           onClose={() => setShowCard(false)}
@@ -1098,6 +1234,8 @@ export default function CalendarSlam() {
 
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&display=swap');
+
+body { background: #1f6b3f; margin: 0; }
 
 .cs-root {
   --grass-deep: #1f6b3f;
@@ -1139,15 +1277,9 @@ const CSS = `
 .cs-lede:last-of-type { margin-bottom:28px; }
 .cs-lede strong { color:var(--ball-soft); font-weight:700; }
 .cs-surfaces { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:24px; }
-.cs-surface-chip { border:2px solid var(--line); border-radius:4px; padding:12px 10px; display:flex; flex-direction:column; gap:3px; background:rgba(246,251,239,.04); }
-.cs-chip-name { font-weight:700; font-size:13px; line-height:1.15; color:var(--chalk); }
-.cs-chip-surface { font-size:10px; letter-spacing:.12em; text-transform:uppercase; font-weight:700; }
-.cs-surface-chip.s-clay  { border-color:var(--clay); }
-.cs-surface-chip.s-grass { border-color:var(--grass); }
-.cs-surface-chip.s-hard  { border-color:var(--hard); }
-.s-clay  .cs-chip-surface { color:var(--clay); }
-.s-grass .cs-chip-surface { color:var(--grass); }
-.s-hard  .cs-chip-surface { color:var(--hard); }
+.cs-surface-chip { border:none; border-radius:10px; padding:14px 12px; display:flex; flex-direction:column; gap:5px; cursor:default; }
+.cs-chip-name { font-weight:700; font-size:13px; line-height:1.15; color:#fff; }
+.cs-chip-surface { font-size:10px; letter-spacing:.12em; text-transform:uppercase; font-weight:700; color:rgba(255,255,255,.75); }
 .cs-fineprint { font-size:12px; color:var(--dim); margin:0 0 26px; max-width:54ch; }
 
 .cs-cta { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:18px; letter-spacing:.06em; text-transform:uppercase; background:var(--ball); color:var(--ink); border:none; border-radius:4px; padding:15px 30px; cursor:pointer; transition:transform .12s ease, box-shadow .2s; box-shadow:0 3px 0 rgba(14,42,26,.4); }
@@ -1171,25 +1303,57 @@ const CSS = `
 .cs-card-name { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:clamp(28px,5.8vw,42px); line-height:1; letter-spacing:0; margin:6px 0 10px; color:var(--chalk); text-transform:uppercase; }
 .cs-card-hint { font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--ball-soft); font-weight:700; }
 
+/* court diagram */
 .cs-court { width:120px; flex:0 0 120px; display:block; align-self:center; }
-.cs-zone { fill:transparent; transition:fill .25s ease; }
-.cs-zone.filled { fill:rgba(63,125,78,.26); }
-.cs-zone.hot { fill:rgba(200,99,63,.42); }
-.cs-zone.filled.hot { fill:rgba(200,99,63,.5); }
 
-/* player silhouette */
+/* figure placeholder (unused but kept) */
 .cs-figure { width:128px; flex:0 0 128px; display:block; align-self:center; }
-.cs-bp { fill:rgba(246,251,239,.22); stroke:none; transition:fill .25s ease, stroke .25s ease; }
-.cs-bp.filled { fill:var(--chalk); }
-.cs-bp.hot { fill:var(--ball); }
-.cs-bp.filled.hot { fill:var(--ball); }
-.cs-figure g.cs-bp { fill:none; }
-.cs-figure g.cs-bp ellipse, .cs-figure g.cs-bp path { stroke:rgba(246,251,239,.34); }
-.cs-figure g.cs-bp.filled ellipse, .cs-figure g.cs-bp.filled path { stroke:var(--chalk); }
-.cs-figure g.cs-bp.hot ellipse, .cs-figure g.cs-bp.hot path { stroke:var(--ball); }
 .cs-figure.pulse { animation:cs-pulse 1.1s ease-in-out infinite; }
 @keyframes cs-pulse { 0%,100%{opacity:1} 50%{opacity:.72} }
 @media (prefers-reduced-motion: reduce) { .cs-figure.pulse { animation:none; } }
+
+/* header nav */
+.cs-head-right { display:flex; flex-direction:column; align-items:flex-end; gap:3px; margin-left:auto; }
+.cs-tour-switch { background:rgba(246,251,239,.1); border:1.5px solid var(--line); border-radius:20px; color:var(--chalk); font-size:12px; font-weight:700; letter-spacing:.06em; padding:5px 12px; cursor:pointer; transition:background .18s, border-color .18s; }
+.cs-tour-switch:hover { background:rgba(216,240,0,.15); border-color:var(--ball); }
+
+/* slam buttons — solid filled pill cards, no border */
+.cs-surface-chip.slam-ao  { background:linear-gradient(135deg,#1a5fb8,#2b7de9); border:none; box-shadow:0 3px 0 rgba(0,0,0,.3); }
+.cs-surface-chip.slam-rg  { background:linear-gradient(135deg,#b84a1a,#e07a3f); border:none; box-shadow:0 3px 0 rgba(0,0,0,.3); }
+.cs-surface-chip.slam-wim { background:linear-gradient(135deg,#3d1a6b,#5a2d82); border:none; box-shadow:0 3px 0 rgba(0,0,0,.3); }
+.cs-surface-chip.slam-uso { background:linear-gradient(135deg,#0e6fa0,#1a8fd0); border:none; box-shadow:0 3px 0 rgba(0,0,0,.3); }
+.slam-ao  .cs-chip-surface, .slam-rg  .cs-chip-surface,
+.slam-wim .cs-chip-surface, .slam-uso .cs-chip-surface { color:rgba(255,255,255,.78); }
+
+/* difficulty selector */
+.cs-difficulty { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:22px; }
+.cs-diff-label { font-size:12px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--dim); }
+.cs-diff-btn { background:rgba(246,251,239,.07); border:1.5px solid var(--line-soft); border-radius:20px; color:var(--dim); font-size:13px; font-weight:700; padding:7px 18px; cursor:pointer; transition:background .18s, border-color .18s, color .18s; }
+.cs-diff-btn.active { background:var(--ball); border-color:var(--ball); color:var(--ink); }
+.cs-diff-btn:not(.active):hover { border-color:var(--ball); color:var(--chalk); }
+.cs-diff-hint { font-size:11px; color:var(--ball-soft); font-weight:600; letter-spacing:.04em; }
+
+/* challenge mode draft badge */
+.cs-challenge-badge { font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; padding:4px 10px; border-radius:20px; white-space:nowrap; }
+.cs-challenge-badge.avail { background:var(--ball); color:var(--ink); }
+.cs-challenge-badge.used  { background:rgba(246,251,239,.12); color:var(--dim); }
+
+/* surface letter badge on attr buttons */
+.cs-attr-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:2px; }
+.cs-surface-badge { font-size:10px; font-weight:900; letter-spacing:.02em; border-radius:4px; padding:2px 5px; line-height:1; }
+.cs-hint-clay  { background:rgba(210,105,63,.25); color:var(--clay); }
+.cs-hint-grass { background:rgba(111,191,115,.2); color:var(--grass); }
+.cs-hint-hard  { background:rgba(56,160,216,.2);  color:var(--hard); }
+
+/* elite badge on locked shots */
+.cs-elite-badge { font-size:13px; color:var(--ball); font-weight:800; }
+
+/* share image button */
+.cs-share-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.cs-share-copy, .cs-share-img { font-size:15px !important; padding:12px 8px !important; }
+.cs-share-img { background:rgba(246,251,239,.12); color:var(--chalk); border:2px solid var(--chalk); border-radius:4px; cursor:pointer; font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:15px; letter-spacing:.04em; text-transform:uppercase; transition:background .18s; }
+.cs-share-img:hover { background:rgba(246,251,239,.22); }
+.cs-share-img:disabled { opacity:.5; cursor:wait; }
 
 .cs-attr-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px; }
 .cs-attr { text-align:left; border:2px solid var(--line-soft); border-radius:5px; background:rgba(246,251,239,.05); padding:11px 13px; cursor:pointer; display:flex; flex-direction:column; gap:4px; transition:border-color .12s, transform .1s, background .15s; }
@@ -1232,9 +1396,11 @@ const CSS = `
   padding:10px 0 12px; margin-bottom:8px; border-bottom:1px solid var(--line-soft); }
 
 /* tour picker */
-.cs-tourpick { padding-top:20px; text-align:left; }
-.cs-net { width:100%; height:54px; display:block; margin-bottom:24px; opacity:.85; }
-.cs-tour-btns { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:8px; max-width:520px; }
+.cs-tourpick { padding-top:20px; text-align:left; min-height:calc(100vh - 80px); display:flex; flex-direction:column; }
+.cs-tour-slams { margin-bottom:20px; }
+.cs-net { width:100%; height:44px; display:block; margin:18px 0 14px; opacity:.75; }
+.cs-tour-prompt { font-size:12px; letter-spacing:.16em; text-transform:uppercase; font-weight:700; color:var(--dim); margin:0 0 12px; }
+.cs-tour-btns { display:grid; grid-template-columns:1fr 1fr; gap:14px; max-width:520px; }
 .cs-tour-btn { display:flex; flex-direction:column; align-items:flex-start; gap:4px; padding:22px 24px; border-radius:8px; border:2.5px solid var(--chalk); background:rgba(246,251,239,.05); cursor:pointer; transition:transform .12s, background .2s, border-color .2s; }
 .cs-tour-btn:hover { transform:translateY(-3px); background:rgba(216,240,0,.1); border-color:var(--ball); }
 .cs-tour-btn:focus-visible { outline:3px solid var(--ball); outline-offset:3px; }
@@ -1245,6 +1411,15 @@ const CSS = `
 .cs-intro-actions { display:flex; align-items:center; gap:18px; flex-wrap:wrap; }
 .cs-text-btn { background:none; border:none; color:var(--dim); font-size:14px; font-weight:600; cursor:pointer; padding:8px 4px; }
 .cs-text-btn:hover { color:var(--chalk); }
+
+/* mobile player fact (shown below grid on small screens, hidden on desktop) */
+.cs-mobile-fact { display:none; }
+@media (max-width:520px) {
+  .cs-mobile-fact { display:flex; flex-direction:column; gap:2px; margin-top:14px; padding:12px; background:rgba(246,251,239,.07); border-radius:6px; border-left:3px solid var(--ball); }
+  .cs-mobile-fact-flag { font-size:18px; }
+  .cs-mobile-fact-name { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:16px; color:var(--chalk); text-transform:uppercase; }
+  .cs-mobile-fact-text { font-size:12.5px; color:var(--dim); line-height:1.4; }
+}
 
 /* live simulation banner + skip */
 .cs-live-banner { display:flex; align-items:center; gap:10px; font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:18px; letter-spacing:.04em; text-transform:uppercase; color:var(--chalk); margin-bottom:16px; padding:12px 16px; border:2px solid var(--ball); border-radius:6px; background:rgba(216,240,0,.08); }
@@ -1262,15 +1437,7 @@ const CSS = `
   .cs-live-dot, .cs-leg.playing, .cs-path-live li { animation:none; }
 }
 
-/* major colour identities */
-.slam-ao .cs-chip-surface { color:#2b7de9; }
-.slam-rg .cs-chip-surface { color:#e07a3f; }
-.slam-wim .cs-chip-surface { color:#5a2d82; }
-.slam-uso .cs-chip-surface { color:#1a8fd0; }
-.cs-surface-chip.slam-ao { border-color:#2b7de9; background:rgba(43,125,233,.14); }
-.cs-surface-chip.slam-rg { border-color:#e07a3f; background:rgba(224,122,63,.14); }
-.cs-surface-chip.slam-wim { border-color:#5a2d82; background:rgba(90,45,130,.18); }
-.cs-surface-chip.slam-uso { border-color:#1a8fd0; background:rgba(26,143,208,.14); }
+/* major colour identities — legs only (chips handled by the new solid rules above) */
 .cs-leg.slam-ao { border-left-color:#2b7de9; }
 .cs-leg.slam-rg { border-left-color:#e07a3f; }
 .cs-leg.slam-wim { border-left-color:#5a2d82; }
@@ -1305,14 +1472,24 @@ const CSS = `
 .cs-share-brand { font-family:"Barlow Condensed",sans-serif; font-weight:800; letter-spacing:.16em; font-size:13px; color:var(--ball); text-transform:uppercase; }
 .cs-share-headline { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:34px; line-height:1.05; letter-spacing:0; margin:6px 0 18px; text-transform:uppercase; color:var(--chalk); }
 .cs-share-headline.slam { color:var(--ball); }
-.cs-share-trail { display:flex; justify-content:center; gap:10px; margin-bottom:16px; }
-.cs-share-leg { display:flex; flex-direction:column; align-items:center; gap:5px; border:2px solid var(--line); border-bottom-width:4px; border-radius:4px; padding:10px 8px; min-width:52px; }
-.cs-share-leg.s-clay { border-bottom-color:var(--clay); }
-.cs-share-leg.s-grass { border-bottom-color:var(--grass); }
-.cs-share-leg.s-hard { border-bottom-color:var(--hard); }
-.cs-share-leg.won { background:rgba(216,240,0,.12); }
-.cs-share-emoji { font-size:22px; }
-.cs-share-slam { font-size:11px; font-weight:800; letter-spacing:.06em; color:var(--chalk); }
+/* begin the season screen */
+.cs-begin-season { display:flex; flex-direction:column; align-items:center; text-align:center; padding:40px 0 28px; gap:20px; }
+.cs-begin-copy { display:flex; flex-direction:column; gap:8px; }
+.cs-begin-title { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:42px; line-height:1; text-transform:uppercase; color:var(--chalk); margin:0; }
+.cs-begin-sub { font-size:16px; color:var(--dim); max-width:40ch; margin:0; line-height:1.5; }
+.cs-begin-btn { font-size:22px; padding:18px 40px; }
+.cs-breakdown-pre { width:100%; max-width:580px; margin-top:8px; }
+
+/* share slam buttons — solid fills, stacked */
+.cs-share-trail { display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
+.cs-share-slam-btn { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:8px; }
+.cs-share-slam-btn.slam-ao  { background:linear-gradient(135deg,#1a5fb8,#2b7de9); }
+.cs-share-slam-btn.slam-rg  { background:linear-gradient(135deg,#b84a1a,#e07a3f); }
+.cs-share-slam-btn.slam-wim { background:linear-gradient(135deg,#3d1a6b,#5a2d82); }
+.cs-share-slam-btn.slam-uso { background:linear-gradient(135deg,#0e6fa0,#1a8fd0); }
+.cs-share-slam-name { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:15px; text-transform:uppercase; color:#fff; min-width:130px; }
+.cs-share-slam-result { font-size:20px; }
+.cs-share-slam-detail { font-size:12px; color:rgba(255,255,255,.8); font-weight:600; flex:1; text-align:right; }
 .cs-share-mode { font-size:12px; color:var(--dim); margin-bottom:18px; }
 .cs-share-copy { width:100%; }
 .cs-share-preview { font-family:ui-monospace,monospace; font-size:11px; text-align:left; background:rgba(7,28,16,.4); border-radius:4px; padding:10px; margin:14px 0 0; white-space:pre-wrap; line-height:1.5; color:var(--chalk); }
@@ -1356,10 +1533,12 @@ const CSS = `
   .cs-attr-grid { grid-template-columns:repeat(2,1fr); }
   /* keep stage as a row on mobile so the sticky header stays short */
   .cs-stage { flex-direction:row; align-items:stretch; gap:12px; }
-  .cs-figure { width:74px; flex:0 0 74px; }
+  .cs-court { width:70px; flex:0 0 70px; }
+  .cs-figure { width:70px; flex:0 0 70px; }
   .cs-card { padding:14px 16px; }
-  .cs-card-name { font-size:24px; }
-  .cs-card-fact { display:none; }
+  .cs-card-name { font-size:22px; }
+  .cs-card-fact { font-size:12px; display:none; }
+  .cs-mobile-fact { display:block; }
   .cs-tour-btns { grid-template-columns:1fr 1fr; }
   .cs-meters { gap:7px; margin-bottom:12px; }
   .cs-sticky { padding-top:6px; }
