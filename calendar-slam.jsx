@@ -637,6 +637,55 @@ function ShareCard({ active, ranSim, build, tourLabel, onClose }) {
 // ============================================================================
 
 // A simple tennis net graphic used as a divider / motif.
+// ============================================================================
+// RIVAL MODAL — newspaper reveal of the player's nemesis
+// ============================================================================
+function RivalModal({ rival, playerName, playerFlag, onClose }) {
+  if (!rival) return null;
+  const headlines = {
+    baseline: [`TWO FORCES COLLIDE ON THE BASELINE`, `BATTLE OF THE GROUNDSTROKERS`],
+    serve:    [`ACE VS ACE: A RIVALRY IS BORN`, `THE SERVE MASTERS CLASH`],
+    defence:  [`ATTACK MEETS DEFENCE: RIVALS EMERGE`, `THE WALL MEETS ITS MATCH`],
+    return:   [`RETURNER RISES TO CHALLENGE`, `THE COURT'S NEW RIVALRY`],
+    allcourt: [`ALL-COURT NEMESIS EMERGES`, `VERSATILITY VS VERSATILITY`],
+  };
+  const headlineOpts = headlines[rival.style] || headlines.baseline;
+  const headline = headlineOpts[Math.floor(rival.name.length % headlineOpts.length)];
+
+  const bodies = {
+    baseline: `Sources close to both camps confirm what the tennis world has already suspected: ${playerName} and ${rival.name} are destined to become the defining rivalry of their generation. "${rival.name}'s relentless ball-striking from the back of the court is precisely the kind of game that will test ${playerName} most," said one leading coach. "Watch this space."`,
+    serve:    `The ${rival.flag} ${rival.name} possesses ${rival.weapon} that has already drawn comparisons to the greats. For ${playerName}, the challenge is clear: find a way through the biggest serve on the ${rival.surface} circuit, or risk being defined by the rivalry.`,
+    defence:  `When ${rival.name} gets into a match, opponents often describe the same feeling — like hitting into a wall. "They just get everything back," said one analyst. For ${playerName}, breaking down ${rival.weapon} will define the next chapter of their career.`,
+    return:   `Tennis aficionados have been quick to identify ${rival.name} as the player best placed to trouble ${playerName} going forward. Their secret weapon: ${rival.weapon} that turns defence into attack in the blink of an eye.`,
+    allcourt: `The ${rival.flag} star brings ${rival.weapon} that makes them almost impossible to gameplan against. Coaches say ${playerName} will need to be at their absolute best to compete — and that this rivalry could produce some of the most entertaining tennis of the coming decade.`,
+  };
+
+  return (
+    <div className="cs-modal cs-rival-modal" onClick={onClose}>
+      <div className="cs-newspaper" onClick={e => e.stopPropagation()}>
+        <div className="cs-newspaper-header">
+          <div className="cs-newspaper-name">THE TENNIS TRIBUNE</div>
+          <div className="cs-newspaper-date">EXCLUSIVE REPORT</div>
+        </div>
+        <div className="cs-newspaper-rule" />
+        <h2 className="cs-newspaper-headline">{headline}</h2>
+        <div className="cs-newspaper-subhead">
+          {playerFlag} {playerName} vs {rival.flag} {rival.name} ({rival.country})
+        </div>
+        <div className="cs-newspaper-rule cs-newspaper-rule-thin" />
+        <p className="cs-newspaper-body">{bodies[rival.style] || bodies.baseline}</p>
+        <div className="cs-newspaper-caption">
+          <em>"{rival.name} is the player I'll measure myself against. That's the rivalry I want."</em>
+          <br />— {playerName}
+        </div>
+        <button className="cs-newspaper-close cs-cta" onClick={onClose}>
+          Close →
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function NetGraphic() {
   return (
     <svg className="cs-net" viewBox="0 0 400 70" aria-hidden="true" preserveAspectRatio="none">
@@ -890,7 +939,13 @@ export default function CalendarSlam() {
   const [retirementPrompt, setRetirementPrompt] = useState(false);
   const [consecutiveLowSeasons, setConsecutiveLowSeasons] = useState(0);
   const [heavyTrainingLastSeason, setHeavyTrainingLastSeason] = useState(false);
-  const [olympicResult, setOlympicResult] = useState(null); // {medal, surface, city} for this season
+  const [olympicResult, setOlympicResult] = useState(null);
+  const [showRivalModal, setShowRivalModal] = useState(false);
+  const [seasonSummary, setSeasonSummary] = useState(null); // {report, quotes} for current season
+  const [chosenQuote, setChosenQuote] = useState(null);
+  const [pressPhase, setPressPhase] = useState(false); // true = showing press quote picker
+  const [upgradeArmed, setUpgradeArmed] = useState(null); // id of upgrade armed for double-tap
+  const [generationalPlayers, setGenerationalPlayers] = useState([]); // fictional players added over career
 
   const T = TOURS[tour];
   const POOL = T.pool;
@@ -905,6 +960,13 @@ export default function CalendarSlam() {
     setPlayerName(p.name);
     setPlayerFlag(p.flag);
   }
+
+  // Auto-generate on mount when arriving at player-create screen.
+  useEffect(() => {
+    if (phase === "player-create" && playerNameMode === "generate" && !playerName) {
+      generatePlayerIdentity();
+    }
+  }, [phase]);
 
   // Career: start a brand-new career.
   function startCareer() {
@@ -929,21 +991,123 @@ export default function CalendarSlam() {
     setBuild({});
     setRound(0);
     setEliteUsed(false);
-    setPhase("intro"); // go to intro (shows career context) then draft
+    setGenerationalPlayers([]);
+    setPressPhase(false);
+    setSeasonSummary(null);
+    setChosenQuote(null);
+    setShowRivalModal(false);
+    setPhase("intro");
+  }
+
+  // --- Procedural season report generator -----------------------------------
+  // Generates a fictional newspaper-style season summary from actual results.
+  function generateSeasonReport(season, age, slamResults, slamWon, totalSlams, rival, quote, olympicRes) {
+    const year = 2025 + season;
+    const slams = slamResults.filter(r => !r.isOlympics);
+    const wonSlams = slams.filter(r => r.wonTitle).map(r => r.name);
+    const lostEarly = slams.find(r => !r.wonTitle && ["Round 1","Round 2","Round 3"].includes(r.lostRound));
+    const finalLoss = slams.find(r => !r.wonTitle && r.lostRound === "Final");
+    const sfLoss = slams.find(r => !r.wonTitle && r.lostRound === "Semi-final");
+    const rivalResult = slamResults.find(r => r.opponent === rival?.name);
+
+    let headline = "";
+    let body = "";
+
+    if (slamWon === 4) {
+      headline = `${playerName.toUpperCase()} COMPLETES THE CALENDAR SLAM`;
+      body = `In a season that will be written into the history books, ${playerName} won all four Grand Slams in a single calendar year — a feat achieved by only a handful of players across the sport's entire history. At ${age} years old, they have announced themselves as one of the all-time greats.`;
+    } else if (slamWon >= 2) {
+      headline = `${wonSlams.join(" AND ")} — ${playerName.toUpperCase()} DELIVERS`;
+      body = `A banner year for ${playerName}. ${slamWon} Grand Slam titles in ${year} cement their status as one of the premier forces on the ${T.label} tour.${finalLoss ? ` The loss in the ${finalLoss.name} final to ${finalLoss.opponent} will sting — but the overall record speaks for itself.` : ""}`;
+    } else if (slamWon === 1) {
+      headline = `BREAKTHROUGH: ${playerName.toUpperCase()} CLAIMS ${wonSlams[0]?.toUpperCase()}`;
+      body = `${playerName} claimed their ${totalSlams === 1 ? "first" : `${totalSlams}${totalSlams === 2 ? "nd" : totalSlams === 3 ? "rd" : "th"}`} Grand Slam title at ${wonSlams[0]}, a result that has the ${T.label} tour talking.${finalLoss ? ` A second title slipped away in the ${finalLoss.name} final against ${finalLoss.opponent}, but this was still a season to celebrate.` : ""}`;
+    } else if (finalLoss) {
+      headline = `SO CLOSE — ${playerName.toUpperCase()} FALLS IN THE ${finalLoss.name.toUpperCase()} FINAL`;
+      body = `A season that promised so much ended in heartbreak at ${finalLoss.name}. ${playerName} — age ${age} — fell to ${finalLoss.opponent} in a match that went the distance. The title remains elusive, but the final appearance proves they belong.`;
+    } else if (sfLoss) {
+      headline = `PROGRESS STALLS: ${playerName.toUpperCase()} FALLS AT THE SEMI-FINAL STAGE`;
+      body = `Semi-final appearances across the tour suggest ${playerName} is trending in the right direction, but the final breakthrough remains to come. ${rivalResult && !rivalResult.wonTitle ? `A loss to ${rival?.name} in the ${rivalResult.name} last four will particularly hurt.` : "They will hope to convert their form into titles next year."}`;
+    } else if (lostEarly) {
+      headline = `TOUGH YEAR FOR ${playerName.toUpperCase()} ON THE GRAND SLAM STAGE`;
+      body = `${year} was not the season ${playerName} had hoped for. Early exits at ${lostEarly.name} and elsewhere raised questions the player will be eager to answer in the off-season. At ${age}, there is time to rebuild.`;
+    } else {
+      headline = `${playerName.toUpperCase()}: BUILDING TOWARDS THE SUMMIT`;
+      body = `Another season on the road for ${playerName}. No titles yet, but the performances suggest a player who is understanding what it takes to compete at the highest level.`;
+    }
+
+    if (olympicRes?.medal?.includes("Gold")) {
+      body += ` The gold medal at the ${olympicRes.city} Olympics was the undoubted highlight of a remarkable summer.`;
+    } else if (olympicRes?.medal?.includes("Silver")) {
+      body += ` Silver at the ${olympicRes.city} Olympics was scant consolation for a player who came so close to gold.`;
+    }
+
+    if (rival && rivalResult && !rivalResult.wonTitle && rivalResult.opponent === rival.name) {
+      body += ` The rivalry with ${rival.flag} ${rival.name} continues to define ${playerName}'s career — another defeat against their nemesis will fuel the off-season preparation.`;
+    }
+
+    if (quote) {
+      body += `\n\n"${quote}" — ${playerName}`;
+    }
+
+    return { headline, body };
+  }
+
+  // Press quotes — four options generated from season context.
+  function generatePressQuotes(slamWon, rival, age) {
+    const options = [
+      slamWon > 0
+        ? `Winning Grand Slams is what I've worked my whole life for. This proves we're on the right track.`
+        : `Every year I come back stronger. The titles will come — I have no doubt about that.`,
+      rival
+        ? `Playing ${rival.name} brings the best out of me. I respect them, but I want to beat them.`
+        : `The competition on tour is incredible. It drives me to keep improving every single day.`,
+      age < 24
+        ? `I'm still learning. There's so much more to come from me at this stage of my career.`
+        : age > 30
+        ? `People keep writing me off but I'm still here. As long as my body holds up, I'll keep competing.`
+        : `I feel like I'm at my peak right now. The goal is to make the most of these years.`,
+      slamWon === 0
+        ? `Results haven't gone my way this year, but I know what I need to work on. Watch this space.`
+        : `The hard work in the off-season pays off on the biggest stages. I'm proud of what we've achieved.`,
+    ];
+    return options;
+  }
+
+  // Generate fictional new-generation players to seed into the draw from season 3+.
+  function spawnGenerationalPlayer(season, rng) {
+    const p = generatePlayer(rng);
+    const surfaces = ["Clay","Grass","Hard"];
+    const styles = ["baseline","serve","defence","allcourt","return"];
+    const weapons = [
+      "explosive groundstrokes", "a fearsome serve", "relentless retrieving",
+      "all-court brilliance", "an aggressive return game", "tactical clay-court guile"
+    ];
+    const surf = surfaces[Math.floor(rng() * surfaces.length)];
+    const style = styles[Math.floor(rng() * styles.length)];
+    const wep = weapons[Math.floor(rng() * weapons.length)];
+    const base = 72 + Math.floor(rng() * 8);
+    return {
+      name: p.name, flag: p.flag,
+      base,
+      surf: { Hard: Math.floor(rng()*5)-1, Clay: Math.floor(rng()*5)-1, Grass: Math.floor(rng()*5)-1, [surf]: 3 },
+      weapon: wep, style,
+      isGenerational: true, debutSeason: season,
+    };
   }
 
   // Career: wrap up a season's results and set up off-season.
   function endCareerSeason(slamResults) {
-    const wonThisSeason = slamResults.filter(r => r.wonTitle).length;
+    const wonThisSeason = slamResults.filter(r => !r.isOlympics && r.wonTitle).length;
     const newTotal = careerSlamCount + wonThisSeason;
     setCareerSlamCount(newTotal);
-
     // Create rival on first season if not yet set
     let activeRival = careerRival;
     if (!activeRival && gameMode === "career") {
       const rivalRng = mulberry32((careerSeason * 99991) & 0xffffffff);
       activeRival = generateRival(build, tour, rivalRng);
       setCareerRival(activeRival);
+      setShowRivalModal(true); // trigger newspaper intro
     }
 
     // Track rival's season results
@@ -961,15 +1125,19 @@ export default function CalendarSlam() {
 
     // Add season to history
     const careerYear = 2025 + careerSeason;
-    const olympics = getOlympics(careerYear);
-    let olympicsThisSeason = null;
-    if (olympics) {
-      const oRng = mulberry32((careerSeason * 77777) & 0xffffffff);
-      olympicsThisSeason = { ...simulateOlympics(build, olympics.surface, oRng), ...olympics, year: careerYear };
-      setOlympicResult(olympicsThisSeason);
-    } else {
-      setOlympicResult(null);
-    }
+    // Pull Olympic result from the sim results (already computed there in real-time)
+    const olympicsEvent = slamResults.find(r => r.isOlympics);
+    const olympicsThisSeason = olympicsEvent ? {
+      medal: olympicsEvent.medal,
+      wonGold: olympicsEvent.wonTitle,
+      city: olympicsEvent.olympicsData?.city,
+      country: olympicsEvent.olympicsData?.country,
+      flag: olympicsEvent.olympicsData?.flag,
+      surface: olympicsEvent.surface,
+      venue: olympicsEvent.olympicsData?.venue,
+      year: careerYear,
+    } : null;
+    setOlympicResult(olympicsThisSeason);
     const seasonRecord = {
       season: careerSeason, age: careerAge, year: careerYear,
       slams: wonThisSeason, results: slamResults, olympics: olympicsThisSeason,
@@ -1000,6 +1168,26 @@ export default function CalendarSlam() {
     setOffseasonUpgrades(upgrades);
     setOffseasonInjury(injury);
     setOffseasonPendingBuild(build);
+
+    // Generate season report and press quotes — reuse olympicsEvent from above
+    const oRes = olympicsEvent ? { medal: olympicsEvent.medal, wonGold: olympicsEvent.wonTitle, city: olympicsEvent.olympicsData?.city } : null;
+    const report = generateSeasonReport(careerSeason, careerAge, slamResults, wonThisSeason, newTotal, updatedRival || activeRival, null, oRes);
+    const quotes = generatePressQuotes(wonThisSeason, updatedRival || activeRival, careerAge);
+    setSeasonSummary({ ...report, quotes });
+    setChosenQuote(null);
+
+    // Spawn a new fictional player from season 3 onwards (one per season, probability rises)
+    if (careerSeason >= 3) {
+      const spawnRng = mulberry32((careerSeason * 88887) & 0xffffffff);
+      const spawnChance = Math.min(0.7, 0.2 + (careerSeason - 3) * 0.06);
+      if (spawnRng() < spawnChance) {
+        const newPlayer = spawnGenerationalPlayer(careerSeason, spawnRng);
+        setGenerationalPlayers(prev => [...prev, newPlayer]);
+      }
+    }
+
+    // Show the press quote screen first, then move to offseason after
+    setPressPhase(true);
     setPhase("offseason");
   }
 
@@ -1022,6 +1210,8 @@ export default function CalendarSlam() {
     setEliteUsed(false);
     setRound(0);
     setRetirementPrompt(false);
+    setUpgradeArmed(null);
+    setPressPhase(false);
     // Go straight to result screen (which shows "Begin season X") —
     // no new draft needed, the build carries over with the upgrade applied.
     setPhase("result");
@@ -1173,13 +1363,76 @@ export default function CalendarSlam() {
     const rand = mulberry32(seed);
     const usedReasons = new Set();
     let won = 0;
-    const perSlam = SLAMS.map((s) => {
-      const r = simulateMajor(build, s, rand, usedReasons, T.field, T.draw);
+
+    // Build the list of events for this season.
+    // In career mode, Olympic years include a 5th event between Wimbledon and US Open.
+    const careerYear = gameMode === "career" ? 2025 + careerSeason : null;
+    const olympicsData = careerYear ? getOlympics(careerYear) : null;
+
+    const events = [];
+    for (const s of SLAMS) {
+      events.push(s);
+      // Olympics slot: after Wimbledon (index 2), before US Open
+      if (s.key === "wim" && olympicsData) {
+        events.push({
+          key: "olympics",
+          name: `${olympicsData.city} Olympics`,
+          surface: olympicsData.surface,
+          short: "OLY",
+          isOlympics: true,
+          olympicsData,
+        });
+      }
+    }
+
+    const perSlam = events.map((s) => {
+      if (s.isOlympics) {
+        // Best-of-3 olympic sim
+        const oResult = simulateOlympics(build, s.surface, rand);
+        // Convert to a path-like structure for the reveal UI
+        const path = [];
+        const rounds = ["Quarter-final","Semi-final","Final"];
+        const oppStrengths = [76, 80, 86];
+        for (let i = 0; i < 3; i++) {
+          let mySets = 0, oppSets = 0;
+          while (mySets < 2 && oppSets < 2) {
+            const noise = (rand() - 0.5) * 12;
+            const pSet = 1 / (1 + Math.exp(-((surfaceScore(build, s.surface) + noise - oppStrengths[i]) / 6)));
+            if (rand() < pSet) mySets++; else oppSets++;
+          }
+          const wonSet = mySets === 2;
+          path.push({ round: rounds[i], name: "Field opponent", won: wonSet, score: `${mySets}-${oppSets}` });
+          if (!wonSet) break;
+        }
+        const wonGold = oResult.wonGold;
+        return {
+          ...s,
+          wonTitle: wonGold,
+          medal: oResult.medal,
+          path,
+          finalOpp: "the field",
+          finalScore: path[path.length-1]?.score || "",
+          note: wonGold ? "delivered a gold-medal performance" : "",
+          lostRound: !wonGold ? (path.find(p => !p.won)?.round || "Final") : null,
+          opponent: "the field",
+          setScore: path[path.length-1]?.score || "",
+          reason: wonGold ? null : "the competition was fierce",
+          weapon: "world-class competition",
+        };
+      }
+      // Merge generational players into the draw pool for career mode
+      const augmentedDraw = gameMode === "career" && generationalPlayers.length > 0
+        ? [...T.draw, ...generationalPlayers.filter(p => p.debutSeason <= careerSeason)]
+        : T.draw;
+      const r = simulateMajor(build, s, rand, usedReasons, T.field, augmentedDraw);
       if (r.wonTitle) won++;
       return { ...s, ...r };
     });
-    return { perSlam, won, tier: tierFor(won) };
-  }, [phase, build, ranSim, seed]);
+
+    // Count grand slam titles (not Olympics)
+    const slamWon = perSlam.filter(s => !s.isOlympics && s.wonTitle).length;
+    return { perSlam, won: slamWon, tier: tierFor(slamWon), olympicsData };
+  }, [phase, build, ranSim, seed, gameMode, careerSeason, generationalPlayers]);
 
   // Kick off a fresh live simulation: reset reveal, new seed, run sim.
   function startSim() {
@@ -1189,10 +1442,11 @@ export default function CalendarSlam() {
   }
 
   function skipSim() {
-    setReveal({ slam: SLAMS.length, round: 0, done: true });
+    const total = simResults ? simResults.perSlam.length : SLAMS.length;
+    setReveal({ slam: total, round: 0, done: true });
   }
 
-  // Drive the live reveal: step through each major's rounds, then the next major.
+  // Drive the live reveal: step through each event's rounds, then the next.
   useEffect(() => {
     if (!ranSim || !simResults || reveal.done) return;
     const slam = simResults.perSlam[reveal.slam];
@@ -1202,8 +1456,7 @@ export default function CalendarSlam() {
     const t = setTimeout(() => {
       setReveal((r) => {
         if (r.round < lastRound) return { ...r, round: r.round + 1 };
-        // finished this major's rounds; pause, then move to next major
-        if (r.slam + 1 >= SLAMS.length) return { ...r, done: true };
+        if (r.slam + 1 >= simResults.perSlam.length) return { ...r, done: true };
         return { slam: r.slam + 1, round: 0, done: false };
       });
     }, reveal.round < lastRound ? delay : delay * 1.6);
@@ -1631,17 +1884,22 @@ export default function CalendarSlam() {
 
               <div className="cs-gauntlet">
                 {simResults.perSlam.map((s, si) => {
-                  if (si > reveal.slam) return null; // not reached yet
+                  if (si > reveal.slam) return null;
                   const isCurrent = si === reveal.slam && !reveal.done;
                   const roundsToShow = reveal.done || si < reveal.slam
                     ? s.path.length
                     : reveal.round + 1;
                   const resolved = roundsToShow >= s.path.length;
+                  const isOly = s.isOlympics;
                   return (
-                    <div key={s.key} className={`cs-leg slam-${s.key} ${resolved ? (s.wonTitle ? "win" : "loss") : "playing"}`}>
+                    <div key={s.key} className={`cs-leg ${isOly ? "cs-leg-olympics" : `slam-${s.key}`} ${resolved ? (s.wonTitle ? "win" : "loss") : "playing"}`}>
                       <div className="cs-leg-top">
-                        <span className="cs-leg-name">{s.name}</span>
-                        <span className="cs-leg-surface">{s.surface}</span>
+                        <span className="cs-leg-name">
+                          {isOly ? "🏅 " : ""}{s.name}
+                        </span>
+                        <span className="cs-leg-surface">
+                          {isOly ? `${s.olympicsData?.flag} Best of 3` : s.surface}
+                        </span>
                       </div>
 
                       {resolved && (
@@ -1740,97 +1998,192 @@ export default function CalendarSlam() {
       {/* OFFSEASON (career mode) */}
       {phase === "offseason" && (
         <section className="cs-offseason">
-          <div className="cs-offseason-header">
-            <div className="cs-intro-tour">Season {careerSeason} complete · Age {careerAge}</div>
-            <h2 className="cs-h1 cs-offseason-h">
-              {careerSeason === 1 && careerSlamCount === 0 ? "Tough first season." :
-               careerSlamCount > 0 ? `${careerSlamCount} slam${careerSlamCount !== 1 ? "s" : ""} so far.` :
-               "Keep building."}
-            </h2>
-          </div>
 
-          {careerRival && careerSeason > 1 && (
-            <div className="cs-rival-card">
-              <span className="cs-rival-label">Your Rivalry</span>
-              <div className="cs-rival-row">
-                <span>{playerFlag} {playerName}</span>
-                <span className="cs-rival-h2h">{careerSlamCount} – {careerRival.slamCount} slams</span>
-                <span>{careerRival.flag} {careerRival.name}</span>
-              </div>
-              <div className="cs-rival-note">
-                {careerRival.name} ({careerRival.country}) — your {careerRival.weakSurf} nemesis
-              </div>
-            </div>
-          )}
-
-          {offseasonInjury && (
-            <div className="cs-injury-card">
-              <span className="cs-injury-icon">🤕</span>
-              <div className="cs-injury-content">
-                <span className="cs-injury-title">{offseasonInjury.label}</span>
-                <span className="cs-injury-desc">{offseasonInjury.desc}</span>
-                <span className="cs-injury-effects">
-                  {Object.entries(offseasonInjury.effects).map(([k,v]) =>
-                    `${ATTRS.find(a=>a.key===k)?.label} ${v}`).join(" · ")}
-                </span>
-              </div>
-            </div>
-          )}
-
-          {olympicResult && (
-            <div className={`cs-olympic-result ${olympicResult.wonGold ? "gold" : ""}`}>
-              <div className="cs-olympic-result-top">
-                <span className="cs-olympic-result-icon">
-                  {olympicResult.medal.includes("Gold") ? "🥇"
-                    : olympicResult.medal.includes("Silver") ? "🥈"
-                    : olympicResult.medal.includes("Bronze") ? "🥉" : "🎾"}
-                </span>
-                <div>
-                  <span className="cs-olympic-result-title">
-                    {olympicResult.year} Olympics · {olympicResult.flag} {olympicResult.city}
-                  </span>
-                  <span className="cs-olympic-result-medal">{olympicResult.medal}</span>
-                  <span className="cs-olympic-result-detail">
-                    {olympicResult.surface} court · {olympicResult.venue} · Best of 3 sets
-                  </span>
+          {/* PRESS QUOTE PHASE — shown first, before the upgrade choices */}
+          {pressPhase && seasonSummary ? (
+            <>
+              <div className="cs-press-report">
+                <div className="cs-press-header">
+                  <span className="cs-press-masthead">THE TENNIS TRIBUNE</span>
+                  <span className="cs-press-edition">Season {careerSeason} Review · {2025 + careerSeason}</span>
                 </div>
+                <h2 className="cs-press-headline">{seasonSummary.headline}</h2>
+                <p className="cs-press-body">{seasonSummary.body}</p>
               </div>
-            </div>
-          )}
 
-          <div className="cs-upgrade-section">
-            <h3 className="cs-upgrade-title">Off-season investment</h3>
-            <p className="cs-upgrade-sub">Choose one. Your decision shapes the seasons ahead.</p>
-            <div className="cs-upgrade-grid">
-              {offseasonUpgrades.map(u => (
-                <button key={u.id} className={`cs-upgrade-btn ${u.recovery ? "recovery" : ""}`}
-                  onClick={() => applyUpgrade(u)}>
-                  <span className="cs-upgrade-label">{u.label}</span>
-                  <span className="cs-upgrade-desc">{u.desc}</span>
-                  <div className="cs-upgrade-effects">
-                    {Object.entries(u.effects).map(([k, v]) => (
-                      <span key={k} className={`cs-upgrade-effect ${v > 0 ? "pos" : "neg"}`}>
-                        {ATTRS.find(a => a.key === k)?.label} {v > 0 ? `+${v}` : v}
-                      </span>
-                    ))}
-                    {u.longevity > 0 && <span className="cs-upgrade-effect pos">+{u.longevity} longevity</span>}
-                    {u.longevity < 0 && <span className="cs-upgrade-effect neg">{u.longevity} longevity</span>}
-                    {Object.keys(u.effects).length === 0 && <span className="cs-upgrade-effect pos">Body recovery</span>}
-                  </div>
-                  {u.warning && <span className="cs-upgrade-warning">⚠ {u.warning}</span>}
+              <div className="cs-quote-section">
+                <h3 className="cs-upgrade-title">The press are waiting.</h3>
+                <p className="cs-upgrade-sub">How do you sum up your {2025 + careerSeason}?</p>
+                <div className="cs-quote-grid">
+                  {seasonSummary.quotes.map((q, i) => (
+                    <button key={i}
+                      className={`cs-quote-btn ${chosenQuote === q ? "chosen" : ""}`}
+                      onClick={() => setChosenQuote(q)}>
+                      "{q}"
+                    </button>
+                  ))}
+                </div>
+                <button className="cs-cta cs-press-continue"
+                  onClick={() => setPressPhase(false)}>
+                  {chosenQuote ? "Continue to off-season →" : "Skip →"}
                 </button>
-              ))}
-            </div>
-          </div>
-
-          {retirementPrompt && (
-            <div className="cs-retirement-prompt">
-              <p>Your peak years may be behind you. Retire now and celebrate your legacy?</p>
-              <div className="cs-retire-actions">
-                <button className="cs-cta" onClick={retire}>Retire →</button>
-                <button className="cs-text-btn" onClick={() => setRetirementPrompt(false)}>Keep going</button>
               </div>
-            </div>
+            </>
+          ) : (
+            <>
+              {/* TROPHY CABINET */}
+              {careerSlamCount > 0 && (
+                <div className="cs-trophy-cabinet">
+                  <span className="cs-trophy-label">Trophy Cabinet</span>
+                  <div className="cs-trophy-row">
+                    {careerSeasons.flatMap(s =>
+                      s.results?.filter(r => !r.isOlympics && r.wonTitle).map(r => (
+                        <div key={`${s.season}-${r.key}`} className={`cs-trophy slam-${r.key}`} title={`${r.name} ${s.year}`}>
+                          <span className="cs-trophy-icon">🏆</span>
+                          <span className="cs-trophy-name">{r.short || r.name?.split(" ").pop()}</span>
+                          <span className="cs-trophy-year">{s.year}</span>
+                        </div>
+                      ))
+                    )}
+                    {careerSeasons.flatMap(s =>
+                      s.olympics?.medal?.includes("Gold") ? [
+                        <div key={`oly-${s.season}`} className="cs-trophy cs-trophy-gold" title={`${s.olympics.city} Olympics`}>
+                          <span className="cs-trophy-icon">🥇</span>
+                          <span className="cs-trophy-name">Olympic</span>
+                          <span className="cs-trophy-year">{s.year}</span>
+                        </div>
+                      ] : []
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* SEASON SUMMARY CARD */}
+              {seasonSummary && (
+                <div className="cs-season-report-card">
+                  <div className="cs-report-source">The Tennis Tribune</div>
+                  <h3 className="cs-report-headline">{seasonSummary.headline}</h3>
+                  <p className="cs-report-body">{seasonSummary.body}</p>
+                </div>
+              )}
+
+              <div className="cs-offseason-header">
+                <div className="cs-intro-tour">Off-season · Season {careerSeason + 1} ahead · Age {careerAge + 1}</div>
+              </div>
+
+              {careerRival && (
+                <div className="cs-rival-card">
+                  <span className="cs-rival-label">Rivalry standings</span>
+                  <div className="cs-rival-row">
+                    <span>{playerFlag} {playerName}</span>
+                    <span className="cs-rival-h2h">{careerSlamCount} – {careerRival.slamCount} slams</span>
+                    <span>{careerRival.flag} {careerRival.name}</span>
+                  </div>
+                  <div className="cs-rival-note">
+                    {careerRival.name} ({careerRival.country}) — your {careerRival.weakSurf} nemesis
+                  </div>
+                </div>
+              )}
+
+              {offseasonInjury && (
+                <div className="cs-injury-card">
+                  <span className="cs-injury-icon">🤕</span>
+                  <div className="cs-injury-content">
+                    <span className="cs-injury-title">{offseasonInjury.label}</span>
+                    <span className="cs-injury-desc">{offseasonInjury.desc}</span>
+                    <span className="cs-injury-effects">
+                      {Object.entries(offseasonInjury.effects).map(([k,v]) =>
+                        `${ATTRS.find(a=>a.key===k)?.label} ${v}`).join(" · ")}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {olympicResult && (
+                <div className={`cs-olympic-result ${olympicResult.wonGold ? "gold" : ""}`}>
+                  <div className="cs-olympic-result-top">
+                    <span className="cs-olympic-result-icon">
+                      {olympicResult.medal?.includes("Gold") ? "🥇"
+                        : olympicResult.medal?.includes("Silver") ? "🥈"
+                        : olympicResult.medal?.includes("Bronze") ? "🥉" : "🎾"}
+                    </span>
+                    <div>
+                      <span className="cs-olympic-result-title">
+                        {olympicResult.year} Olympics · {olympicResult.flag} {olympicResult.city}
+                      </span>
+                      <span className="cs-olympic-result-medal">{olympicResult.medal}</span>
+                      <span className="cs-olympic-result-detail">
+                        {olympicResult.surface} court · {olympicResult.venue}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="cs-upgrade-section">
+                <h3 className="cs-upgrade-title">Off-season investment</h3>
+                <p className="cs-upgrade-sub">Tap once to preview, tap again to confirm.</p>
+                <div className="cs-upgrade-grid">
+                  {offseasonUpgrades.map(u => {
+                    const armed = upgradeArmed === u.id;
+                    return (
+                      <button key={u.id}
+                        className={`cs-upgrade-btn ${u.recovery ? "recovery" : ""} ${armed ? "armed" : ""}`}
+                        onClick={() => {
+                          if (armed) applyUpgrade(u);
+                          else setUpgradeArmed(u.id);
+                        }}>
+                        <span className="cs-upgrade-label">{u.label}</span>
+                        <span className="cs-upgrade-desc">{u.desc}</span>
+                        <div className="cs-upgrade-effects">
+                          {Object.entries(u.effects).map(([k, v]) => (
+                            <span key={k} className={`cs-upgrade-effect ${v > 0 ? "pos" : "neg"}`}>
+                              {ATTRS.find(a => a.key === k)?.label} {v > 0 ? `+${v}` : v}
+                            </span>
+                          ))}
+                          {u.longevity > 0 && <span className="cs-upgrade-effect pos">+{u.longevity} longevity</span>}
+                          {u.longevity < 0 && <span className="cs-upgrade-effect neg">{u.longevity} longevity</span>}
+                          {Object.keys(u.effects).length === 0 && <span className="cs-upgrade-effect pos">Body recovery</span>}
+                        </div>
+                        {armed && <span className="cs-upgrade-confirm">Tap again to confirm ✓</span>}
+                        {u.warning && !armed && <span className="cs-upgrade-warning">⚠ {u.warning}</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Current stats panel — helps you decide where to invest */}
+                <details className="cs-stats-panel">
+                  <summary>View current stats ▾</summary>
+                  <div className="cs-stats-grid">
+                    {ATTRS.map(a => {
+                      const val = offseasonPendingBuild?.[a.key]?.rating;
+                      const pct = val ? Math.round((val / 99) * 100) : 0;
+                      const tier = val >= 90 ? "elite" : val >= 80 ? "strong" : val >= 70 ? "solid" : "weak";
+                      return (
+                        <div key={a.key} className="cs-stat-row">
+                          <span className="cs-stat-label">{a.label}</span>
+                          <div className="cs-stat-bar-track">
+                            <div className={`cs-stat-bar cs-stat-${tier}`} style={{width:`${pct}%`}} />
+                          </div>
+                          <span className="cs-stat-val">{val ?? "—"}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </details>
+              </div>
+
+              {retirementPrompt && (
+                <div className="cs-retirement-prompt">
+                  <p>Your peak years may be behind you. Retire now and celebrate your legacy?</p>
+                  <div className="cs-retire-actions">
+                    <button className="cs-cta" onClick={retire}>Retire →</button>
+                    <button className="cs-text-btn" onClick={() => setRetirementPrompt(false)}>Keep going</button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </section>
       )}
@@ -1902,6 +2255,15 @@ export default function CalendarSlam() {
           build={build}
           tourLabel={T.label}
           onClose={() => setShowCard(false)}
+        />
+      )}
+
+      {showRivalModal && careerRival && (
+        <RivalModal
+          rival={careerRival}
+          playerName={playerName}
+          playerFlag={playerFlag}
+          onClose={() => setShowRivalModal(false)}
         />
       )}
     </div>
@@ -2119,6 +2481,9 @@ body { background: #1f6b3f; margin: 0; }
 .cs-leg.slam-rg { border-left-color:#e07a3f; }
 .cs-leg.slam-wim { border-left-color:#5a2d82; }
 .cs-leg.slam-uso { border-left-color:#1a8fd0; }
+.cs-leg.cs-leg-olympics { border-left-color:#ffd700; background:rgba(255,215,0,.07); }
+.cs-leg.cs-leg-olympics .cs-leg-name { color:#ffd700; }
+.cs-leg.cs-leg-olympics.win { background:rgba(255,215,0,.14); }
 
 .cs-tier-eyebrow { font-size:10px; letter-spacing:.18em; text-transform:uppercase; font-weight:800; color:var(--dim); margin-bottom:4px; }
 .cs-sim-prompt { text-align:center; margin-bottom:22px; display:flex; flex-direction:column; align-items:center; gap:12px; }
@@ -2257,6 +2622,72 @@ body { background: #1f6b3f; margin: 0; }
 .cs-olympic-result-detail { display:block; font-size:12px; color:var(--dim); }
 
 /* ---- END CAREER MODE CSS ---- */
+
+/* Newspaper rivalry modal */
+.cs-rival-modal { align-items:flex-start; padding-top:40px; }
+.cs-newspaper { background:#f5f0e4; color:#1a1205; max-width:460px; width:100%; border-radius:4px; padding:0 0 24px; box-shadow:0 8px 40px rgba(0,0,0,.5); }
+.cs-newspaper-header { display:flex; justify-content:space-between; align-items:baseline; padding:14px 20px 10px; border-bottom:3px solid #1a1205; }
+.cs-newspaper-name { font-family:"Barlow Condensed",serif; font-weight:900; font-size:22px; letter-spacing:.08em; text-transform:uppercase; color:#1a1205; }
+.cs-newspaper-date { font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:#555; font-weight:700; }
+.cs-newspaper-rule { border:none; border-top:2px solid #1a1205; margin:0 20px; }
+.cs-newspaper-rule-thin { border-top-width:1px; margin:8px 20px; }
+.cs-newspaper-headline { font-family:"Barlow Condensed",serif; font-weight:900; font-size:clamp(22px,5vw,32px); line-height:1.05; text-transform:uppercase; margin:14px 20px 8px; color:#1a1205; }
+.cs-newspaper-subhead { font-size:13px; font-weight:700; margin:0 20px 10px; color:#444; }
+.cs-newspaper-body { font-size:14px; line-height:1.65; margin:0 20px 12px; color:#2a1f10; }
+.cs-newspaper-caption { font-size:12px; line-height:1.55; margin:0 20px 18px; color:#555; font-style:italic; }
+.cs-newspaper-close { margin:0 20px; font-size:15px; padding:11px 24px; }
+
+/* Season press report card in offseason */
+.cs-season-report-card { background:#f5f0e4; border-radius:6px; padding:16px 18px; margin-bottom:18px; }
+.cs-report-source { font-size:10px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:#888; margin-bottom:6px; }
+.cs-report-headline { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:20px; text-transform:uppercase; color:#1a1205; margin:0 0 8px; line-height:1.1; }
+.cs-report-body { font-size:13.5px; line-height:1.6; color:#2a1f10; margin:0; }
+
+/* Press quote section */
+.cs-press-report { background:#f5f0e4; border-radius:6px; padding:16px 18px; margin-bottom:18px; }
+.cs-press-header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; border-bottom:2px solid #1a1205; padding-bottom:8px; }
+.cs-press-masthead { font-family:"Barlow Condensed",sans-serif; font-weight:900; font-size:16px; letter-spacing:.1em; text-transform:uppercase; color:#1a1205; }
+.cs-press-edition { font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:#666; }
+.cs-press-headline { font-family:"Barlow Condensed",sans-serif; font-weight:900; font-size:22px; text-transform:uppercase; line-height:1.05; color:#1a1205; margin:0 0 10px; }
+.cs-press-body { font-size:13px; line-height:1.65; color:#2a1f10; margin:0; white-space:pre-line; }
+.cs-quote-section { margin-bottom:24px; }
+.cs-quote-grid { display:flex; flex-direction:column; gap:8px; margin:12px 0 16px; }
+.cs-quote-btn { text-align:left; background:rgba(246,251,239,.06); border:1.5px solid var(--line-soft); border-radius:6px; padding:12px 14px; cursor:pointer; font-size:13.5px; line-height:1.5; color:var(--chalk); font-style:italic; transition:.18s; }
+.cs-quote-btn:hover { border-color:var(--ball); background:rgba(216,240,0,.08); }
+.cs-quote-btn.chosen { border-color:var(--ball); background:rgba(216,240,0,.12); color:var(--chalk); }
+.cs-press-continue { margin-top:4px; }
+
+/* Trophy cabinet */
+.cs-trophy-cabinet { margin-bottom:18px; }
+.cs-trophy-label { font-size:10px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--dim); display:block; margin-bottom:8px; }
+.cs-trophy-row { display:flex; gap:8px; flex-wrap:wrap; }
+.cs-trophy { display:flex; flex-direction:column; align-items:center; gap:2px; padding:8px 10px; border-radius:8px; min-width:52px; }
+.cs-trophy.slam-ao  { background:linear-gradient(135deg,#1a5fb8,#2b7de9); }
+.cs-trophy.slam-rg  { background:linear-gradient(135deg,#b84a1a,#e07a3f); }
+.cs-trophy.slam-wim { background:linear-gradient(135deg,#3d1a6b,#5a2d82); }
+.cs-trophy.slam-uso { background:linear-gradient(135deg,#0e6fa0,#1a8fd0); }
+.cs-trophy.cs-trophy-gold { background:linear-gradient(135deg,#b8860b,#ffd700); }
+.cs-trophy-icon { font-size:20px; }
+.cs-trophy-name { font-size:9px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:rgba(255,255,255,.9); }
+.cs-trophy-year { font-size:9px; color:rgba(255,255,255,.65); }
+
+/* Stats panel in offseason */
+.cs-stats-panel { margin-top:18px; }
+.cs-stats-panel summary { cursor:pointer; font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--dim); padding:6px 0; }
+.cs-stats-grid { display:flex; flex-direction:column; gap:6px; margin-top:10px; }
+.cs-stat-row { display:grid; grid-template-columns:90px 1fr 36px; align-items:center; gap:8px; }
+.cs-stat-label { font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--dim); }
+.cs-stat-bar-track { height:8px; background:rgba(14,42,26,.45); border-radius:4px; overflow:hidden; }
+.cs-stat-bar { height:100%; border-radius:4px; transition:width .3s ease; }
+.cs-stat-elite { background:var(--ball); }
+.cs-stat-strong { background:var(--grass); }
+.cs-stat-solid { background:var(--hard); }
+.cs-stat-weak { background:var(--clay); }
+.cs-stat-val { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:16px; color:var(--chalk); text-align:right; }
+
+/* Upgrade armed state */
+.cs-upgrade-btn.armed { border-color:var(--ball); background:rgba(216,240,0,.1); transform:translateX(6px); }
+.cs-upgrade-confirm { font-size:11px; font-weight:800; color:var(--ball); text-transform:uppercase; letter-spacing:.06em; margin-top:4px; }
 
 .cs-begin-season { display:flex; flex-direction:column; align-items:center; text-align:center; padding:40px 0 28px; gap:20px; }
 .cs-begin-copy { display:flex; flex-direction:column; gap:8px; }
