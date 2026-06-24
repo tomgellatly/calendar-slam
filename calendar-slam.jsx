@@ -1022,8 +1022,9 @@ export default function CalendarSlam() {
     setEliteUsed(false);
     setRound(0);
     setRetirementPrompt(false);
-    setPhase("draft");
-    spinNext([], false);
+    // Go straight to result screen (which shows "Begin season X") —
+    // no new draft needed, the build carries over with the upgrade applied.
+    setPhase("result");
   }
 
   // Career: retire and show the hall of fame summary.
@@ -1370,49 +1371,73 @@ export default function CalendarSlam() {
 
       {phase === "intro" && (
         <section className="cs-intro">
-          <div className="cs-intro-tour">{T.label} · {T.sub}</div>
-          <h1 className="cs-h1">
-            Can your player win<br />
-            <em>all four majors</em> in one year?
-          </h1>
-          <p className="cs-lede">
-            Spin real players from different eras, draft their iconic weapons, and
-            build a tennis god. But beware — to win it all, you must conquer every
-            surface.
-          </p>
-          <p className="cs-lede">
-            Watch your <strong>Hard</strong>, <strong>Clay</strong> and{" "}
-            <strong>Grass</strong> meters closely with every draft pick. Can you
-            build the ultimate all-court champion and sweep the majors?
-          </p>
-
-          <div className="cs-surfaces">
-            {SLAMS.map((s) => (
-              <div key={s.key} className={`cs-surface-chip slam-${s.key}`}>
-                <span className="cs-chip-name">{s.name}</span>
-                <span className="cs-chip-surface">{s.surface}</span>
+          {gameMode === "career" ? (
+            <>
+              <div className="cs-intro-tour">Career Mode · {T.label} · Season 1</div>
+              <h1 className="cs-h1">
+                Build your <em>player</em> from scratch.
+              </h1>
+              <p className="cs-lede">
+                Spin legends from different eras and draft their iconic weapons into your player's game.
+                You have <strong>10 picks</strong> — choose wisely. This build will carry through your career,
+                shaped by coaches, injuries and the passage of time.
+              </p>
+              <div className="cs-surfaces">
+                {SLAMS.map((s) => (
+                  <div key={s.key} className={`cs-surface-chip slam-${s.key}`}>
+                    <span className="cs-chip-name">{s.name}</span>
+                    <span className="cs-chip-surface">{s.surface}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-
-          <div className="cs-difficulty">
-            <span className="cs-diff-label">Mode</span>
-            <button
-              className={`cs-diff-btn ${difficulty === "normal" ? "active" : ""}`}
-              onClick={() => setDifficulty("normal")}
-            >Normal</button>
-            <button
-              className={`cs-diff-btn ${difficulty === "challenge" ? "active" : ""}`}
-              onClick={() => setDifficulty("challenge")}
-            >Challenge</button>
-            {difficulty === "challenge" && (
-              <span className="cs-diff-hint">One elite pick, nine journeymen</span>
-            )}
-          </div>
-
-          <div className="cs-intro-actions">
-            <button className="cs-cta" onClick={startDraft}>Start drafting →</button>
-          </div>
+              <div className="cs-intro-actions">
+                <button className="cs-cta" onClick={startDraft}>Begin the draft →</button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="cs-intro-tour">{T.label} · {T.sub}</div>
+              <h1 className="cs-h1">
+                Can your player win<br />
+                <em>all four majors</em> in one year?
+              </h1>
+              <p className="cs-lede">
+                Spin real players from different eras, draft their iconic weapons, and
+                build a tennis god. But beware — to win it all, you must conquer every
+                surface.
+              </p>
+              <p className="cs-lede">
+                Watch your <strong>Hard</strong>, <strong>Clay</strong> and{" "}
+                <strong>Grass</strong> meters closely with every draft pick. Can you
+                build the ultimate all-court champion and sweep the majors?
+              </p>
+              <div className="cs-surfaces">
+                {SLAMS.map((s) => (
+                  <div key={s.key} className={`cs-surface-chip slam-${s.key}`}>
+                    <span className="cs-chip-name">{s.name}</span>
+                    <span className="cs-chip-surface">{s.surface}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="cs-difficulty">
+                <span className="cs-diff-label">Mode</span>
+                <button
+                  className={`cs-diff-btn ${difficulty === "normal" ? "active" : ""}`}
+                  onClick={() => setDifficulty("normal")}
+                >Normal</button>
+                <button
+                  className={`cs-diff-btn ${difficulty === "challenge" ? "active" : ""}`}
+                  onClick={() => setDifficulty("challenge")}
+                >Challenge</button>
+                {difficulty === "challenge" && (
+                  <span className="cs-diff-hint">One elite pick, nine journeymen</span>
+                )}
+              </div>
+              <div className="cs-intro-actions">
+                <button className="cs-cta" onClick={startDraft}>Start drafting →</button>
+              </div>
+            </>
+          )}
         </section>
       )}
 
