@@ -39,48 +39,70 @@ const SURFACE_WEIGHTS = {
 // --- Player pools. Ratings are illustrative estimates, NOT real data. --------
 // Each player: stats, country flag (emoji), and a one-line career fact.
 const POOL_ATP = [
-  { name: "Pete Sampras", flag: "🇺🇸", fact: "Serve-and-volley king who ruled the grass of the 1990s.", stats: { serve: 97, return: 78, forehand: 90, backhand: 84, net: 95, movement: 86, defence: 80, stamina: 84, mental: 92, touch: 88 } },
-  { name: "Andre Agassi", flag: "🇺🇸", fact: "The great returner whose ball-striking redefined the baseline.", stats: { serve: 80, return: 96, forehand: 93, backhand: 92, net: 78, movement: 85, defence: 88, stamina: 86, mental: 84, touch: 80 } },
-  { name: "Roger Federer", flag: "🇨🇭", fact: "The most elegant all-courter the game has ever seen.", stats: { serve: 92, return: 86, forehand: 97, backhand: 84, net: 92, movement: 95, defence: 88, stamina: 90, mental: 93, touch: 96 } },
-  { name: "Rafael Nadal", flag: "🇪🇸", fact: "The King of Clay, famed for relentless topspin and iron will.", stats: { serve: 85, return: 92, forehand: 98, backhand: 88, net: 82, movement: 96, defence: 97, stamina: 98, mental: 97, touch: 84 } },
-  { name: "Novak Djokovic", flag: "🇷🇸", fact: "The supreme returner and defender, bending matches to his will.", stats: { serve: 88, return: 99, forehand: 92, backhand: 97, net: 84, movement: 97, defence: 96, stamina: 96, mental: 95, touch: 86 } },
-  { name: "Ivan Lendl", flag: "🇨🇿", fact: "The ruthless baseliner who industrialised the modern forehand.", stats: { serve: 88, return: 84, forehand: 94, backhand: 86, net: 76, movement: 84, defence: 86, stamina: 92, mental: 90, touch: 74 } },
-  { name: "Boris Becker", flag: "🇩🇪", fact: "The diving teenage Wimbledon champion with a thunderous serve.", stats: { serve: 95, return: 80, forehand: 88, backhand: 82, net: 93, movement: 82, defence: 78, stamina: 82, mental: 86, touch: 82 } },
-  { name: "Stefan Edberg", flag: "🇸🇪", fact: "The most graceful serve-and-volleyer of his generation.", stats: { serve: 89, return: 82, forehand: 80, backhand: 88, net: 97, movement: 90, defence: 84, stamina: 84, mental: 85, touch: 90 } },
-  { name: "Bjorn Borg", flag: "🇸🇪", fact: "The ice-cool baseliner who conquered both clay and grass.", stats: { serve: 86, return: 88, forehand: 92, backhand: 90, net: 80, movement: 94, defence: 93, stamina: 96, mental: 96, touch: 82 } },
-  { name: "John McEnroe", flag: "🇺🇸", fact: "A touch artist at net with the finest hands in the game.", stats: { serve: 87, return: 86, forehand: 84, backhand: 82, net: 96, movement: 88, defence: 82, stamina: 80, mental: 78, touch: 98 } },
-  { name: "Andy Murray", flag: "🇬🇧", fact: "A brilliant counterpuncher and one of the best returners around.", stats: { serve: 84, return: 94, forehand: 86, backhand: 90, net: 85, movement: 93, defence: 95, stamina: 92, mental: 84, touch: 90 } },
-  { name: "Stan Wawrinka", flag: "🇨🇭", fact: "Owner of perhaps the most devastating one-handed backhand ever.", stats: { serve: 88, return: 84, forehand: 90, backhand: 96, net: 80, movement: 82, defence: 82, stamina: 84, mental: 82, touch: 84 } },
-  { name: "Juan M. del Potro", flag: "🇦🇷", fact: "A gentle giant whose forehand was one of the heaviest in history.", stats: { serve: 91, return: 82, forehand: 98, backhand: 80, net: 78, movement: 78, defence: 80, stamina: 82, mental: 84, touch: 72 } },
-  { name: "Goran Ivanisevic", flag: "🇭🇷", fact: "A wildcard with a left-handed serve that bordered on unplayable.", stats: { serve: 99, return: 70, forehand: 82, backhand: 76, net: 86, movement: 76, defence: 70, stamina: 78, mental: 74, touch: 76 } },
-  { name: "Gustavo Kuerten", flag: "🇧🇷", fact: "The joyful Brazilian whose topspin made him a clay-court hero.", stats: { serve: 84, return: 84, forehand: 93, backhand: 86, net: 78, movement: 88, defence: 90, stamina: 90, mental: 86, touch: 88 } },
-  { name: "Marat Safin", flag: "🇷🇺", fact: "A mercurial talent with raw power off both wings.", stats: { serve: 93, return: 86, forehand: 92, backhand: 90, net: 82, movement: 84, defence: 82, stamina: 80, mental: 70, touch: 80 } },
+  { name: "Pete Sampras",       flag: "🇺🇸", fact: "Serve-and-volley king who ruled the grass of the 1990s.", stats: { serve: 97, return: 78, forehand: 90, backhand: 84, net: 95, movement: 86, defence: 80, stamina: 84, mental: 92, touch: 88 } },
+  { name: "Andre Agassi",       flag: "🇺🇸", fact: "The great returner whose ball-striking redefined the baseline.", stats: { serve: 80, return: 96, forehand: 93, backhand: 92, net: 78, movement: 85, defence: 88, stamina: 86, mental: 84, touch: 80 } },
+  { name: "Roger Federer",      flag: "🇨🇭", fact: "The most elegant all-courter the game has ever seen.", stats: { serve: 92, return: 86, forehand: 97, backhand: 84, net: 92, movement: 95, defence: 88, stamina: 90, mental: 93, touch: 96 } },
+  { name: "Rafael Nadal",       flag: "🇪🇸", fact: "The King of Clay, famed for relentless topspin and iron will.", stats: { serve: 85, return: 92, forehand: 98, backhand: 88, net: 82, movement: 96, defence: 97, stamina: 98, mental: 97, touch: 84 } },
+  { name: "Novak Djokovic",     flag: "🇷🇸", fact: "The supreme returner and defender, bending matches to his will.", stats: { serve: 88, return: 99, forehand: 92, backhand: 97, net: 84, movement: 97, defence: 96, stamina: 96, mental: 95, touch: 86 } },
+  { name: "Ivan Lendl",         flag: "🇨🇿", fact: "The ruthless baseliner who industrialised the modern forehand.", stats: { serve: 88, return: 84, forehand: 94, backhand: 86, net: 76, movement: 84, defence: 86, stamina: 92, mental: 90, touch: 74 } },
+  { name: "Boris Becker",       flag: "🇩🇪", fact: "The diving teenage Wimbledon champion with a thunderous serve.", stats: { serve: 95, return: 80, forehand: 88, backhand: 82, net: 93, movement: 82, defence: 78, stamina: 82, mental: 86, touch: 82 } },
+  { name: "Stefan Edberg",      flag: "🇸🇪", fact: "The most graceful serve-and-volleyer of his generation.", stats: { serve: 89, return: 82, forehand: 80, backhand: 88, net: 97, movement: 90, defence: 84, stamina: 84, mental: 85, touch: 90 } },
+  { name: "Bjorn Borg",         flag: "🇸🇪", fact: "The ice-cool baseliner who conquered both clay and grass.", stats: { serve: 86, return: 88, forehand: 92, backhand: 90, net: 80, movement: 94, defence: 93, stamina: 96, mental: 96, touch: 82 } },
+  { name: "John McEnroe",       flag: "🇺🇸", fact: "A touch artist at net with the finest hands in the game.", stats: { serve: 87, return: 86, forehand: 84, backhand: 82, net: 96, movement: 88, defence: 82, stamina: 80, mental: 78, touch: 98 } },
+  { name: "Andy Murray",        flag: "🇬🇧", fact: "A brilliant counterpuncher and one of the best returners around.", stats: { serve: 84, return: 94, forehand: 86, backhand: 90, net: 85, movement: 93, defence: 95, stamina: 92, mental: 84, touch: 90 } },
+  { name: "Stan Wawrinka",      flag: "🇨🇭", fact: "Owner of perhaps the most devastating one-handed backhand ever.", stats: { serve: 88, return: 84, forehand: 90, backhand: 96, net: 80, movement: 82, defence: 82, stamina: 84, mental: 82, touch: 84 } },
+  { name: "Juan M. del Potro",  flag: "🇦🇷", fact: "A gentle giant whose forehand was one of the heaviest in history.", stats: { serve: 91, return: 82, forehand: 98, backhand: 80, net: 78, movement: 78, defence: 80, stamina: 82, mental: 84, touch: 72 } },
+  { name: "Goran Ivanisevic",   flag: "🇭🇷", fact: "A wildcard with a left-handed serve that bordered on unplayable.", stats: { serve: 99, return: 70, forehand: 82, backhand: 76, net: 86, movement: 76, defence: 70, stamina: 78, mental: 74, touch: 76 } },
+  { name: "Gustavo Kuerten",    flag: "🇧🇷", fact: "The joyful Brazilian whose topspin made him a clay-court hero.", stats: { serve: 84, return: 84, forehand: 93, backhand: 86, net: 78, movement: 88, defence: 90, stamina: 90, mental: 86, touch: 88 } },
+  { name: "Marat Safin",        flag: "🇷🇺", fact: "A mercurial talent with raw power off both wings.", stats: { serve: 93, return: 86, forehand: 92, backhand: 90, net: 82, movement: 84, defence: 82, stamina: 80, mental: 70, touch: 80 } },
+  { name: "Jim Courier",        flag: "🇺🇸", fact: "A ferociously fit baseliner who dominated clay in the early 1990s.", stats: { serve: 84, return: 86, forehand: 94, backhand: 82, net: 76, movement: 88, defence: 88, stamina: 95, mental: 88, touch: 76 } },
+  { name: "Thomas Muster",      flag: "🇦🇹", fact: "The unstoppable clay-court machine with relentless topspin.", stats: { serve: 78, return: 88, forehand: 94, backhand: 82, net: 72, movement: 90, defence: 92, stamina: 98, mental: 90, touch: 76 } },
+  { name: "Patrick Rafter",     flag: "🇦🇺", fact: "A serve-and-volley artist who made grass his personal playground.", stats: { serve: 90, return: 80, forehand: 82, backhand: 84, net: 95, movement: 86, defence: 80, stamina: 82, mental: 88, touch: 88 } },
+  { name: "Lleyton Hewitt",     flag: "🇦🇺", fact: "A relentless retriever whose fighting spirit was unmatched.", stats: { serve: 82, return: 94, forehand: 86, backhand: 84, net: 80, movement: 96, defence: 96, stamina: 94, mental: 94, touch: 84 } },
+  { name: "Yevgeny Kafelnikov", flag: "🇷🇺", fact: "A complete all-court player who won on both clay and hard.", stats: { serve: 84, return: 86, forehand: 90, backhand: 88, net: 82, movement: 84, defence: 84, stamina: 86, mental: 82, touch: 80 } },
+  { name: "Michael Chang",      flag: "🇺🇸", fact: "The youngest male Slam champion, famed for extraordinary defence.", stats: { serve: 74, return: 90, forehand: 84, backhand: 84, net: 72, movement: 96, defence: 97, stamina: 98, mental: 92, touch: 86 } },
+  { name: "Tommy Haas",         flag: "🇩🇪", fact: "A stylish all-courter who consistently troubled the very best.", stats: { serve: 90, return: 82, forehand: 90, backhand: 86, net: 84, movement: 86, defence: 82, stamina: 80, mental: 80, touch: 84 } },
+  { name: "David Ferrer",       flag: "🇪🇸", fact: "The tireless workhorse who punched well above his talent level.", stats: { serve: 80, return: 88, forehand: 88, backhand: 84, net: 76, movement: 94, defence: 94, stamina: 99, mental: 92, touch: 78 } },
+  { name: "Robin Soderling",    flag: "🇸🇪", fact: "The only man to beat Nadal at Roland Garros during his peak.", stats: { serve: 90, return: 82, forehand: 95, backhand: 82, net: 78, movement: 80, defence: 80, stamina: 82, mental: 80, touch: 74 } },
+  { name: "Andy Roddick",       flag: "🇺🇸", fact: "A US Open champion with one of the hardest serves in history.", stats: { serve: 97, return: 80, forehand: 90, backhand: 78, net: 80, movement: 82, defence: 78, stamina: 84, mental: 84, touch: 74 } },
+  { name: "Nikolay Davydenko",  flag: "🇷🇺", fact: "A technically pristine baseliner who troubled every top player.", stats: { serve: 80, return: 86, forehand: 88, backhand: 88, net: 78, movement: 88, defence: 86, stamina: 90, mental: 82, touch: 82 } },
   // Current era
-  { name: "Jannik Sinner", flag: "🇮🇹", fact: "The ice-cold Italian No. 1 with flat, relentless ball-striking.", stats: { serve: 90, return: 92, forehand: 95, backhand: 94, net: 82, movement: 92, defence: 90, stamina: 92, mental: 93, touch: 80 } },
-  { name: "Carlos Alcaraz", flag: "🇪🇸", fact: "The electric all-court prodigy with dazzling variety.", stats: { serve: 88, return: 90, forehand: 96, backhand: 88, net: 90, movement: 97, defence: 92, stamina: 93, mental: 90, touch: 95 } },
-  { name: "Alexander Zverev", flag: "🇩🇪", fact: "A towering baseliner with a heavy serve and clay-court grit.", stats: { serve: 94, return: 86, forehand: 88, backhand: 92, net: 80, movement: 86, defence: 86, stamina: 88, mental: 80, touch: 78 } },
-  { name: "Daniil Medvedev", flag: "🇷🇺", fact: "An unorthodox counterpuncher who defends from deep behind the line.", stats: { serve: 88, return: 94, forehand: 86, backhand: 88, net: 76, movement: 90, defence: 95, stamina: 90, mental: 82, touch: 80 } },
-  { name: "Ben Shelton", flag: "🇺🇸", fact: "A young American powerhouse with an explosive lefty serve.", stats: { serve: 96, return: 80, forehand: 92, backhand: 80, net: 82, movement: 84, defence: 78, stamina: 84, mental: 82, touch: 76 } },
+  { name: "Jannik Sinner",      flag: "🇮🇹", fact: "The ice-cold Italian No. 1 with flat, relentless ball-striking.", stats: { serve: 90, return: 92, forehand: 95, backhand: 94, net: 82, movement: 92, defence: 90, stamina: 92, mental: 93, touch: 80 } },
+  { name: "Carlos Alcaraz",     flag: "🇪🇸", fact: "The electric all-court prodigy with dazzling variety.", stats: { serve: 88, return: 90, forehand: 96, backhand: 88, net: 90, movement: 97, defence: 92, stamina: 93, mental: 90, touch: 95 } },
+  { name: "Alexander Zverev",   flag: "🇩🇪", fact: "A towering baseliner with a heavy serve and clay-court grit.", stats: { serve: 94, return: 86, forehand: 88, backhand: 92, net: 80, movement: 86, defence: 86, stamina: 88, mental: 80, touch: 78 } },
+  { name: "Daniil Medvedev",    flag: "🇷🇺", fact: "An unorthodox counterpuncher who defends from deep behind the line.", stats: { serve: 88, return: 94, forehand: 86, backhand: 88, net: 76, movement: 90, defence: 95, stamina: 90, mental: 82, touch: 80 } },
+  { name: "Ben Shelton",        flag: "🇺🇸", fact: "A young American powerhouse with an explosive lefty serve.", stats: { serve: 96, return: 80, forehand: 92, backhand: 80, net: 82, movement: 84, defence: 78, stamina: 84, mental: 82, touch: 76 } },
+  { name: "Holger Rune",        flag: "🇩🇰", fact: "A fiery competitor with huge talent and all-court aggression.", stats: { serve: 88, return: 84, forehand: 90, backhand: 86, net: 82, movement: 86, defence: 82, stamina: 82, mental: 78, touch: 82 } },
+  { name: "Felix Auger-Aliassime", flag:"🇨🇦", fact:"A serve-and-forehand powerhouse who thrives on fast surfaces.", stats: { serve: 92, return: 82, forehand: 90, backhand: 82, net: 84, movement: 86, defence: 80, stamina: 84, mental: 80, touch: 78 } },
+  { name: "Stefanos Tsitsipas", flag: "🇬🇷", fact: "A fluid one-handed backhand player with creative shot-making.", stats: { serve: 87, return: 83, forehand: 90, backhand: 88, net: 84, movement: 86, defence: 82, stamina: 84, mental: 80, touch: 88 } },
 ];
 
 const POOL_WTA = [
-  { name: "Serena Williams", flag: "🇺🇸", fact: "The most dominant force in women's tennis, with a colossal serve.", stats: { serve: 98, return: 90, forehand: 95, backhand: 92, net: 84, movement: 88, defence: 86, stamina: 90, mental: 97, touch: 82 } },
-  { name: "Steffi Graf", flag: "🇩🇪", fact: "Owner of a fearsome forehand and the only Golden Slam in history.", stats: { serve: 90, return: 88, forehand: 98, backhand: 84, net: 86, movement: 96, defence: 90, stamina: 94, mental: 96, touch: 84 } },
-  { name: "Martina Navratilova", flag: "🇺🇸", fact: "The serve-and-volley pioneer who redefined athleticism on tour.", stats: { serve: 92, return: 84, forehand: 88, backhand: 86, net: 98, movement: 92, defence: 84, stamina: 90, mental: 92, touch: 94 } },
-  { name: "Justine Henin", flag: "🇧🇪", fact: "A graceful all-courter with arguably the finest backhand in the game.", stats: { serve: 84, return: 90, forehand: 90, backhand: 98, net: 88, movement: 94, defence: 92, stamina: 88, mental: 90, touch: 92 } },
-  { name: "Monica Seles", flag: "🇷🇸", fact: "A ferocious two-fisted hitter who took the ball impossibly early.", stats: { serve: 84, return: 94, forehand: 95, backhand: 96, net: 76, movement: 84, defence: 86, stamina: 86, mental: 88, touch: 78 } },
-  { name: "Venus Williams", flag: "🇺🇸", fact: "A grass-court great with a huge serve and explosive movement.", stats: { serve: 94, return: 84, forehand: 90, backhand: 86, net: 86, movement: 94, defence: 84, stamina: 88, mental: 86, touch: 80 } },
-  { name: "Chris Evert", flag: "🇺🇸", fact: "The metronomic baseliner whose consistency was almost inhuman.", stats: { serve: 78, return: 90, forehand: 90, backhand: 94, net: 74, movement: 88, defence: 96, stamina: 92, mental: 96, touch: 84 } },
-  { name: "Martina Hingis", flag: "🇨🇭", fact: "A tactical genius who out-thought opponents with guile and angles.", stats: { serve: 78, return: 88, forehand: 84, backhand: 86, net: 90, movement: 92, defence: 90, stamina: 84, mental: 90, touch: 96 } },
-  { name: "Maria Sharapova", flag: "🇷🇺", fact: "A fierce competitor with flat, penetrating groundstrokes.", stats: { serve: 90, return: 86, forehand: 92, backhand: 92, net: 76, movement: 80, defence: 82, stamina: 86, mental: 94, touch: 74 } },
-  { name: "Kim Clijsters", flag: "🇧🇪", fact: "A supreme athlete famed for sliding splits and elastic defence.", stats: { serve: 86, return: 90, forehand: 90, backhand: 88, net: 84, movement: 95, defence: 94, stamina: 88, mental: 86, touch: 84 } },
+  { name: "Serena Williams",    flag: "🇺🇸", fact: "The most dominant force in women's tennis, with a colossal serve.", stats: { serve: 98, return: 90, forehand: 95, backhand: 92, net: 84, movement: 88, defence: 86, stamina: 90, mental: 97, touch: 82 } },
+  { name: "Steffi Graf",        flag: "🇩🇪", fact: "Owner of a fearsome forehand and the only Golden Slam in history.", stats: { serve: 90, return: 88, forehand: 98, backhand: 84, net: 86, movement: 96, defence: 90, stamina: 94, mental: 96, touch: 84 } },
+  { name: "Martina Navratilova",flag: "🇺🇸", fact: "The serve-and-volley pioneer who redefined athleticism on tour.", stats: { serve: 92, return: 84, forehand: 88, backhand: 86, net: 98, movement: 92, defence: 84, stamina: 90, mental: 92, touch: 94 } },
+  { name: "Justine Henin",      flag: "🇧🇪", fact: "A graceful all-courter with arguably the finest backhand in the game.", stats: { serve: 84, return: 90, forehand: 90, backhand: 98, net: 88, movement: 94, defence: 92, stamina: 88, mental: 90, touch: 92 } },
+  { name: "Monica Seles",       flag: "🇷🇸", fact: "A ferocious two-fisted hitter who took the ball impossibly early.", stats: { serve: 84, return: 94, forehand: 95, backhand: 96, net: 76, movement: 84, defence: 86, stamina: 86, mental: 88, touch: 78 } },
+  { name: "Venus Williams",     flag: "🇺🇸", fact: "A grass-court great with a huge serve and explosive movement.", stats: { serve: 94, return: 84, forehand: 90, backhand: 86, net: 86, movement: 94, defence: 84, stamina: 88, mental: 86, touch: 80 } },
+  { name: "Chris Evert",        flag: "🇺🇸", fact: "The metronomic baseliner whose consistency was almost inhuman.", stats: { serve: 78, return: 90, forehand: 90, backhand: 94, net: 74, movement: 88, defence: 96, stamina: 92, mental: 96, touch: 84 } },
+  { name: "Martina Hingis",     flag: "🇨🇭", fact: "A tactical genius who out-thought opponents with guile and angles.", stats: { serve: 78, return: 88, forehand: 84, backhand: 86, net: 90, movement: 92, defence: 90, stamina: 84, mental: 90, touch: 96 } },
+  { name: "Maria Sharapova",    flag: "🇷🇺", fact: "A fierce competitor with flat, penetrating groundstrokes.", stats: { serve: 90, return: 86, forehand: 92, backhand: 92, net: 76, movement: 80, defence: 82, stamina: 86, mental: 94, touch: 74 } },
+  { name: "Kim Clijsters",      flag: "🇧🇪", fact: "A supreme athlete famed for sliding splits and elastic defence.", stats: { serve: 86, return: 90, forehand: 90, backhand: 88, net: 84, movement: 95, defence: 94, stamina: 88, mental: 86, touch: 84 } },
+  { name: "Lindsay Davenport",  flag: "🇺🇸", fact: "A powerful flat hitter who dominated on hard courts.", stats: { serve: 88, return: 84, forehand: 90, backhand: 86, net: 82, movement: 80, defence: 82, stamina: 84, mental: 86, touch: 78 } },
+  { name: "Victoria Azarenka",  flag: "🇧🇾", fact: "A two-handed powerhouse who pressured from every part of the court.", stats: { serve: 84, return: 90, forehand: 90, backhand: 86, net: 78, movement: 90, defence: 90, stamina: 88, mental: 84, touch: 78 } },
+  { name: "Arantxa Sanchez-Vicario", flag:"🇪🇸", fact:"A relentless clay-court fighter with incredible defence.", stats: { serve: 74, return: 90, forehand: 86, backhand: 84, net: 78, movement: 94, defence: 96, stamina: 96, mental: 90, touch: 84 } },
+  { name: "Mary Pierce",        flag: "🇫🇷", fact: "A French Open and Australian Open champion with a powerful game.", stats: { serve: 86, return: 82, forehand: 92, backhand: 84, net: 80, movement: 82, defence: 80, stamina: 82, mental: 82, touch: 78 } },
+  { name: "Amelie Mauresmo",    flag: "🇫🇷", fact: "A versatile all-courter with an exceptional serve-and-volley game.", stats: { serve: 88, return: 84, forehand: 86, backhand: 90, net: 92, movement: 88, defence: 84, stamina: 84, mental: 84, touch: 88 } },
   // Current era
-  { name: "Aryna Sabalenka", flag: "🇧🇾", fact: "The current world No. 1, hitting with overwhelming power.", stats: { serve: 92, return: 88, forehand: 95, backhand: 92, net: 80, movement: 86, defence: 84, stamina: 88, mental: 88, touch: 78 } },
-  { name: "Iga Swiatek", flag: "🇵🇱", fact: "A clay-court phenomenon with heavy topspin and relentless movement.", stats: { serve: 86, return: 92, forehand: 96, backhand: 88, net: 80, movement: 95, defence: 93, stamina: 92, mental: 90, touch: 86 } },
-  { name: "Coco Gauff", flag: "🇺🇸", fact: "A lightning-quick defender with a booming serve and big future.", stats: { serve: 90, return: 90, forehand: 84, backhand: 92, net: 82, movement: 96, defence: 94, stamina: 90, mental: 86, touch: 84 } },
-  { name: "Elena Rybakina", flag: "🇰🇿", fact: "A grass-court force with one of the biggest serves on tour.", stats: { serve: 95, return: 84, forehand: 92, backhand: 86, net: 80, movement: 84, defence: 82, stamina: 86, mental: 86, touch: 78 } },
-  { name: "Jessica Pegula", flag: "🇺🇸", fact: "A clean, consistent ball-striker who takes time away from rivals.", stats: { serve: 84, return: 90, forehand: 90, backhand: 90, net: 82, movement: 88, defence: 90, stamina: 88, mental: 86, touch: 84 } },
-  { name: "Naomi Osaka", flag: "🇯🇵", fact: "A hard-court champion with a thunderous serve and forehand.", stats: { serve: 94, return: 84, forehand: 94, backhand: 86, net: 78, movement: 82, defence: 80, stamina: 84, mental: 84, touch: 76 } },
+  { name: "Aryna Sabalenka",    flag: "🇧🇾", fact: "The current world No. 1, hitting with overwhelming power.", stats: { serve: 92, return: 88, forehand: 95, backhand: 92, net: 80, movement: 86, defence: 84, stamina: 88, mental: 88, touch: 78 } },
+  { name: "Iga Swiatek",        flag: "🇵🇱", fact: "A clay-court phenomenon with heavy topspin and relentless movement.", stats: { serve: 86, return: 92, forehand: 96, backhand: 88, net: 80, movement: 95, defence: 93, stamina: 92, mental: 90, touch: 86 } },
+  { name: "Coco Gauff",         flag: "🇺🇸", fact: "A lightning-quick defender with a booming serve and big future.", stats: { serve: 90, return: 90, forehand: 84, backhand: 92, net: 82, movement: 96, defence: 94, stamina: 90, mental: 86, touch: 84 } },
+  { name: "Elena Rybakina",     flag: "🇰🇿", fact: "A grass-court force with one of the biggest serves on tour.", stats: { serve: 95, return: 84, forehand: 92, backhand: 86, net: 80, movement: 84, defence: 82, stamina: 86, mental: 86, touch: 78 } },
+  { name: "Jessica Pegula",     flag: "🇺🇸", fact: "A clean, consistent ball-striker who takes time away from rivals.", stats: { serve: 84, return: 90, forehand: 90, backhand: 90, net: 82, movement: 88, defence: 90, stamina: 88, mental: 86, touch: 84 } },
+  { name: "Naomi Osaka",        flag: "🇯🇵", fact: "A hard-court champion with a thunderous serve and forehand.", stats: { serve: 94, return: 84, forehand: 94, backhand: 86, net: 78, movement: 82, defence: 80, stamina: 84, mental: 84, touch: 76 } },
+  { name: "Simona Halep",       flag: "🇷🇴", fact: "A clay and grass champion with exceptional movement and defence.", stats: { serve: 80, return: 90, forehand: 88, backhand: 86, net: 80, movement: 94, defence: 94, stamina: 90, mental: 88, touch: 86 } },
+  { name: "Angelique Kerber",   flag: "🇩🇪", fact: "A left-handed defensive master who excelled on every surface.", stats: { serve: 80, return: 92, forehand: 84, backhand: 90, net: 78, movement: 92, defence: 96, stamina: 90, mental: 86, touch: 84 } },
+  { name: "Petra Kvitova",      flag: "🇨🇿", fact: "A two-time Wimbledon champion with a devastating lefty game.", stats: { serve: 88, return: 82, forehand: 88, backhand: 88, net: 86, movement: 86, defence: 80, stamina: 84, mental: 82, touch: 82 } },
 ];
 
 // --- The field: real current tour players. Each has a base level and
@@ -867,12 +889,45 @@ function shouldRetire(stats, consecutiveLowSeasons, age) {
 }
 
 // Pick 3 distinct upgrades for the off-season choice.
-function pickUpgrades(rng) {
-  const pool = [...UPGRADE_POOL];
+// Pick 3 upgrade options, filtering out any whose primary effect would be wasted
+// (stat already at 95+). Also trims effects so nothing advertises going over 99.
+function pickUpgrades(rng, currentBuild) {
+  const CAP = 99;
+  const NEAR_CAP = 95; // won't offer an upgrade whose main stat is already this high
+
+  // Filter: remove upgrades where ALL positive stat effects would be wasted
+  const useful = UPGRADE_POOL.filter(u => {
+    const positiveEffects = Object.entries(u.effects).filter(([,v]) => v > 0);
+    if (positiveEffects.length === 0) return true; // rest/recovery always valid
+    if (!currentBuild) return true;
+    return positiveEffects.some(([k]) => {
+      const cur = currentBuild[k]?.rating ?? 0;
+      return cur < NEAR_CAP;
+    });
+  });
+
+  // Use full pool as fallback if filtering left too few options
+  const pool = [...(useful.length >= 3 ? useful : UPGRADE_POOL)];
   const chosen = [];
   while (chosen.length < 3 && pool.length > 0) {
     const i = Math.floor(rng() * pool.length);
-    chosen.push(pool.splice(i, 1)[0]);
+    const u = pool.splice(i, 1)[0];
+    // Trim advertised effects to show realistic headroom
+    if (currentBuild) {
+      const trimmedEffects = {};
+      for (const [k, v] of Object.entries(u.effects)) {
+        if (v > 0) {
+          const cur = currentBuild[k]?.rating ?? 0;
+          const actual = Math.min(v, CAP - cur);
+          if (actual > 0) trimmedEffects[k] = actual;
+        } else {
+          trimmedEffects[k] = v; // keep negative effects (injuries etc) as-is
+        }
+      }
+      chosen.push({ ...u, effects: trimmedEffects });
+    } else {
+      chosen.push(u);
+    }
   }
   return chosen;
 }
@@ -893,11 +948,19 @@ function applyDecay(build, decay) {
   return applyEffects(build, decay);
 }
 
-// Simulate rival's season (they win some slams probabilistically).
+// Simulate rival's season. They're a surface specialist, so they only seriously
+// contend on their home surface. On average about 1 slam every 3-4 seasons.
 function rivalSeason(rival, year, rng) {
-  // Rival gets stronger for first 5 years then plateaus.
-  const peakBoost = Math.min(5, year) * 1.5;
-  const wins = SLAMS.filter(() => rng() < 0.12 + peakBoost * 0.01).length;
+  if (!rival) return 0;
+  let wins = 0;
+  for (const slam of SLAMS) {
+    // Rival only has a real chance on their specialist surface
+    const isHomeSlam = slam.surface === rival.weakSurf; // weakSurf = the surface they counter you on
+    const baseChance = isHomeSlam ? 0.18 : 0.04;
+    // Rival peaks around years 3-7 of your career
+    const peak = Math.max(0, 1 - Math.abs(year - 5) * 0.07);
+    if (rng() < baseChance * (0.7 + peak * 0.6)) wins++;
+  }
   return wins;
 }
 
@@ -1053,25 +1116,63 @@ export default function CalendarSlam() {
     return { headline, body };
   }
 
-  // Press quotes — four options generated from season context.
-  function generatePressQuotes(slamWon, rival, age) {
-    const options = [
-      slamWon > 0
-        ? `Winning Grand Slams is what I've worked my whole life for. This proves we're on the right track.`
-        : `Every year I come back stronger. The titles will come — I have no doubt about that.`,
-      rival
-        ? `Playing ${rival.name} brings the best out of me. I respect them, but I want to beat them.`
-        : `The competition on tour is incredible. It drives me to keep improving every single day.`,
-      age < 24
-        ? `I'm still learning. There's so much more to come from me at this stage of my career.`
-        : age > 30
-        ? `People keep writing me off but I'm still here. As long as my body holds up, I'll keep competing.`
-        : `I feel like I'm at my peak right now. The goal is to make the most of these years.`,
-      slamWon === 0
-        ? `Results haven't gone my way this year, but I know what I need to work on. Watch this space.`
-        : `The hard work in the off-season pays off on the biggest stages. I'm proud of what we've achieved.`,
-    ];
-    return options;
+  // Press quotes — four bespoke options drawn directly from this season's results.
+  function generatePressQuotes(slamWon, rival, age, slamResults, olympicRes, totalSlams) {
+    const slams = (slamResults || []).filter(r => !r.isOlympics);
+    const wonNames = slams.filter(r => r.wonTitle).map(r => r.name);
+    const finalLoss = slams.find(r => !r.wonTitle && r.lostRound === "Final");
+    const sfLoss = slams.find(r => !r.wonTitle && r.lostRound === "Semi-final");
+    const rivalLoss = slams.find(r => !r.wonTitle && r.opponent === rival?.name);
+    const rivalWin = slams.find(r => r.wonTitle && r.path?.[r.path.length-1]?.name === rival?.name);
+    const hasOlympic = olympicRes?.medal;
+    const isFirstSlam = totalSlams === 1 && slamWon === 1;
+
+    // Build four quotes, each from a different emotional angle
+    const q1 = wonNames.length > 0
+      ? isFirstSlam
+        ? `Winning ${wonNames[0]} for the first time — I genuinely can't put it into words. This is everything.`
+        : wonNames.length >= 2
+          ? `${wonNames[0]} and ${wonNames[1]} in the same year. That's the level I've always believed I could reach.`
+          : `${wonNames[0]} means a lot to me right now. We put in a lot of work to be ready for that surface.`
+      : finalLoss
+        ? `Reaching the ${finalLoss.name} final proves I belong at this level. The title will come.`
+        : sfLoss
+          ? `I know I let a semi-final slip at ${sfLoss.name}. That one will sit with me over winter.`
+          : `The results this year weren't what I'd hoped for. But I've identified what needs to change.`;
+
+    const q2 = rivalLoss
+      ? `${rival.name} got the better of me again at ${rivalLoss.name}. That's the match I'm building my whole off-season around.`
+      : rivalWin
+        ? `Beating ${rival.name} when it mattered most — that was the win that meant the most to me this year.`
+        : rival
+          ? `The rivalry with ${rival.name} pushes me to be better. I genuinely think that pressure brings out a level I couldn't reach otherwise.`
+          : `Every week you're competing against the best in the world. That sharpens you in ways nothing else can.`;
+
+    const q3 = hasOlympic
+      ? olympicRes.medal.includes("Gold")
+        ? `The gold medal is something I'll treasure for the rest of my life. Representing your country — nothing compares to that.`
+        : olympicRes.medal.includes("Silver")
+          ? `Silver at the Olympics hurts — you play for gold and nothing else. But I'll be back for it.`
+          : `An Olympic medal, whatever colour, is something very few people can say they've won. I'm proud of that.`
+      : age < 23
+        ? `I'm still finding my level on the biggest stages. Each year I understand more about what it takes.`
+        : age > 31
+          ? `People underestimate what experience gives you. I know how to compete at this level in a way I didn't at 25.`
+          : wonNames.length > 0
+            ? `The preparation was different this year. We made some changes that I think are really starting to pay off.`
+            : `I need to be more clinical when I get the chances. The performances are there — the results will follow.`;
+
+    const q4 = slamWon === 4
+      ? `A calendar slam. I'm not sure it's fully sunk in yet. I don't think it does for a while.`
+      : slamWon === 0 && finalLoss
+        ? `Two finals, no titles. That's the part that eats at you. Next year I want to be the one holding the trophy.`
+        : slamWon >= 2
+          ? `Multiple slam titles in a season — that's the goal every year, but delivering it is something else. I'm proud of what we did.`
+          : wonNames.length > 0
+            ? `I know I can win more of these. The ${wonNames[0]} title is the proof of that.`
+            : `Seasons like this one make you dig deep and ask honest questions. The answers I've found give me real confidence for next year.`;
+
+    return [q1, q2, q3, q4];
   }
 
   // Generate fictional new-generation players to seed into the draw from season 3+.
@@ -1153,9 +1254,9 @@ export default function CalendarSlam() {
       setRetirementPrompt(true);
     }
 
-    // Generate off-season options
+    // Generate off-season options (pass build so stat-capped options are filtered out)
     const upgradeRng = mulberry32((careerSeason * 54321) & 0xffffffff);
-    const upgrades = pickUpgrades(upgradeRng);
+    const upgrades = pickUpgrades(upgradeRng, build);
 
     // Roll for injury
     const risk = injuryRisk(careerAge, careerLongevity, heavyTrainingLastSeason);
@@ -1172,14 +1273,19 @@ export default function CalendarSlam() {
     // Generate season report and press quotes — reuse olympicsEvent from above
     const oRes = olympicsEvent ? { medal: olympicsEvent.medal, wonGold: olympicsEvent.wonTitle, city: olympicsEvent.olympicsData?.city } : null;
     const report = generateSeasonReport(careerSeason, careerAge, slamResults, wonThisSeason, newTotal, updatedRival || activeRival, null, oRes);
-    const quotes = generatePressQuotes(wonThisSeason, updatedRival || activeRival, careerAge);
+    const quotes = generatePressQuotes(wonThisSeason, updatedRival || activeRival, careerAge, slamResults, oRes, newTotal);
     setSeasonSummary({ ...report, quotes });
     setChosenQuote(null);
 
-    // Spawn a new fictional player from season 3 onwards (one per season, probability rises)
-    if (careerSeason >= 3) {
+    // Spawn fictional next-gen players. Seed 3 from season 1 to immediately
+    // freshen the draw, then add more each season at rising probability.
+    if (careerSeason === 1) {
+      const seedRng = mulberry32((careerSeason * 11113) & 0xffffffff);
+      const seedPlayers = [1, 2, 3].map(() => spawnGenerationalPlayer(1, seedRng));
+      setGenerationalPlayers(seedPlayers);
+    } else {
       const spawnRng = mulberry32((careerSeason * 88887) & 0xffffffff);
-      const spawnChance = Math.min(0.7, 0.2 + (careerSeason - 3) * 0.06);
+      const spawnChance = Math.min(0.85, 0.45 + (careerSeason - 2) * 0.07);
       if (spawnRng() < spawnChance) {
         const newPlayer = spawnGenerationalPlayer(careerSeason, spawnRng);
         setGenerationalPlayers(prev => [...prev, newPlayer]);
@@ -1875,11 +1981,16 @@ export default function CalendarSlam() {
                   <div className="cs-tier-note">{simResults.tier.note}</div>
                 </div>
               ) : (
-                <div className="cs-live-banner">
-                  <span className="cs-live-dot" />
-                  Playing {simResults.perSlam[reveal.slam]?.name}…
-                  <button className="cs-skip-btn" onClick={skipSim}>Skip ⏭</button>
-                </div>
+                <>
+                  <div className="cs-live-banner">
+                    <span className="cs-live-dot" />
+                    Playing {simResults.perSlam[reveal.slam]?.name}…
+                    <button className="cs-skip-btn" onClick={skipSim}>Skip ⏭</button>
+                  </div>
+                  <div className="cs-skip-float">
+                    <button className="cs-skip-btn cs-skip-float-btn" onClick={skipSim}>Skip to results ⏭</button>
+                  </div>
+                </>
               )}
 
               <div className="cs-gauntlet">
@@ -2466,6 +2577,8 @@ body { background: #1f6b3f; margin: 0; }
 @keyframes cs-blink { 0%,100%{opacity:1} 50%{opacity:.25} }
 .cs-skip-btn { margin-left:auto; background:var(--ball); color:var(--ink); border:none; border-radius:4px; font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:14px; letter-spacing:.06em; text-transform:uppercase; padding:7px 16px; cursor:pointer; }
 .cs-skip-btn:hover { filter:brightness(1.08); }
+.cs-skip-float { position:sticky; bottom:16px; display:flex; justify-content:center; pointer-events:none; margin-top:16px; }
+.cs-skip-float-btn { pointer-events:all; box-shadow:0 3px 12px rgba(0,0,0,.4); font-size:15px; padding:10px 24px; border-radius:24px; }
 .cs-leg.playing { border-color:var(--ball); animation:cs-legin .3s ease; }
 @keyframes cs-legin { from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none} }
 .cs-path-live li { animation:cs-rowin .25s ease; }
