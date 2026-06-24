@@ -659,13 +659,208 @@ function NetGraphic() {
 }
 
 // ============================================================================
+// CAREER MODE
+// ============================================================================
+
+// --- Olympics schedule -------------------------------------------------------
+// Best-of-3 sets. Real data where confirmed, projected/invented thereafter.
+// careerYear = 2025 + careerSeason.
+const OLYMPICS = {
+  2028: { city: "Los Angeles", country: "USA",       flag: "🇺🇸", surface: "Hard",  venue: "Carson Courts" },
+  2032: { city: "Brisbane",    country: "Australia", flag: "🇦🇺", surface: "Hard",  venue: "Queensland Tennis Centre" },
+  2036: { city: "Madrid",      country: "Spain",     flag: "🇪🇸", surface: "Clay",  venue: "Caja Mágica" },
+  2040: { city: "Seoul",       country: "South Korea",flag:"🇰🇷",  surface: "Hard",  venue: "Olympic Tennis Centre" },
+  2044: { city: "Mumbai",      country: "India",     flag: "🇮🇳", surface: "Hard",  venue: "Brabourne Stadium Courts" },
+};
+
+// Returns Olympic data for a given career year, or null if not an Olympic year.
+function getOlympics(year) { return OLYMPICS[year] || null; }
+
+// Simulate a best-of-3 Olympic match against a strong opponent.
+// Returns { wonGold, wonMedal, result: 'Gold'|'Silver'|'Bronze'|'Eliminated' }.
+function simulateOlympics(build, surface, rand) {
+  const myForm = surfaceScore(build, surface);
+  // Olympic field is slightly weaker than slam level but still tough.
+  // QF, SF, Final brackets.
+  const opponents = [76, 80, 86]; // QF, SF, Final strength
+  let survived = true;
+  let roundsWon = 0;
+  for (const oppLevel of opponents) {
+    let mySets = 0, oppSets = 0;
+    // Best of 3
+    while (mySets < 2 && oppSets < 2) {
+      const noise = (rand() - 0.5) * 12;
+      const pSet = 1 / (1 + Math.exp(-((myForm + noise - oppLevel) / 6)));
+      if (rand() < pSet) mySets++; else oppSets++;
+    }
+    if (mySets === 2) roundsWon++;
+    else { survived = false; break; }
+  }
+  if (roundsWon === 3) return { wonGold: true, medal: "Gold 🥇" };
+  if (roundsWon === 2) {
+    // Lost in final — play bronze? No, tennis gives silver to finalist
+    return { wonGold: false, medal: "Silver 🥈" };
+  }
+  if (roundsWon === 1) {
+    // Lost in SF — bronze medal match (best of 3, easier opponent)
+    const bronzeOpp = 78;
+    let ms = 0, os = 0;
+    while (ms < 2 && os < 2) {
+      const noise = (rand() - 0.5) * 12;
+      const pSet = 1 / (1 + Math.exp(-((myForm + noise - bronzeOpp) / 6)));
+      if (rand() < pSet) ms++; else os++;
+    }
+    return ms === 2
+      ? { wonGold: false, medal: "Bronze 🥉" }
+      : { wonGold: false, medal: "Eliminated 4th" };
+  }
+  return { wonGold: false, medal: "Eliminated in QF" };
+}
+
+// --- Name generator ----------------------------------------------------------
+const NAMES = {
+  "🇪🇸": { country: "Spain",       first: ["Carlos","Rafael","Pablo","Jorge","Javier","Alejandro","Sergio","Miguel"], last: ["Garcia","Lopez","Martinez","Fernandez","Romero","Navarro","Torres","Molina"] },
+  "🇮🇹": { country: "Italy",       first: ["Lorenzo","Matteo","Marco","Federico","Luca","Giovanni","Andrea","Filippo"], last: ["Rossi","Ferrari","Ricci","Conti","Esposito","Bianchi","Gallo","Moretti"] },
+  "🇩🇪": { country: "Germany",     first: ["Felix","Lukas","Niklas","Jonas","Julian","Maximilian","Florian","Fabian"], last: ["Müller","Schmidt","Weber","Becker","Hoffmann","Wagner","Fischer","Braun"] },
+  "🇷🇺": { country: "Russia",      first: ["Andrei","Dmitri","Ivan","Sergei","Pavel","Alexei","Nikolai","Viktor"], last: ["Ivanov","Petrov","Volkov","Sokolov","Lebedev","Kozlov","Novikov","Morozov"] },
+  "🇫🇷": { country: "France",      first: ["Lucas","Thomas","Hugo","Nathan","Théo","Antoine","Mathieu","Pierre"], last: ["Martin","Dubois","Laurent","Bernard","Leroy","Moreau","Simon","Girard"] },
+  "🇦🇷": { country: "Argentina",   first: ["Franco","Tomás","Nicolás","Matías","Santiago","Leandro","Rodrigo","Ezequiel"], last: ["Gonzalez","Rodriguez","Fernandez","Perez","Alvarez","Romero","Medina","Vega"] },
+  "🇧🇷": { country: "Brazil",      first: ["Thiago","Felipe","Gustavo","Rafael","Bruno","Lucas","Gabriel","Eduardo"], last: ["Silva","Santos","Oliveira","Pereira","Alves","Costa","Lima","Ferreira"] },
+  "🇺🇸": { country: "USA",         first: ["Tyler","Jordan","Austin","Brandon","Kevin","Chris","Dylan","Ryan"], last: ["Johnson","Williams","Brown","Davis","Miller","Wilson","Moore","Anderson"] },
+  "🇬🇧": { country: "Great Britain",first: ["Jack","Oliver","Harry","Charlie","George","Ethan","Liam","James"], last: ["Smith","Jones","Taylor","Brown","Wilson","Evans","Thomas","Roberts"] },
+  "🇦🇺": { country: "Australia",   first: ["Liam","Noah","Ethan","Mason","Jack","Ryan","Riley","Kyle"], last: ["Smith","Jones","Williams","Brown","Wilson","Taylor","Anderson","Thomas"] },
+  "🇨🇿": { country: "Czech Rep.",  first: ["Jakub","Tomas","Jan","Petr","Martin","Pavel","Michal","Ondrej"], last: ["Novak","Dvorak","Cerny","Blaha","Horak","Kral","Pospisil","Stepanek"] },
+  "🇷🇸": { country: "Serbia",      first: ["Novak","Stefan","Filip","Nikola","Marko","Milan","Igor","Luka"], last: ["Jovic","Milic","Petrovic","Nikolic","Markovic","Simic","Ilic","Djordjevic"] },
+  "🇨🇦": { country: "Canada",      first: ["Ethan","Logan","Lucas","Nathan","Liam","Owen","Felix","Alexis"], last: ["Martin","Roy","Tremblay","Gagnon","Bouchard","Auger","Lapointe","Cote"] },
+  "🇯🇵": { country: "Japan",       first: ["Kei","Sho","Ryota","Hiroki","Yuto","Ryu","Daiki","Sota"], last: ["Nishikori","Nakashima","Ito","Yamamoto","Suzuki","Tanaka","Watanabe","Sato"] },
+  "🇵🇱": { country: "Poland",      first: ["Hubert","Jan","Piotr","Marek","Kamil","Michal","Tomasz","Lukasz"], last: ["Kowalski","Wisniewski","Wojcik","Kowalczyk","Kaminski","Lewandowski","Zielinski","Szymanski"] },
+};
+
+const FLAG_KEYS = Object.keys(NAMES);
+
+function generatePlayer(rng) {
+  const flag = FLAG_KEYS[Math.floor(rng() * FLAG_KEYS.length)];
+  const { first, last } = NAMES[flag];
+  const name = `${first[Math.floor(rng() * first.length)]} ${last[Math.floor(rng() * last.length)]}`;
+  return { name, flag, country: NAMES[flag].country };
+}
+
+// --- Off-season upgrades -----------------------------------------------------
+const UPGRADE_POOL = [
+  { id: "serve_coach",   label: "Hire a Serve Coach",          desc: "Refine your toss and kick serve with a specialist.",      effects: { serve: 4 },                   longevity: 0 },
+  { id: "fitness",       label: "Intensive Fitness Programme",  desc: "Pushing your body hard now. It'll pay off — for a while.", effects: { stamina: 3, movement: 2 },   longevity: -1, warning: "Heavy training can shorten careers. Proceed?" },
+  { id: "nutritionist",  label: "Elite Nutritionist",           desc: "Precision fuelling slows your body's decline.",            effects: { stamina: 2 },                 longevity: 2 },
+  { id: "mental_coach",  label: "Sports Psychologist",          desc: "Learn to thrive under pressure on the big points.",        effects: { mental: 4 },                  longevity: 0 },
+  { id: "fh_coach",      label: "Forehand Specialist",          desc: "Rebuild your forehand from the ground up.",                effects: { forehand: 4, touch: 1 },      longevity: 0 },
+  { id: "bh_coach",      label: "Backhand Specialist",          desc: "Work on disguise, slice, and two-handed drive.",           effects: { backhand: 4, touch: 1 },      longevity: 0 },
+  { id: "net_coach",     label: "Net Game Coach",               desc: "Volley clinic and approach shot drills.",                  effects: { net: 4, touch: 2 },           longevity: 0 },
+  { id: "return_coach",  label: "Return of Serve Coach",        desc: "Early ball, aggressive positioning.",                      effects: { return: 3, movement: 1 },     longevity: 0 },
+  { id: "movement",      label: "Movement & Footwork Trainer",  desc: "Court coverage, split step timing, lateral speed.",        effects: { movement: 3, defence: 2 },    longevity: 0 },
+  { id: "defence",       label: "Defensive Grinding Specialist",desc: "Learn to reset points and outlast opponents.",             effects: { defence: 3, stamina: 2 },     longevity: 0 },
+  { id: "rest",          label: "Rest & Recovery Season",       desc: "No gains. But your body will thank you later.",            effects: {},                             longevity: 3, recovery: true },
+];
+
+// --- Injury pool (logical body mapping) --------------------------------------
+const INJURIES = [
+  { label: "Wrist injury",          desc: "A niggling wrist issue affects your racket arm.",      effects: { serve: -5, forehand: -5 } },
+  { label: "Elbow tendinitis",      desc: "Inflammation in the elbow limits your swing speed.",   effects: { forehand: -5, backhand: -4 } },
+  { label: "Knee injury",           desc: "Knee pain limits your movement and ability to load.",  effects: { movement: -5, defence: -5 } },
+  { label: "Shoulder strain",       desc: "A strained shoulder takes power off your serve.",      effects: { serve: -5, net: -4 } },
+  { label: "Back spasm",            desc: "Back tightness limits your service motion and reach.", effects: { serve: -4, stamina: -3 } },
+  { label: "Ankle sprain",          desc: "An ankle roll disrupts your footwork all season.",     effects: { movement: -5, stamina: -3 } },
+  { label: "Fatigue & burnout",     desc: "Mental and physical exhaustion after pushing too hard.",effects: { mental: -4, stamina: -3 } },
+  { label: "Hip flexor strain",     desc: "Hip tightness affects your split step and reach.",     effects: { movement: -4, defence: -3 } },
+];
+
+// --- Rival generation --------------------------------------------------------
+function generateRival(playerBuild, playerTour, rng) {
+  const rival = generatePlayer(rng);
+  // Assign a style that counters the player's weakest surface
+  const scores = ["Clay","Grass","Hard"].map(s => ({ s, v: surfaceScore(playerBuild, s) }));
+  scores.sort((a,b) => a.v - b.v);
+  const weakestSurf = scores[0].s;
+  const styles = {
+    Clay:  { style: "baseline", surface: "Clay",  weapon: "relentless clay-court topspin" },
+    Grass: { style: "serve",    surface: "Grass", weapon: "an unplayable grass-court serve" },
+    Hard:  { style: "return",   surface: "Hard",  weapon: "aggressive all-court ball-striking" },
+  };
+  return { ...rival, ...styles[weakestSurf], slamCount: 0, h2hWins: 0, h2hLosses: 0, weakSurf: weakestSurf };
+}
+
+// --- Age decay curve ---------------------------------------------------------
+// Returns attribute reductions per season based on age.
+function ageDecay(age, longevity) {
+  // Longevity bonus delays decay. Each +1 longevity adds ~1 year of peak.
+  const adjustedAge = age - longevity * 0.8;
+  if (adjustedAge <= 25) return {};
+  if (adjustedAge <= 27) return { stamina: -1 };
+  if (adjustedAge <= 29) return { stamina: -1, movement: -1 };
+  if (adjustedAge <= 31) return { stamina: -2, movement: -1, defence: -1 };
+  if (adjustedAge <= 33) return { stamina: -2, movement: -2, defence: -1, mental: -1 };
+  return { stamina: -3, movement: -2, defence: -2, serve: -1, mental: -1 };
+}
+
+// Injury risk rises with age and heavy training history.
+function injuryRisk(age, longevity, heavyTrainingSeason) {
+  const base = Math.max(0, (age - 24) * 0.04);
+  const decay = longevity < 0 ? 0.1 * Math.abs(longevity) : 0;
+  const fatigue = heavyTrainingSeason ? 0.12 : 0;
+  return Math.min(0.55, base + decay + fatigue);
+}
+
+// Should we prompt retirement? True if avg surface score < retirement threshold
+// for two consecutive seasons, or age >= 39.
+const RETIRE_THRESHOLD = 62;
+function shouldRetire(stats, consecutiveLowSeasons, age) {
+  if (age >= 39) return true;
+  const avg = ["Clay","Grass","Hard"].reduce((s,surf) => s + surfaceScore(stats, surf), 0) / 3;
+  return avg < RETIRE_THRESHOLD && consecutiveLowSeasons >= 2;
+}
+
+// Pick 3 distinct upgrades for the off-season choice.
+function pickUpgrades(rng) {
+  const pool = [...UPGRADE_POOL];
+  const chosen = [];
+  while (chosen.length < 3 && pool.length > 0) {
+    const i = Math.floor(rng() * pool.length);
+    chosen.push(pool.splice(i, 1)[0]);
+  }
+  return chosen;
+}
+
+// Apply effects to a build (clamp 0-99).
+function applyEffects(build, effects) {
+  const next = { ...build };
+  for (const [k, v] of Object.entries(effects)) {
+    if (next[k] != null) {
+      next[k] = { ...next[k], rating: Math.max(10, Math.min(99, next[k].rating + v)) };
+    }
+  }
+  return next;
+}
+
+// Apply age decay to build stats.
+function applyDecay(build, decay) {
+  return applyEffects(build, decay);
+}
+
+// Simulate rival's season (they win some slams probabilistically).
+function rivalSeason(rival, year, rng) {
+  // Rival gets stronger for first 5 years then plateaus.
+  const peakBoost = Math.min(5, year) * 1.5;
+  const wins = SLAMS.filter(() => rng() < 0.12 + peakBoost * 0.01).length;
+  return wins;
+}
+
+// ============================================================================
 
 export default function CalendarSlam() {
-  const [phase, setPhase] = useState("tour"); // tour | intro | draft | result
+  const [phase, setPhase] = useState("mode"); // mode | tour | player-create | intro | draft | result | offseason | retirement
+  const [gameMode, setGameMode] = useState("single"); // "single" | "career"
   const [tour, setTour] = useState("atp");
   const [round, setRound] = useState(0);
   const [build, setBuild] = useState({});
-  const [current, setCurrent] = useState(null); // current spun player
+  const [current, setCurrent] = useState(null);
   const [spinning, setSpinning] = useState(false);
   const [reduce, setReduce] = useState(false);
   const [hovered, setHovered] = useState(null);
@@ -675,11 +870,164 @@ export default function CalendarSlam() {
   const [isTouch, setIsTouch] = useState(false);
   const [previewKey, setPreviewKey] = useState(null);
   const [reveal, setReveal] = useState({ slam: 0, round: 0, done: false });
-  const [difficulty, setDifficulty] = useState("normal"); // "normal" | "challenge"
-  const [eliteUsed, setEliteUsed] = useState(false); // challenge: has the elite pick been taken?
+  const [difficulty, setDifficulty] = useState("normal");
+  const [eliteUsed, setEliteUsed] = useState(false);
+
+  // Career mode state
+  const [playerName, setPlayerName] = useState("");
+  const [playerFlag, setPlayerFlag] = useState("🇬🇧");
+  const [playerNameMode, setPlayerNameMode] = useState("generate"); // "generate" | "custom"
+  const [careerSeason, setCareerSeason] = useState(1);
+  const [careerAge, setCareerAge] = useState(20);
+  const [careerStartAge, setCareerStartAge] = useState(20);
+  const [careerLongevity, setCareerLongevity] = useState(0);
+  const [careerSlamCount, setCareerSlamCount] = useState(0);
+  const [careerSeasons, setCareerSeasons] = useState([]); // [{year, slams, upgrades, injury}]
+  const [careerRival, setCareerRival] = useState(null);
+  const [offseasonUpgrades, setOffseasonUpgrades] = useState([]);
+  const [offseasonInjury, setOffseasonInjury] = useState(null);
+  const [offseasonPendingBuild, setOffseasonPendingBuild] = useState(null);
+  const [retirementPrompt, setRetirementPrompt] = useState(false);
+  const [consecutiveLowSeasons, setConsecutiveLowSeasons] = useState(0);
+  const [heavyTrainingLastSeason, setHeavyTrainingLastSeason] = useState(false);
+  const [olympicResult, setOlympicResult] = useState(null); // {medal, surface, city} for this season
 
   const T = TOURS[tour];
   const POOL = T.pool;
+
+  // Career: derive a unique RNG from season number for off-season events.
+  const careerRng = useMemo(() => mulberry32(careerSeason * 7919 + 42), [careerSeason]);
+
+  // Career: generate a player identity (called on player-create screen).
+  function generatePlayerIdentity() {
+    const rng = mulberry32(Date.now() & 0xffffffff);
+    const p = generatePlayer(rng);
+    setPlayerName(p.name);
+    setPlayerFlag(p.flag);
+  }
+
+  // Career: start a brand-new career.
+  function startCareer() {
+    const rng = mulberry32((Date.now() & 0xffffffff) ^ 0xdeadbeef);
+    // If name mode is generate, generate now.
+    let name = playerName, flag = playerFlag;
+    if (playerNameMode === "generate" || !playerName.trim()) {
+      const p = generatePlayer(rng);
+      name = p.name; flag = p.flag;
+      setPlayerName(name); setPlayerFlag(flag);
+    }
+    setCareerSeason(1);
+    setCareerAge(careerStartAge);
+    setCareerLongevity(0);
+    setCareerSlamCount(0);
+    setCareerSeasons([]);
+    setCareerRival(null);
+    setConsecutiveLowSeasons(0);
+    setHeavyTrainingLastSeason(false);
+    setRetirementPrompt(false);
+    setRanSim(false);
+    setBuild({});
+    setRound(0);
+    setEliteUsed(false);
+    setPhase("intro"); // go to intro (shows career context) then draft
+  }
+
+  // Career: wrap up a season's results and set up off-season.
+  function endCareerSeason(slamResults) {
+    const wonThisSeason = slamResults.filter(r => r.wonTitle).length;
+    const newTotal = careerSlamCount + wonThisSeason;
+    setCareerSlamCount(newTotal);
+
+    // Create rival on first season if not yet set
+    let activeRival = careerRival;
+    if (!activeRival && gameMode === "career") {
+      const rivalRng = mulberry32((careerSeason * 99991) & 0xffffffff);
+      activeRival = generateRival(build, tour, rivalRng);
+      setCareerRival(activeRival);
+    }
+
+    // Track rival's season results
+    const rivalRng2 = mulberry32((careerSeason * 31337 + 99) & 0xffffffff);
+    const rivalWins = rivalSeason(activeRival, careerSeason, rivalRng2);
+    const updatedRival = activeRival ? {
+      ...activeRival,
+      slamCount: activeRival.slamCount + rivalWins,
+      h2hLosses: activeRival.h2hLosses + slamResults.filter(r =>
+        !r.wonTitle && r.opponent === activeRival.name).length,
+      h2hWins: activeRival.h2hWins + slamResults.filter(r =>
+        r.wonTitle && r.path?.[r.path.length - 1]?.name === activeRival.name).length,
+    } : null;
+    if (updatedRival) setCareerRival(updatedRival);
+
+    // Add season to history
+    const careerYear = 2025 + careerSeason;
+    const olympics = getOlympics(careerYear);
+    let olympicsThisSeason = null;
+    if (olympics) {
+      const oRng = mulberry32((careerSeason * 77777) & 0xffffffff);
+      olympicsThisSeason = { ...simulateOlympics(build, olympics.surface, oRng), ...olympics, year: careerYear };
+      setOlympicResult(olympicsThisSeason);
+    } else {
+      setOlympicResult(null);
+    }
+    const seasonRecord = {
+      season: careerSeason, age: careerAge, year: careerYear,
+      slams: wonThisSeason, results: slamResults, olympics: olympicsThisSeason,
+    };
+    setCareerSeasons(prev => [...prev, seasonRecord]);
+
+    // Check consecutive low seasons for retirement prompt
+    const avgScore = ["Clay","Grass","Hard"].reduce((s,surf) => s + surfaceScore(build, surf), 0) / 3;
+    const isLow = avgScore < RETIRE_THRESHOLD;
+    const newLow = isLow ? consecutiveLowSeasons + 1 : 0;
+    setConsecutiveLowSeasons(newLow);
+    if (shouldRetire(build, newLow, careerAge + 1)) {
+      setRetirementPrompt(true);
+    }
+
+    // Generate off-season options
+    const upgradeRng = mulberry32((careerSeason * 54321) & 0xffffffff);
+    const upgrades = pickUpgrades(upgradeRng);
+
+    // Roll for injury
+    const risk = injuryRisk(careerAge, careerLongevity, heavyTrainingLastSeason);
+    const injuryRng = mulberry32((careerSeason * 11111 + 7) & 0xffffffff);
+    let injury = null;
+    if (injuryRng() < risk) {
+      injury = INJURIES[Math.floor(injuryRng() * INJURIES.length)];
+    }
+
+    setOffseasonUpgrades(upgrades);
+    setOffseasonInjury(injury);
+    setOffseasonPendingBuild(build);
+    setPhase("offseason");
+  }
+
+  // Career: apply an upgrade choice and move to next season.
+  function applyUpgrade(upgrade) {
+    let nextBuild = applyEffects(offseasonPendingBuild, upgrade.effects);
+    // Apply injury if present
+    if (offseasonInjury) nextBuild = applyEffects(nextBuild, offseasonInjury.effects);
+    // Apply age decay
+    const decay = ageDecay(careerAge + 1, careerLongevity + (upgrade.longevity || 0));
+    nextBuild = applyDecay(nextBuild, decay);
+    const newLongevity = careerLongevity + (upgrade.longevity || 0);
+    setCareerLongevity(newLongevity);
+    setHeavyTrainingLastSeason(upgrade.id === "fitness");
+    setBuild(nextBuild);
+    setCareerSeason(s => s + 1);
+    setCareerAge(a => a + 1);
+    setRanSim(false);
+    setReveal({ slam: 0, round: 0, done: false });
+    setEliteUsed(false);
+    setRound(0);
+    setRetirementPrompt(false);
+    setPhase("draft");
+    spinNext([], false);
+  }
+
+  // Career: retire and show the hall of fame summary.
+  function retire() { setPhase("retirement"); }
 
   useEffect(() => {
     const m = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -866,17 +1214,52 @@ export default function CalendarSlam() {
       <style>{CSS}</style>
 
       <header className="cs-head">
-        <div className="cs-wordmark">Calendar Slam</div>
+        <div className="cs-wordmark">
+          <span className="cs-wordmark-calendar">Calendar</span>
+          <span className="cs-wordmark-slam">Slam</span>
+        </div>
         <div className="cs-head-right">
-          {phase !== "tour" && (
+          {phase !== "mode" && phase !== "tour" && phase !== "player-create" && (
             <button className="cs-tour-switch" onClick={() => setPhase("tour")}
               title="Switch tour">
               {T.label} ⇄
             </button>
           )}
+          {gameMode === "career" && careerSeason > 1 && (
+            <div className="cs-career-badge">
+              {playerFlag} {playerName} · Season {careerSeason} · {careerSlamCount} slam{careerSlamCount !== 1 ? "s" : ""}
+            </div>
+          )}
           <div className="cs-tag">build a champion, shot by shot</div>
         </div>
       </header>
+
+      {/* MODE SELECT */}
+      {phase === "mode" && (
+        <section className="cs-mode-pick">
+          <h1 className="cs-h1">
+            Can you build<br /><em>a tennis legend?</em>
+          </h1>
+          <p className="cs-lede">
+            Draft iconic shots from real players across different eras. Build
+            the ultimate all-court champion. Then find out how far they can go.
+          </p>
+          <NetGraphic />
+          <p className="cs-tour-prompt">Choose your game</p>
+          <div className="cs-mode-btns">
+            <button className="cs-mode-btn" onClick={() => { setGameMode("single"); setPhase("tour"); }}>
+              <span className="cs-mode-icon">🎾</span>
+              <span className="cs-mode-label">Single Season</span>
+              <span className="cs-mode-desc">Build the ultimate player and chase the Calendar Slam — all four majors in one year.</span>
+            </button>
+            <button className="cs-mode-btn career" onClick={() => { setGameMode("career"); setPhase("tour"); }}>
+              <span className="cs-mode-icon">🏆</span>
+              <span className="cs-mode-label">Career Mode</span>
+              <span className="cs-mode-desc">Guide your player across 15-20 seasons. Hire coaches, survive injuries, build a rivalry, and write your legacy.</span>
+            </button>
+          </div>
+        </section>
+      )}
 
       {phase === "tour" && (
         <section className="cs-tourpick">
@@ -900,19 +1283,88 @@ export default function CalendarSlam() {
           <div className="cs-tour-btns">
             <button
               className="cs-tour-btn atp"
-              onClick={() => { setTour("atp"); setPhase("intro"); }}
+              onClick={() => { setTour("atp"); setPhase(gameMode === "career" ? "player-create" : "intro"); }}
             >
               <span className="cs-tour-label">ATP</span>
               <span className="cs-tour-sub">Men's Tour</span>
             </button>
             <button
               className="cs-tour-btn wta"
-              onClick={() => { setTour("wta"); setPhase("intro"); }}
+              onClick={() => { setTour("wta"); setPhase(gameMode === "career" ? "player-create" : "intro"); }}
             >
               <span className="cs-tour-label">WTA</span>
               <span className="cs-tour-sub">Women's Tour</span>
             </button>
           </div>
+        </section>
+      )}
+
+      {/* PLAYER CREATE (career mode only) */}
+      {phase === "player-create" && (
+        <section className="cs-player-create">
+          <div className="cs-intro-tour">{T.label} · Career Mode</div>
+          <h1 className="cs-h1">Create your <em>player</em></h1>
+          <p className="cs-lede">Give your player an identity, or let us generate one for you.</p>
+
+          <div className="cs-create-tabs">
+            <button className={`cs-create-tab ${playerNameMode === "generate" ? "active" : ""}`}
+              onClick={() => { setPlayerNameMode("generate"); generatePlayerIdentity(); }}>
+              Generate
+            </button>
+            <button className={`cs-create-tab ${playerNameMode === "custom" ? "active" : ""}`}
+              onClick={() => setPlayerNameMode("custom")}>
+              Custom
+            </button>
+          </div>
+
+          {playerNameMode === "generate" ? (
+            <div className="cs-create-generated">
+              <div className="cs-gen-player">
+                <span className="cs-gen-flag">{playerFlag}</span>
+                <span className="cs-gen-name">{playerName || "Generating…"}</span>
+              </div>
+              <button className="cs-text-btn" onClick={generatePlayerIdentity}>↻ Generate another</button>
+            </div>
+          ) : (
+            <div className="cs-create-custom">
+              <div className="cs-create-field">
+                <label className="cs-create-label">Name</label>
+                <input
+                  className="cs-create-input"
+                  value={playerName}
+                  onChange={e => setPlayerName(e.target.value)}
+                  placeholder="Your player's name"
+                  maxLength={32}
+                />
+              </div>
+              <div className="cs-create-field">
+                <label className="cs-create-label">Nationality</label>
+                <select className="cs-create-select" value={playerFlag}
+                  onChange={e => setPlayerFlag(e.target.value)}>
+                  {FLAG_KEYS.map(f => (
+                    <option key={f} value={f}>{f} {NAMES[f].country}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
+
+          <div className="cs-create-field">
+            <label className="cs-create-label">Starting age</label>
+            <div className="cs-age-btns">
+              {[18, 19, 20, 21, 22].map(a => (
+                <button key={a}
+                  className={`cs-age-btn ${careerStartAge === a ? "active" : ""}`}
+                  onClick={() => setCareerStartAge(a)}>{a}</button>
+              ))}
+            </div>
+            <p className="cs-create-hint">Younger = more seasons but a slower peak. Older = ready sooner.</p>
+          </div>
+
+          <button className="cs-cta" onClick={startCareer}
+            disabled={!playerName.trim() && playerNameMode === "custom"}>
+            Begin career →
+          </button>
         </section>
       )}
 
@@ -1088,12 +1540,34 @@ export default function CalendarSlam() {
         <section className="cs-result">
           {!ranSim && (
             <div className="cs-begin-season">
+              {gameMode === "career" && (() => {
+                const yr = 2025 + careerSeason;
+                const ol = getOlympics(yr);
+                return ol ? (
+                  <div className="cs-olympic-banner">
+                    <span className="cs-olympic-rings">🏅</span>
+                    <div className="cs-olympic-text">
+                      <strong>Olympic Year — {yr}</strong>
+                      <span>{ol.flag} {ol.city} · {ol.surface} court · {ol.venue}</span>
+                      <span className="cs-olympic-note">Olympics is best of 3 sets. Your result will be revealed at the end of the season.</span>
+                    </div>
+                  </div>
+                ) : null;
+              })()}
               <div className="cs-begin-copy">
-                <h2 className="cs-begin-title">Your player is ready.</h2>
-                <p className="cs-begin-sub">Send them out against the {T.label} field. Melbourne, Paris, London, New York.</p>
+                <h2 className="cs-begin-title">
+                  {gameMode === "career"
+                    ? `Season ${careerSeason} · ${2025 + careerSeason}`
+                    : "Your player is ready."}
+                </h2>
+                <p className="cs-begin-sub">
+                  {gameMode === "career"
+                    ? `Age ${careerAge} · ${playerFlag} ${playerName}`
+                    : `Send them out against the ${T.label} field. Melbourne, Paris, London, New York.`}
+                </p>
               </div>
               <button className="cs-cta cs-begin-btn" onClick={startSim}>
-                Begin the season →
+                {gameMode === "career" ? `Play Season ${careerSeason} →` : "Begin the season →"}
               </button>
               <details className="cs-breakdown cs-breakdown-pre">
                 <summary>Review your build first ▾</summary>
@@ -1190,9 +1664,26 @@ export default function CalendarSlam() {
 
               {reveal.done && (
                 <div className="cs-sim-prompt">
-                  <button className="cs-sim-btn" onClick={startSim}>
-                    ↻ Run the year again (new draw)
-                  </button>
+                  {gameMode === "career" ? (
+                    <>
+                      <button className="cs-sim-btn cs-career-next" onClick={() => endCareerSeason(simResults.perSlam)}>
+                        ✓ End season {careerSeason} →
+                      </button>
+                      {retirementPrompt && (
+                        <div className="cs-retirement-prompt">
+                          <p>Your body may not have many more seasons at this level. Retire now or keep pushing?</p>
+                          <div className="cs-retire-actions">
+                            <button className="cs-sim-btn" onClick={retire}>Retire</button>
+                            <button className="cs-sim-btn" onClick={() => endCareerSeason(simResults.perSlam)}>One more season</button>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <button className="cs-sim-btn" onClick={startSim}>
+                      ↻ Run the year again (new draw)
+                    </button>
+                  )}
                   <button className="cs-sim-btn cs-share-btn" onClick={() => setShowCard(true)}>
                     ↗ Share result
                   </button>
@@ -1215,7 +1706,167 @@ export default function CalendarSlam() {
             </div>
           </details>
 
-          <button className="cs-cta" onClick={startDraft}>Build another →</button>
+          {gameMode === "single" ? (
+            <button className="cs-cta" onClick={() => { setPhase("mode"); }}>Play again →</button>
+          ) : null}
+        </section>
+      )}
+
+      {/* OFFSEASON (career mode) */}
+      {phase === "offseason" && (
+        <section className="cs-offseason">
+          <div className="cs-offseason-header">
+            <div className="cs-intro-tour">Season {careerSeason} complete · Age {careerAge}</div>
+            <h2 className="cs-h1 cs-offseason-h">
+              {careerSeason === 1 && careerSlamCount === 0 ? "Tough first season." :
+               careerSlamCount > 0 ? `${careerSlamCount} slam${careerSlamCount !== 1 ? "s" : ""} so far.` :
+               "Keep building."}
+            </h2>
+          </div>
+
+          {careerRival && careerSeason > 1 && (
+            <div className="cs-rival-card">
+              <span className="cs-rival-label">Your Rivalry</span>
+              <div className="cs-rival-row">
+                <span>{playerFlag} {playerName}</span>
+                <span className="cs-rival-h2h">{careerSlamCount} – {careerRival.slamCount} slams</span>
+                <span>{careerRival.flag} {careerRival.name}</span>
+              </div>
+              <div className="cs-rival-note">
+                {careerRival.name} ({careerRival.country}) — your {careerRival.weakSurf} nemesis
+              </div>
+            </div>
+          )}
+
+          {offseasonInjury && (
+            <div className="cs-injury-card">
+              <span className="cs-injury-icon">🤕</span>
+              <div className="cs-injury-content">
+                <span className="cs-injury-title">{offseasonInjury.label}</span>
+                <span className="cs-injury-desc">{offseasonInjury.desc}</span>
+                <span className="cs-injury-effects">
+                  {Object.entries(offseasonInjury.effects).map(([k,v]) =>
+                    `${ATTRS.find(a=>a.key===k)?.label} ${v}`).join(" · ")}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {olympicResult && (
+            <div className={`cs-olympic-result ${olympicResult.wonGold ? "gold" : ""}`}>
+              <div className="cs-olympic-result-top">
+                <span className="cs-olympic-result-icon">
+                  {olympicResult.medal.includes("Gold") ? "🥇"
+                    : olympicResult.medal.includes("Silver") ? "🥈"
+                    : olympicResult.medal.includes("Bronze") ? "🥉" : "🎾"}
+                </span>
+                <div>
+                  <span className="cs-olympic-result-title">
+                    {olympicResult.year} Olympics · {olympicResult.flag} {olympicResult.city}
+                  </span>
+                  <span className="cs-olympic-result-medal">{olympicResult.medal}</span>
+                  <span className="cs-olympic-result-detail">
+                    {olympicResult.surface} court · {olympicResult.venue} · Best of 3 sets
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="cs-upgrade-section">
+            <h3 className="cs-upgrade-title">Off-season investment</h3>
+            <p className="cs-upgrade-sub">Choose one. Your decision shapes the seasons ahead.</p>
+            <div className="cs-upgrade-grid">
+              {offseasonUpgrades.map(u => (
+                <button key={u.id} className={`cs-upgrade-btn ${u.recovery ? "recovery" : ""}`}
+                  onClick={() => applyUpgrade(u)}>
+                  <span className="cs-upgrade-label">{u.label}</span>
+                  <span className="cs-upgrade-desc">{u.desc}</span>
+                  <div className="cs-upgrade-effects">
+                    {Object.entries(u.effects).map(([k, v]) => (
+                      <span key={k} className={`cs-upgrade-effect ${v > 0 ? "pos" : "neg"}`}>
+                        {ATTRS.find(a => a.key === k)?.label} {v > 0 ? `+${v}` : v}
+                      </span>
+                    ))}
+                    {u.longevity > 0 && <span className="cs-upgrade-effect pos">+{u.longevity} longevity</span>}
+                    {u.longevity < 0 && <span className="cs-upgrade-effect neg">{u.longevity} longevity</span>}
+                    {Object.keys(u.effects).length === 0 && <span className="cs-upgrade-effect pos">Body recovery</span>}
+                  </div>
+                  {u.warning && <span className="cs-upgrade-warning">⚠ {u.warning}</span>}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {retirementPrompt && (
+            <div className="cs-retirement-prompt">
+              <p>Your peak years may be behind you. Retire now and celebrate your legacy?</p>
+              <div className="cs-retire-actions">
+                <button className="cs-cta" onClick={retire}>Retire →</button>
+                <button className="cs-text-btn" onClick={() => setRetirementPrompt(false)}>Keep going</button>
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* RETIREMENT (career mode) */}
+      {phase === "retirement" && (
+        <section className="cs-retirement">
+          <div className="cs-retire-hero">
+            <span className="cs-retire-flag">{playerFlag}</span>
+            <h1 className="cs-h1">{playerName}</h1>
+            <p className="cs-retire-years">{2025 + 1}–{2025 + careerSeason} · {T.label}</p>
+          </div>
+
+          <div className="cs-retire-stat-grid">
+            <div className="cs-retire-stat">
+              <span className="cs-retire-val">{careerSlamCount}</span>
+              <span className="cs-retire-key">Grand Slam{careerSlamCount !== 1 ? "s" : ""}</span>
+            </div>
+            <div className="cs-retire-stat">
+              <span className="cs-retire-val">{careerSeason}</span>
+              <span className="cs-retire-key">Seasons</span>
+            </div>
+            <div className="cs-retire-stat">
+              <span className="cs-retire-val">{careerSeasons.reduce((s,r) => s + r.slams, 0)}</span>
+              <span className="cs-retire-key">Total slams</span>
+            </div>
+          </div>
+
+          <div className="cs-retire-tier">
+            {careerSlamCount >= 10 ? "🐐 All-Time Great" :
+             careerSlamCount >= 5  ? "⭐ Legendary Champion" :
+             careerSlamCount >= 2  ? "🏆 Grand Slam Champion" :
+             careerSlamCount === 1 ? "🎾 Grand Slam Winner" :
+                                      "🎾 A Professional Career"}
+          </div>
+
+          {careerRival && (
+            <div className="cs-rival-card">
+              <span className="cs-rival-label">Career Rivalry</span>
+              <div className="cs-rival-row">
+                <span>{playerFlag} {playerName} — {careerSlamCount} slams</span>
+                <span>vs.</span>
+                <span>{careerRival.flag} {careerRival.name} — {careerRival.slamCount} slams</span>
+              </div>
+            </div>
+          )}
+
+          <div className="cs-season-log">
+            <h3 className="cs-upgrade-title">Season by season</h3>
+            {careerSeasons.map(s => (
+              <div key={s.season} className="cs-season-row">
+                <span className="cs-season-num">{s.year} · Age {s.age}</span>
+                <span className="cs-season-result">
+                  {s.slams > 0 ? `🏆 ${s.slams} slam${s.slams !== 1 ? "s" : ""}` : "No titles"}
+                  {s.olympics ? ` · ${s.olympics.medal}` : ""}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <button className="cs-cta" onClick={() => setPhase("mode")}>Play again →</button>
         </section>
       )}
 
@@ -1265,8 +1916,9 @@ body { background: #1f6b3f; margin: 0; }
   -webkit-font-smoothing: antialiased;
 }
 .cs-head { display:flex; align-items:baseline; gap:16px; flex-wrap:wrap; border-bottom:2.5px solid var(--chalk); padding-bottom:12px; }
-.cs-wordmark { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:30px; letter-spacing:.5px; line-height:1; color:var(--chalk); text-transform:uppercase; }
-.cs-wordmark::first-letter { color:var(--ball); }
+.cs-wordmark { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:28px; letter-spacing:.5px; line-height:1; display:flex; align-items:baseline; gap:7px; text-transform:uppercase; }
+.cs-wordmark-calendar { color:var(--chalk); font-weight:700; letter-spacing:.06em; }
+.cs-wordmark-slam { color:var(--ball); font-weight:900; font-style:italic; letter-spacing:-.01em; font-size:1.18em; text-shadow:2px 2px 0 rgba(14,42,26,.5), 0 0 18px rgba(216,240,0,.35); }
 .cs-tag { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--dim); font-weight:600; }
 
 /* INTRO */
@@ -1473,6 +2125,114 @@ body { background: #1f6b3f; margin: 0; }
 .cs-share-headline { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:34px; line-height:1.05; letter-spacing:0; margin:6px 0 18px; text-transform:uppercase; color:var(--chalk); }
 .cs-share-headline.slam { color:var(--ball); }
 /* begin the season screen */
+/* ---- CAREER MODE CSS ---- */
+
+/* Mode pick */
+.cs-mode-pick { padding-top:24px; }
+.cs-mode-btns { display:grid; grid-template-columns:1fr 1fr; gap:14px; max-width:600px; margin-top:4px; }
+.cs-mode-btn { display:flex; flex-direction:column; align-items:flex-start; gap:8px; padding:22px 20px; border-radius:10px; border:2.5px solid var(--chalk); background:rgba(246,251,239,.05); cursor:pointer; text-align:left; transition:transform .12s, background .2s, border-color .2s; }
+.cs-mode-btn:hover { transform:translateY(-3px); background:rgba(216,240,0,.1); border-color:var(--ball); }
+.cs-mode-btn.career { border-color:var(--ball); background:rgba(216,240,0,.08); }
+.cs-mode-icon { font-size:30px; }
+.cs-mode-label { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:22px; text-transform:uppercase; color:var(--chalk); line-height:1; }
+.cs-mode-desc { font-size:13px; color:var(--dim); line-height:1.45; }
+
+/* Career badge in header */
+.cs-career-badge { font-size:11px; font-weight:700; color:var(--ball-soft); letter-spacing:.04em; white-space:nowrap; }
+
+/* Player create */
+.cs-player-create { padding-top:28px; }
+.cs-create-tabs { display:flex; gap:8px; margin:20px 0 18px; }
+.cs-create-tab { background:rgba(246,251,239,.07); border:1.5px solid var(--line-soft); border-radius:20px; color:var(--dim); font-size:13px; font-weight:700; padding:7px 22px; cursor:pointer; transition:.18s; }
+.cs-create-tab.active { background:var(--ball); border-color:var(--ball); color:var(--ink); }
+.cs-create-generated { display:flex; align-items:center; gap:16px; margin-bottom:24px; }
+.cs-gen-flag { font-size:42px; }
+.cs-gen-name { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:32px; color:var(--chalk); text-transform:uppercase; }
+.cs-create-custom { display:flex; flex-direction:column; gap:14px; margin-bottom:24px; }
+.cs-create-field { display:flex; flex-direction:column; gap:6px; margin-bottom:18px; }
+.cs-create-label { font-size:11px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--dim); }
+.cs-create-input, .cs-create-select { background:rgba(246,251,239,.08); border:1.5px solid var(--line); border-radius:6px; color:var(--chalk); font-size:17px; font-weight:600; padding:12px 14px; width:100%; box-sizing:border-box; }
+.cs-create-input:focus, .cs-create-select:focus { outline:none; border-color:var(--ball); }
+.cs-create-hint { font-size:12px; color:var(--dim); margin-top:4px; }
+.cs-age-btns { display:flex; gap:8px; flex-wrap:wrap; }
+.cs-age-btn { background:rgba(246,251,239,.07); border:1.5px solid var(--line-soft); border-radius:8px; color:var(--dim); font-size:18px; font-weight:800; padding:10px 20px; cursor:pointer; transition:.18s; }
+.cs-age-btn.active { background:var(--ball); border-color:var(--ball); color:var(--ink); }
+
+/* Off-season */
+.cs-offseason { padding-top:28px; }
+.cs-offseason-header { margin-bottom:22px; }
+.cs-offseason-h { font-size:clamp(28px,6vw,46px); margin:6px 0 0; }
+.cs-rival-card { background:rgba(216,240,0,.07); border:1.5px solid rgba(216,240,0,.3); border-radius:8px; padding:14px 16px; margin-bottom:18px; display:flex; flex-direction:column; gap:6px; }
+.cs-rival-label { font-size:10px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--ball-soft); }
+.cs-rival-row { display:flex; justify-content:space-between; align-items:center; font-weight:700; font-size:14px; color:var(--chalk); }
+.cs-rival-h2h { font-family:"Barlow Condensed",sans-serif; font-size:20px; font-weight:800; color:var(--ball); }
+.cs-rival-note { font-size:12px; color:var(--dim); }
+.cs-injury-card { background:rgba(210,105,63,.12); border:1.5px solid rgba(210,105,63,.4); border-radius:8px; padding:14px 16px; margin-bottom:18px; display:flex; gap:14px; align-items:flex-start; }
+.cs-injury-icon { font-size:28px; flex-shrink:0; }
+.cs-injury-content { display:flex; flex-direction:column; gap:3px; }
+.cs-injury-title { font-weight:800; font-size:15px; color:var(--clay); }
+.cs-injury-desc { font-size:13px; color:var(--dim); line-height:1.4; }
+.cs-injury-effects { font-size:12px; color:var(--clay); font-weight:700; margin-top:2px; }
+.cs-upgrade-section { margin-bottom:28px; }
+.cs-upgrade-title { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:20px; text-transform:uppercase; color:var(--chalk); margin:0 0 4px; }
+.cs-upgrade-sub { font-size:13px; color:var(--dim); margin:0 0 14px; }
+.cs-upgrade-grid { display:flex; flex-direction:column; gap:10px; }
+.cs-upgrade-btn { display:flex; flex-direction:column; gap:6px; padding:16px 18px; border:2px solid var(--line-soft); border-radius:8px; background:rgba(246,251,239,.05); cursor:pointer; text-align:left; transition:.18s; }
+.cs-upgrade-btn:hover { border-color:var(--ball); background:rgba(216,240,0,.08); transform:translateX(4px); }
+.cs-upgrade-btn.recovery { border-color:rgba(111,191,115,.4); background:rgba(111,191,115,.07); }
+.cs-upgrade-label { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:18px; text-transform:uppercase; color:var(--chalk); }
+.cs-upgrade-desc { font-size:13px; color:var(--dim); line-height:1.4; }
+.cs-upgrade-effects { display:flex; gap:8px; flex-wrap:wrap; margin-top:2px; }
+.cs-upgrade-effect { font-size:11px; font-weight:800; padding:2px 8px; border-radius:10px; }
+.cs-upgrade-effect.pos { background:rgba(111,191,115,.2); color:var(--grass); }
+.cs-upgrade-effect.neg { background:rgba(210,105,63,.18); color:var(--clay); }
+.cs-upgrade-warning { font-size:11px; color:var(--ball-soft); font-weight:700; }
+.cs-retirement-prompt { background:rgba(210,105,63,.1); border:1.5px solid rgba(210,105,63,.4); border-radius:8px; padding:16px; margin-top:16px; }
+.cs-retirement-prompt p { font-size:14px; color:var(--chalk); margin:0 0 12px; }
+.cs-retire-actions { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+.cs-career-next { width:100%; }
+
+/* Retirement screen */
+.cs-retirement { padding-top:28px; text-align:center; }
+.cs-retire-hero { margin-bottom:28px; }
+.cs-retire-flag { font-size:64px; display:block; margin-bottom:8px; }
+.cs-retire-years { font-size:14px; color:var(--dim); font-weight:600; }
+.cs-retire-stat-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:22px; }
+.cs-retire-stat { background:rgba(246,251,239,.06); border:1.5px solid var(--line-soft); border-radius:8px; padding:16px 8px; display:flex; flex-direction:column; gap:4px; }
+.cs-retire-val { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:42px; color:var(--ball); line-height:1; }
+.cs-retire-key { font-size:11px; letter-spacing:.1em; text-transform:uppercase; font-weight:700; color:var(--dim); }
+.cs-retire-tier { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:26px; text-transform:uppercase; color:var(--chalk); margin:0 0 22px; }
+.cs-season-log { text-align:left; margin-bottom:28px; }
+.cs-season-row { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line-soft); font-size:13.5px; }
+.cs-season-num { color:var(--dim); font-weight:600; }
+.cs-season-result { color:var(--chalk); font-weight:700; }
+
+@media (max-width:520px) {
+  .cs-mode-btns { grid-template-columns:1fr; }
+  .cs-retire-stat-grid { grid-template-columns:repeat(3,1fr); gap:6px; }
+  .cs-retire-val { font-size:32px; }
+}
+
+/* Olympic year banner */
+.cs-olympic-banner { display:flex; align-items:flex-start; gap:14px; background:linear-gradient(135deg,rgba(255,215,0,.12),rgba(216,240,0,.08)); border:1.5px solid rgba(255,215,0,.45); border-radius:8px; padding:14px 16px; margin-bottom:2px; }
+.cs-olympic-rings { font-size:32px; flex-shrink:0; }
+.cs-olympic-text { display:flex; flex-direction:column; gap:3px; }
+.cs-olympic-text strong { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:17px; text-transform:uppercase; color:#ffd700; letter-spacing:.04em; }
+.cs-olympic-text span { font-size:13px; color:var(--dim); }
+.cs-olympic-note { font-size:12px; color:rgba(255,215,0,.65) !important; font-style:italic; }
+
+/* Olympic offseason result */
+.cs-olympic-result { background:rgba(200,200,200,.07); border:1.5px solid rgba(200,200,200,.25); border-radius:8px; padding:14px 16px; margin-bottom:18px; }
+.cs-olympic-result.gold { background:rgba(255,215,0,.12); border-color:rgba(255,215,0,.45); }
+.cs-olympic-result-top { display:flex; gap:14px; align-items:flex-start; }
+.cs-olympic-result-icon { font-size:32px; flex-shrink:0; }
+.cs-olympic-result-title { display:block; font-size:11px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--dim); }
+.cs-olympic-result-medal { display:block; font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:22px; text-transform:uppercase; color:var(--chalk); margin:2px 0; }
+.cs-olympic-result.gold .cs-olympic-result-medal { color:#ffd700; }
+.cs-olympic-result-detail { display:block; font-size:12px; color:var(--dim); }
+
+/* ---- END CAREER MODE CSS ---- */
+
 .cs-begin-season { display:flex; flex-direction:column; align-items:center; text-align:center; padding:40px 0 28px; gap:20px; }
 .cs-begin-copy { display:flex; flex-direction:column; gap:8px; }
 .cs-begin-title { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:42px; line-height:1; text-transform:uppercase; color:var(--chalk); margin:0; }
