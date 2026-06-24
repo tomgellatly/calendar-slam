@@ -36,39 +36,56 @@ const SURFACE_WEIGHTS = {
   Grass: { serve: 1.4, return: 0.9, forehand: 1.0, backhand: 0.9, net: 1.3, movement: 1.0, defence: 0.8, stamina: 0.8, mental: 1.1, touch: 1.1 },
 };
 
-// --- Player pool. Ratings are illustrative placeholders, NOT real data. ------
-// In production these derive from Jeff Sackmann's tennis_atp / tennis_wta stats.
-// Player-only (no specific season) keeps it accessible.
-const POOL = [
-  { name: "Pete Sampras", stats: { serve: 97, return: 78, forehand: 90, backhand: 84, net: 95, movement: 86, defence: 80, stamina: 84, mental: 92, touch: 88 } },
-  { name: "Andre Agassi", stats: { serve: 80, return: 96, forehand: 93, backhand: 92, net: 78, movement: 85, defence: 88, stamina: 86, mental: 84, touch: 80 } },
-  { name: "Roger Federer", stats: { serve: 92, return: 86, forehand: 97, backhand: 84, net: 92, movement: 95, defence: 88, stamina: 90, mental: 93, touch: 96 } },
-  { name: "Rafael Nadal", stats: { serve: 85, return: 92, forehand: 98, backhand: 88, net: 82, movement: 96, defence: 97, stamina: 98, mental: 97, touch: 84 } },
-  { name: "Novak Djokovic", stats: { serve: 88, return: 99, forehand: 92, backhand: 97, net: 84, movement: 97, defence: 96, stamina: 96, mental: 95, touch: 86 } },
-  { name: "Ivan Lendl", stats: { serve: 88, return: 84, forehand: 94, backhand: 86, net: 76, movement: 84, defence: 86, stamina: 92, mental: 90, touch: 74 } },
-  { name: "Boris Becker", stats: { serve: 95, return: 80, forehand: 88, backhand: 82, net: 93, movement: 82, defence: 78, stamina: 82, mental: 86, touch: 82 } },
-  { name: "Stefan Edberg", stats: { serve: 89, return: 82, forehand: 80, backhand: 88, net: 97, movement: 90, defence: 84, stamina: 84, mental: 85, touch: 90 } },
-  { name: "Bjorn Borg", stats: { serve: 86, return: 88, forehand: 92, backhand: 90, net: 80, movement: 94, defence: 93, stamina: 96, mental: 96, touch: 82 } },
-  { name: "John McEnroe", stats: { serve: 87, return: 86, forehand: 84, backhand: 82, net: 96, movement: 88, defence: 82, stamina: 80, mental: 78, touch: 98 } },
-  { name: "Andy Murray", stats: { serve: 84, return: 94, forehand: 86, backhand: 90, net: 85, movement: 93, defence: 95, stamina: 92, mental: 84, touch: 90 } },
-  { name: "Stan Wawrinka", stats: { serve: 88, return: 84, forehand: 90, backhand: 96, net: 80, movement: 82, defence: 82, stamina: 84, mental: 82, touch: 84 } },
-  { name: "Juan M. del Potro", stats: { serve: 91, return: 82, forehand: 98, backhand: 80, net: 78, movement: 78, defence: 80, stamina: 82, mental: 84, touch: 72 } },
-  { name: "Goran Ivanisevic", stats: { serve: 99, return: 70, forehand: 82, backhand: 76, net: 86, movement: 76, defence: 70, stamina: 78, mental: 74, touch: 76 } },
-  { name: "Gustavo Kuerten", stats: { serve: 84, return: 84, forehand: 93, backhand: 86, net: 78, movement: 88, defence: 90, stamina: 90, mental: 86, touch: 88 } },
-  { name: "Marat Safin", stats: { serve: 93, return: 86, forehand: 92, backhand: 90, net: 82, movement: 84, defence: 82, stamina: 80, mental: 70, touch: 80 } },
-  // Current era — draftable shots from today's tour
-  { name: "Jannik Sinner", stats: { serve: 90, return: 92, forehand: 95, backhand: 94, net: 82, movement: 92, defence: 90, stamina: 92, mental: 93, touch: 80 } },
-  { name: "Carlos Alcaraz", stats: { serve: 88, return: 90, forehand: 96, backhand: 88, net: 90, movement: 97, defence: 92, stamina: 93, mental: 90, touch: 95 } },
-  { name: "Novak Djokovic", stats: { serve: 88, return: 99, forehand: 92, backhand: 97, net: 84, movement: 96, defence: 97, stamina: 94, mental: 96, touch: 88 } },
-  { name: "Alexander Zverev", stats: { serve: 94, return: 86, forehand: 88, backhand: 92, net: 80, movement: 86, defence: 86, stamina: 88, mental: 80, touch: 78 } },
-  { name: "Daniil Medvedev", stats: { serve: 88, return: 94, forehand: 86, backhand: 88, net: 76, movement: 90, defence: 95, stamina: 90, mental: 82, touch: 80 } },
-  { name: "Ben Shelton", stats: { serve: 96, return: 80, forehand: 92, backhand: 80, net: 82, movement: 84, defence: 78, stamina: 84, mental: 82, touch: 76 } },
+// --- Player pools. Ratings are illustrative estimates, NOT real data. --------
+// Each player: stats, country flag (emoji), and a one-line career fact.
+const POOL_ATP = [
+  { name: "Pete Sampras", flag: "🇺🇸", fact: "Serve-and-volley king who ruled the grass of the 1990s.", stats: { serve: 97, return: 78, forehand: 90, backhand: 84, net: 95, movement: 86, defence: 80, stamina: 84, mental: 92, touch: 88 } },
+  { name: "Andre Agassi", flag: "🇺🇸", fact: "The great returner whose ball-striking redefined the baseline.", stats: { serve: 80, return: 96, forehand: 93, backhand: 92, net: 78, movement: 85, defence: 88, stamina: 86, mental: 84, touch: 80 } },
+  { name: "Roger Federer", flag: "🇨🇭", fact: "The most elegant all-courter the game has ever seen.", stats: { serve: 92, return: 86, forehand: 97, backhand: 84, net: 92, movement: 95, defence: 88, stamina: 90, mental: 93, touch: 96 } },
+  { name: "Rafael Nadal", flag: "🇪🇸", fact: "The King of Clay, famed for relentless topspin and iron will.", stats: { serve: 85, return: 92, forehand: 98, backhand: 88, net: 82, movement: 96, defence: 97, stamina: 98, mental: 97, touch: 84 } },
+  { name: "Novak Djokovic", flag: "🇷🇸", fact: "The supreme returner and defender, bending matches to his will.", stats: { serve: 88, return: 99, forehand: 92, backhand: 97, net: 84, movement: 97, defence: 96, stamina: 96, mental: 95, touch: 86 } },
+  { name: "Ivan Lendl", flag: "🇨🇿", fact: "The ruthless baseliner who industrialised the modern forehand.", stats: { serve: 88, return: 84, forehand: 94, backhand: 86, net: 76, movement: 84, defence: 86, stamina: 92, mental: 90, touch: 74 } },
+  { name: "Boris Becker", flag: "🇩🇪", fact: "The diving teenage Wimbledon champion with a thunderous serve.", stats: { serve: 95, return: 80, forehand: 88, backhand: 82, net: 93, movement: 82, defence: 78, stamina: 82, mental: 86, touch: 82 } },
+  { name: "Stefan Edberg", flag: "🇸🇪", fact: "The most graceful serve-and-volleyer of his generation.", stats: { serve: 89, return: 82, forehand: 80, backhand: 88, net: 97, movement: 90, defence: 84, stamina: 84, mental: 85, touch: 90 } },
+  { name: "Bjorn Borg", flag: "🇸🇪", fact: "The ice-cool baseliner who conquered both clay and grass.", stats: { serve: 86, return: 88, forehand: 92, backhand: 90, net: 80, movement: 94, defence: 93, stamina: 96, mental: 96, touch: 82 } },
+  { name: "John McEnroe", flag: "🇺🇸", fact: "A touch artist at net with the finest hands in the game.", stats: { serve: 87, return: 86, forehand: 84, backhand: 82, net: 96, movement: 88, defence: 82, stamina: 80, mental: 78, touch: 98 } },
+  { name: "Andy Murray", flag: "🇬🇧", fact: "A brilliant counterpuncher and one of the best returners around.", stats: { serve: 84, return: 94, forehand: 86, backhand: 90, net: 85, movement: 93, defence: 95, stamina: 92, mental: 84, touch: 90 } },
+  { name: "Stan Wawrinka", flag: "🇨🇭", fact: "Owner of perhaps the most devastating one-handed backhand ever.", stats: { serve: 88, return: 84, forehand: 90, backhand: 96, net: 80, movement: 82, defence: 82, stamina: 84, mental: 82, touch: 84 } },
+  { name: "Juan M. del Potro", flag: "🇦🇷", fact: "A gentle giant whose forehand was one of the heaviest in history.", stats: { serve: 91, return: 82, forehand: 98, backhand: 80, net: 78, movement: 78, defence: 80, stamina: 82, mental: 84, touch: 72 } },
+  { name: "Goran Ivanisevic", flag: "🇭🇷", fact: "A wildcard with a left-handed serve that bordered on unplayable.", stats: { serve: 99, return: 70, forehand: 82, backhand: 76, net: 86, movement: 76, defence: 70, stamina: 78, mental: 74, touch: 76 } },
+  { name: "Gustavo Kuerten", flag: "🇧🇷", fact: "The joyful Brazilian whose topspin made him a clay-court hero.", stats: { serve: 84, return: 84, forehand: 93, backhand: 86, net: 78, movement: 88, defence: 90, stamina: 90, mental: 86, touch: 88 } },
+  { name: "Marat Safin", flag: "🇷🇺", fact: "A mercurial talent with raw power off both wings.", stats: { serve: 93, return: 86, forehand: 92, backhand: 90, net: 82, movement: 84, defence: 82, stamina: 80, mental: 70, touch: 80 } },
+  // Current era
+  { name: "Jannik Sinner", flag: "🇮🇹", fact: "The ice-cold Italian No. 1 with flat, relentless ball-striking.", stats: { serve: 90, return: 92, forehand: 95, backhand: 94, net: 82, movement: 92, defence: 90, stamina: 92, mental: 93, touch: 80 } },
+  { name: "Carlos Alcaraz", flag: "🇪🇸", fact: "The electric all-court prodigy with dazzling variety.", stats: { serve: 88, return: 90, forehand: 96, backhand: 88, net: 90, movement: 97, defence: 92, stamina: 93, mental: 90, touch: 95 } },
+  { name: "Alexander Zverev", flag: "🇩🇪", fact: "A towering baseliner with a heavy serve and clay-court grit.", stats: { serve: 94, return: 86, forehand: 88, backhand: 92, net: 80, movement: 86, defence: 86, stamina: 88, mental: 80, touch: 78 } },
+  { name: "Daniil Medvedev", flag: "🇷🇺", fact: "An unorthodox counterpuncher who defends from deep behind the line.", stats: { serve: 88, return: 94, forehand: 86, backhand: 88, net: 76, movement: 90, defence: 95, stamina: 90, mental: 82, touch: 80 } },
+  { name: "Ben Shelton", flag: "🇺🇸", fact: "A young American powerhouse with an explosive lefty serve.", stats: { serve: 96, return: 80, forehand: 92, backhand: 80, net: 82, movement: 84, defence: 78, stamina: 84, mental: 82, touch: 76 } },
 ];
 
-// --- The field: real current ATP players (top 10, June 2026). Each has a base
-// level and per-surface adjustments reflecting their real strengths, plus a
-// signature so loss narratives feel specific. Levels are illustrative. -------
-const FIELD_PLAYERS = [
+const POOL_WTA = [
+  { name: "Serena Williams", flag: "🇺🇸", fact: "The most dominant force in women's tennis, with a colossal serve.", stats: { serve: 98, return: 90, forehand: 95, backhand: 92, net: 84, movement: 88, defence: 86, stamina: 90, mental: 97, touch: 82 } },
+  { name: "Steffi Graf", flag: "🇩🇪", fact: "Owner of a fearsome forehand and the only Golden Slam in history.", stats: { serve: 90, return: 88, forehand: 98, backhand: 84, net: 86, movement: 96, defence: 90, stamina: 94, mental: 96, touch: 84 } },
+  { name: "Martina Navratilova", flag: "🇺🇸", fact: "The serve-and-volley pioneer who redefined athleticism on tour.", stats: { serve: 92, return: 84, forehand: 88, backhand: 86, net: 98, movement: 92, defence: 84, stamina: 90, mental: 92, touch: 94 } },
+  { name: "Justine Henin", flag: "🇧🇪", fact: "A graceful all-courter with arguably the finest backhand in the game.", stats: { serve: 84, return: 90, forehand: 90, backhand: 98, net: 88, movement: 94, defence: 92, stamina: 88, mental: 90, touch: 92 } },
+  { name: "Monica Seles", flag: "🇷🇸", fact: "A ferocious two-fisted hitter who took the ball impossibly early.", stats: { serve: 84, return: 94, forehand: 95, backhand: 96, net: 76, movement: 84, defence: 86, stamina: 86, mental: 88, touch: 78 } },
+  { name: "Venus Williams", flag: "🇺🇸", fact: "A grass-court great with a huge serve and explosive movement.", stats: { serve: 94, return: 84, forehand: 90, backhand: 86, net: 86, movement: 94, defence: 84, stamina: 88, mental: 86, touch: 80 } },
+  { name: "Chris Evert", flag: "🇺🇸", fact: "The metronomic baseliner whose consistency was almost inhuman.", stats: { serve: 78, return: 90, forehand: 90, backhand: 94, net: 74, movement: 88, defence: 96, stamina: 92, mental: 96, touch: 84 } },
+  { name: "Martina Hingis", flag: "🇨🇭", fact: "A tactical genius who out-thought opponents with guile and angles.", stats: { serve: 78, return: 88, forehand: 84, backhand: 86, net: 90, movement: 92, defence: 90, stamina: 84, mental: 90, touch: 96 } },
+  { name: "Maria Sharapova", flag: "🇷🇺", fact: "A fierce competitor with flat, penetrating groundstrokes.", stats: { serve: 90, return: 86, forehand: 92, backhand: 92, net: 76, movement: 80, defence: 82, stamina: 86, mental: 94, touch: 74 } },
+  { name: "Kim Clijsters", flag: "🇧🇪", fact: "A supreme athlete famed for sliding splits and elastic defence.", stats: { serve: 86, return: 90, forehand: 90, backhand: 88, net: 84, movement: 95, defence: 94, stamina: 88, mental: 86, touch: 84 } },
+  // Current era
+  { name: "Aryna Sabalenka", flag: "🇧🇾", fact: "The current world No. 1, hitting with overwhelming power.", stats: { serve: 92, return: 88, forehand: 95, backhand: 92, net: 80, movement: 86, defence: 84, stamina: 88, mental: 88, touch: 78 } },
+  { name: "Iga Swiatek", flag: "🇵🇱", fact: "A clay-court phenomenon with heavy topspin and relentless movement.", stats: { serve: 86, return: 92, forehand: 96, backhand: 88, net: 80, movement: 95, defence: 93, stamina: 92, mental: 90, touch: 86 } },
+  { name: "Coco Gauff", flag: "🇺🇸", fact: "A lightning-quick defender with a booming serve and big future.", stats: { serve: 90, return: 90, forehand: 84, backhand: 92, net: 82, movement: 96, defence: 94, stamina: 90, mental: 86, touch: 84 } },
+  { name: "Elena Rybakina", flag: "🇰🇿", fact: "A grass-court force with one of the biggest serves on tour.", stats: { serve: 95, return: 84, forehand: 92, backhand: 86, net: 80, movement: 84, defence: 82, stamina: 86, mental: 86, touch: 78 } },
+  { name: "Jessica Pegula", flag: "🇺🇸", fact: "A clean, consistent ball-striker who takes time away from rivals.", stats: { serve: 84, return: 90, forehand: 90, backhand: 90, net: 82, movement: 88, defence: 90, stamina: 88, mental: 86, touch: 84 } },
+  { name: "Naomi Osaka", flag: "🇯🇵", fact: "A hard-court champion with a thunderous serve and forehand.", stats: { serve: 94, return: 84, forehand: 94, backhand: 86, net: 78, movement: 82, defence: 80, stamina: 84, mental: 84, touch: 76 } },
+];
+
+// --- The field: real current tour players. Each has a base level and
+// per-surface adjustments, plus a signature for loss narratives. Estimates. ---
+const FIELD_ATP = [
   { name: "Jannik Sinner", base: 88, surf: { Hard: 4, Clay: 1, Grass: 2 }, weapon: "relentless flat hitting", style: "baseline" },
   { name: "Carlos Alcaraz", base: 88, surf: { Hard: 2, Clay: 4, Grass: 3 }, weapon: "all-court variety", style: "allcourt" },
   { name: "Alexander Zverev", base: 84, surf: { Hard: 2, Clay: 4, Grass: 0 }, weapon: "heavy serve and clay-court grind", style: "baseline" },
@@ -79,6 +96,19 @@ const FIELD_PLAYERS = [
   { name: "Novak Djokovic", base: 85, surf: { Hard: 4, Clay: 2, Grass: 3 }, weapon: "an impenetrable return and defence", style: "return" },
   { name: "Daniil Medvedev", base: 81, surf: { Hard: 4, Clay: -2, Grass: 1 }, weapon: "deep-court counterpunching", style: "defence" },
   { name: "Flavio Cobolli", base: 77, surf: { Hard: 1, Clay: 3, Grass: 1 }, weapon: "fearless ball-striking", style: "baseline" },
+];
+
+const FIELD_WTA = [
+  { name: "Aryna Sabalenka", base: 88, surf: { Hard: 4, Clay: 1, Grass: 2 }, weapon: "overwhelming power", style: "baseline" },
+  { name: "Iga Swiatek", base: 88, surf: { Hard: 2, Clay: 4, Grass: 1 }, weapon: "heavy topspin and relentless movement", style: "defence" },
+  { name: "Coco Gauff", base: 84, surf: { Hard: 3, Clay: 2, Grass: 2 }, weapon: "lightning speed and a big serve", style: "defence" },
+  { name: "Elena Rybakina", base: 83, surf: { Hard: 3, Clay: 0, Grass: 4 }, weapon: "one of the biggest serves on tour", style: "serve" },
+  { name: "Jessica Pegula", base: 80, surf: { Hard: 3, Clay: 1, Grass: 2 }, weapon: "clean, early ball-striking", style: "baseline" },
+  { name: "Jasmine Paolini", base: 79, surf: { Hard: 1, Clay: 3, Grass: 2 }, weapon: "fearless attacking tennis", style: "allcourt" },
+  { name: "Qinwen Zheng", base: 81, surf: { Hard: 3, Clay: 1, Grass: 1 }, weapon: "a powerful serve and forehand", style: "serve" },
+  { name: "Madison Keys", base: 80, surf: { Hard: 3, Clay: 0, Grass: 2 }, weapon: "thunderous flat hitting", style: "baseline" },
+  { name: "Mirra Andreeva", base: 80, surf: { Hard: 2, Clay: 2, Grass: 2 }, weapon: "precocious all-court maturity", style: "allcourt" },
+  { name: "Barbora Krejcikova", base: 78, surf: { Hard: 1, Clay: 3, Grass: 3 }, weapon: "craft, variety and slice", style: "allcourt" },
 ];
 
 // COSMETIC ONLY. The real win/loss engine uses SURFACE_WEIGHTS above. These
@@ -107,9 +137,8 @@ function displayMeter(build, surface) {
 
 // ============================================================================
 
-// Lower-ranked but real current tour players for the early rounds, so the draw
-// looks like a real major rather than only the top 10. Levels are illustrative.
-const DRAW_POOL = [
+// Lower-ranked but real current tour players for the early rounds. Estimates.
+const DRAW_ATP = [
   { name: "Holger Rune", base: 78, surf: { Hard: 2, Clay: 2, Grass: 1 }, weapon: "a flashy all-court game", style: "baseline" },
   { name: "Lorenzo Musetti", base: 77, surf: { Hard: 0, Clay: 4, Grass: 1 }, weapon: "a one-handed backhand and clay craft", style: "baseline" },
   { name: "Andrey Rublev", base: 78, surf: { Hard: 2, Clay: 1, Grass: 1 }, weapon: "a thunderous forehand", style: "baseline" },
@@ -127,17 +156,35 @@ const DRAW_POOL = [
   { name: "Alexander Bublik", base: 72, surf: { Hard: 2, Clay: -1, Grass: 3 }, weapon: "unpredictable serve-and-trickery", style: "serve" },
 ];
 
+const DRAW_WTA = [
+  { name: "Emma Navarro", base: 77, surf: { Hard: 2, Clay: 1, Grass: 1 }, weapon: "tireless retrieving", style: "defence" },
+  { name: "Daria Kasatkina", base: 76, surf: { Hard: 1, Clay: 3, Grass: 1 }, weapon: "clever variety and touch", style: "allcourt" },
+  { name: "Beatriz Haddad Maia", base: 75, surf: { Hard: 1, Clay: 3, Grass: 2 }, weapon: "a heavy lefty forehand", style: "baseline" },
+  { name: "Liudmila Samsonova", base: 75, surf: { Hard: 3, Clay: 0, Grass: 2 }, weapon: "flat, powerful hitting", style: "baseline" },
+  { name: "Ekaterina Alexandrova", base: 74, surf: { Hard: 3, Clay: 0, Grass: 2 }, weapon: "early, aggressive ball-striking", style: "baseline" },
+  { name: "Elina Svitolina", base: 76, surf: { Hard: 2, Clay: 2, Grass: 2 }, weapon: "rock-solid counterpunching", style: "defence" },
+  { name: "Diana Shnaider", base: 74, surf: { Hard: 2, Clay: 2, Grass: 1 }, weapon: "a fearless lefty game", style: "baseline" },
+  { name: "Donna Vekic", base: 73, surf: { Hard: 2, Clay: 0, Grass: 2 }, weapon: "big first-strike tennis", style: "serve" },
+  { name: "Marketa Vondrousova", base: 75, surf: { Hard: 1, Clay: 2, Grass: 4 }, weapon: "crafty lefty slice and angles", style: "allcourt" },
+  { name: "Anna Kalinskaya", base: 73, surf: { Hard: 2, Clay: 1, Grass: 1 }, weapon: "clean, compact groundstrokes", style: "baseline" },
+  { name: "Paula Badosa", base: 74, surf: { Hard: 2, Clay: 2, Grass: 1 }, weapon: "powerful baseline hitting", style: "baseline" },
+  { name: "Victoria Azarenka", base: 75, surf: { Hard: 3, Clay: 1, Grass: 1 }, weapon: "relentless two-handed pressure", style: "return" },
+  { name: "Karolina Muchova", base: 76, surf: { Hard: 2, Clay: 3, Grass: 2 }, weapon: "exquisite all-court variety", style: "allcourt" },
+  { name: "Leylah Fernandez", base: 73, surf: { Hard: 2, Clay: 2, Grass: 1 }, weapon: "scrappy lefty defence", style: "defence" },
+  { name: "Sofia Kenin", base: 72, surf: { Hard: 2, Clay: 1, Grass: 1 }, weapon: "sharp, flat angles", style: "baseline" },
+];
+
 const ROUNDS = ["Round 1", "Round 2", "Round 3", "Round 4", "Quarter-final", "Semi-final", "Final"];
 
 // Build a 7-man draw for a major. Early rounds (1-4) pull realistic top-100
 // names; the back end (QF/SF/F) draws from the top 10, ordered so the toughest
 // surface threat is the likeliest final. Returns ordered opponents per round.
-function buildDraw(slam, rand) {
+function buildDraw(slam, rand, field, drawPool) {
   const withLevel = (arr) =>
     arr.map((p) => ({ ...p, level: p.base + p.surf[slam.surface] }));
 
-  const lower = withLevel(DRAW_POOL).sort(() => rand() - 0.5);
-  const top = withLevel(FIELD_PLAYERS).sort((a, b) => a.level - b.level);
+  const lower = withLevel(drawPool).sort(() => rand() - 0.5);
+  const top = withLevel(field).sort((a, b) => a.level - b.level);
 
   const draw = [];
   // Rounds 1-3: lower-ranked tour players
@@ -145,13 +192,21 @@ function buildDraw(slam, rand) {
   // Round 4: a strong lower player or a weaker top-10 name
   const r4Pool = [lower[3], top[0], top[1]];
   draw.push(r4Pool[Math.floor(rand() * r4Pool.length)]);
-  // QF / SF / Final: progressively stronger top-10, surface king last
+  // QF / SF / Final: the genuine contenders, with a championship-week boost so
+  // the back half plays at peak. Keeps the calendar slam genuinely rare.
   const top5 = top.slice(-5);
-  draw.push(top5[Math.floor(rand() * 2)]);
-  draw.push(top5[2 + Math.floor(rand() * 2)]);
-  draw.push(top[top.length - 1]);
+  const boost = (p, by) => ({ ...p, level: p.level + by });
+  draw.push(boost(top5[Math.floor(rand() * 2)], 1));        // QF
+  draw.push(boost(top5[2 + Math.floor(rand() * 2)], 2));    // SF
+  draw.push(boost(top[top.length - 1], 3));                 // Final: surface king at his best
   return draw;
 }
+
+// Bundles for each tour, selected at runtime.
+const TOURS = {
+  atp: { pool: POOL_ATP, field: FIELD_ATP, draw: DRAW_ATP, label: "ATP", sub: "Men's Tour" },
+  wta: { pool: POOL_WTA, field: FIELD_WTA, draw: DRAW_WTA, label: "WTA", sub: "Women's Tour" },
+};
 
 function mulberry32(seed) {
   return function () {
@@ -230,8 +285,8 @@ const fmtScore = (sets) => sets.map(([a, b]) => `${a}-${b}`).join(" ");
 // Simulate one major: seven rounds against the real draw, each best-of-5 with
 // per-set noise. Records the full path with real set scores. `usedReasons` is a
 // Set shared across majors so loss explanations never repeat.
-function simulateMajor(build, slam, rand, usedReasons) {
-  const draw = buildDraw(slam, rand);
+function simulateMajor(build, slam, rand, usedReasons, field, drawPool) {
+  const draw = buildDraw(slam, rand, field, drawPool);
   const myForm = surfaceScore(build, slam.surface);
   const path = [];
 
@@ -368,30 +423,31 @@ function Figure({ build, hovered }) {
   const wholeHot = hovered === "stamina";
 
   return (
-    <svg className={`cs-figure ${wholeHot ? "pulse" : ""}`} viewBox="0 0 200 300" aria-hidden="true">
+    <svg className={`cs-figure ${wholeHot ? "pulse" : ""}`} viewBox="0 0 220 300" aria-hidden="true">
       {/* back leg */}
-      <path className={cls("legs")} d="M88 150 Q74 190 58 226 Q48 252 34 274 Q30 282 38 285 Q47 286 53 278 Q68 250 82 222 Q94 196 102 168 Z" />
-      <path className={cls("feet")} d="M34 272 Q22 278 17 287 Q14 294 25 295 L48 293 Q53 287 46 282 Q40 278 36 275 Z" />
+      <path className={cls("legs")} d="M96 150 C92 168 84 186 74 206 C66 222 54 240 44 258 C40 266 36 274 38 280 C40 285 48 285 52 280 C62 266 72 250 82 234 C92 218 100 200 106 180 C110 168 110 158 106 150 Z" />
+      <path className={cls("feet")} d="M44 256 C36 262 30 272 28 280 C27 286 32 289 40 288 C50 286 58 282 60 276 C61 270 56 264 50 262 C47 260 45 258 44 256 Z" />
       {/* front leg */}
-      <path className={cls("legs")} d="M112 150 Q120 192 126 228 Q130 252 131 274 Q131 284 141 285 Q151 284 150 273 Q149 242 145 210 Q141 180 132 152 Z" />
-      <path className={cls("feet")} d="M129 273 Q127 286 134 291 Q145 295 158 290 Q168 285 161 277 Q152 271 142 271 Q133 271 131 274 Z" />
+      <path className={cls("legs")} d="M118 150 C124 170 128 190 132 212 C135 230 137 250 137 270 C137 278 140 283 146 283 C153 283 156 277 155 269 C153 248 150 226 146 206 C142 184 138 166 132 150 Z" />
+      <path className={cls("feet")} d="M133 268 C131 276 132 283 138 286 C146 289 156 287 160 281 C163 276 159 270 152 268 C145 266 138 266 133 268 Z" />
       {/* hips */}
-      <path className={cls("hips")} d="M84 134 Q100 128 120 134 Q128 146 130 160 Q130 168 124 170 Q108 174 92 170 Q84 168 84 158 Q83 146 84 134 Z" />
+      <path className={cls("hips")} d="M92 132 C104 126 122 126 132 134 C137 144 138 154 136 162 C124 168 108 168 96 164 C90 158 89 144 92 132 Z" />
       {/* torso */}
-      <path className={cls("torso")} d="M86 66 Q102 58 120 66 Q126 88 126 112 Q128 132 122 146 Q104 152 88 146 Q82 130 82 108 Q81 84 86 66 Z" />
+      <path className={cls("torso")} d="M94 64 C104 56 122 56 130 66 C134 84 135 104 134 122 C133 134 130 144 124 150 C112 154 100 153 92 148 C88 138 88 122 88 104 C88 86 90 72 94 64 Z" />
       {/* off arm */}
-      <path className={cls("offArm")} d="M90 78 Q76 86 72 102 Q70 116 80 124 Q90 128 124 110 Q128 104 122 98 Q108 104 94 106 Q88 100 92 90 Q96 82 90 78 Z" />
+      <path className={cls("offArm")} d="M96 76 C84 80 74 90 70 104 C67 116 70 128 78 134 C84 137 90 133 90 126 C89 116 92 106 100 100 C108 94 118 92 126 96 C130 92 128 84 120 80 C112 76 102 74 96 76 Z" />
       {/* racket arm */}
-      <path className={cls("racketArm")} d="M120 70 Q138 68 150 82 Q160 96 158 116 Q156 128 148 128 Q140 126 140 116 Q140 100 130 92 Q120 86 116 86 Q114 76 120 70 Z" />
-      <path className={cls("racketArm")} d="M138 112 Q150 100 160 84 Q166 74 160 70 Q152 68 148 78 Q140 94 132 108 Z" />
+      <path className={cls("racketArm")} d="M128 64 C142 60 156 66 164 80 C170 92 170 106 166 118 C163 126 156 128 150 124 C146 120 147 110 148 100 C148 90 142 82 132 80 C124 78 120 76 120 70 C121 64 124 64 128 64 Z" />
+      <path className={cls("racketArm")} d="M158 96 C168 82 176 66 180 52 C182 44 178 38 172 40 C166 42 164 50 160 62 C156 74 150 86 146 96 C150 100 154 100 158 96 Z" />
       {/* racket */}
       <g className={cls("racket")}>
-        <ellipse cx="170" cy="42" rx="19" ry="25" fill="none" strokeWidth="5" />
-        <path d="M163 64 L156 80 M177 64 L170 80" strokeWidth="5" fill="none" />
+        <ellipse cx="186" cy="34" rx="22" ry="28" fill="none" strokeWidth="5" />
+        <ellipse cx="186" cy="34" rx="14" ry="19" fill="none" strokeWidth="1.5" opacity="0.5" />
+        <path d="M178 58 L170 76 M192 58 L184 76" strokeWidth="5" fill="none" />
       </g>
       {/* neck + head */}
-      <path className={cls("torso")} d="M98 54 Q98 62 106 64 Q114 64 114 56 L114 50 L98 50 Z" />
-      <path className={cls("head")} d="M96 28 Q96 16 108 16 Q122 16 122 32 Q122 47 109 51 Q97 49 96 36 Z" />
+      <path className={cls("torso")} d="M106 50 C106 58 112 62 119 62 C126 62 128 54 127 48 L127 42 L107 42 Z" />
+      <path className={cls("head")} d="M105 24 C105 12 116 8 124 12 C132 16 134 28 130 38 C127 46 118 48 111 44 C106 41 104 32 105 24 Z" />
     </svg>
   );
 }
@@ -447,7 +503,7 @@ function Court({ build, hovered }) {
 // coloured squares, and offers a Wordle-style text block to copy/share.
 const SURF_EMOJI = { Clay: "🟧", Grass: "🟩", Hard: "🟦" };
 
-function ShareCard({ active, ranSim, build, onClose }) {
+function ShareCard({ active, ranSim, build, tourLabel, onClose }) {
   const [copied, setCopied] = useState(false);
   if (!active) return null;
 
@@ -463,7 +519,7 @@ function ShareCard({ active, ranSim, build, onClose }) {
     `${active.won}/4 majors`;
 
   const shareText =
-    `Calendar Slam — ${headline}\n${squares}\n${ranSim ? "Simulated vs the 2026 field" : "Quick projection"}\nplay: calendarslam.com`;
+    `Calendar Slam — ${headline}\n${squares}\n${ranSim ? `Simulated vs the ${tourLabel} field` : "Quick projection"}\nplay: calendarslam.com`;
 
   function copy() {
     try {
@@ -495,7 +551,7 @@ function ShareCard({ active, ranSim, build, onClose }) {
           })}
         </div>
 
-        <div className="cs-share-mode">{ranSim ? "Simulated vs the 2026 ATP field" : "Quick projection"}</div>
+        <div className="cs-share-mode">{ranSim ? `Simulated vs the ${tourLabel} field` : "Quick projection"}</div>
 
         <button className="cs-cta cs-share-copy" onClick={copy}>
           {copied ? "Copied ✓" : "Copy result"}
@@ -508,8 +564,33 @@ function ShareCard({ active, ranSim, build, onClose }) {
 
 // ============================================================================
 
+// A simple tennis net graphic used as a divider / motif.
+function NetGraphic() {
+  return (
+    <svg className="cs-net" viewBox="0 0 400 70" aria-hidden="true" preserveAspectRatio="none">
+      {/* net band top */}
+      <rect x="0" y="6" width="400" height="7" fill="var(--chalk)" />
+      {/* posts */}
+      <rect x="2" y="6" width="4" height="60" fill="var(--chalk)" />
+      <rect x="394" y="6" width="4" height="60" fill="var(--chalk)" />
+      {/* mesh */}
+      <g stroke="var(--line)" strokeWidth="1">
+        {Array.from({ length: 33 }).map((_, i) => (
+          <line key={`v${i}`} x1={6 + i * 12} y1="13" x2={6 + i * 12} y2="66" />
+        ))}
+        {Array.from({ length: 5 }).map((_, i) => (
+          <line key={`h${i}`} x1="6" y1={20 + i * 11} x2="394" y2={20 + i * 11} />
+        ))}
+      </g>
+    </svg>
+  );
+}
+
+// ============================================================================
+
 export default function CalendarSlam() {
-  const [phase, setPhase] = useState("intro"); // intro | draft | result
+  const [phase, setPhase] = useState("tour"); // tour | intro | draft | result
+  const [tour, setTour] = useState("atp");
   const [round, setRound] = useState(0);
   const [build, setBuild] = useState({});
   const [current, setCurrent] = useState(null); // current spun player
@@ -521,6 +602,10 @@ export default function CalendarSlam() {
   const [showCard, setShowCard] = useState(false);
   const [isTouch, setIsTouch] = useState(false);
   const [previewKey, setPreviewKey] = useState(null); // touch: armed shot awaiting confirm
+  const [reveal, setReveal] = useState({ slam: 0, round: 0, done: false }); // live sim progress
+
+  const T = TOURS[tour];
+  const POOL = T.pool;
 
   useEffect(() => {
     const m = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -541,6 +626,7 @@ export default function CalendarSlam() {
     setBuild({});
     setRound(0);
     setRanSim(false);
+    setReveal({ slam: 0, round: 0, done: false });
     setShowCard(false);
     setPhase("draft");
     spin([]);
@@ -594,7 +680,7 @@ export default function CalendarSlam() {
     if (spinning || !current) return;
     const next = {
       ...build,
-      [attrKey]: { rating: current.stats[attrKey], player: current.name },
+      [attrKey]: { rating: current.stats[attrKey], player: current.name, flag: current.flag },
     };
     setBuild(next);
     const newRound = round + 1;
@@ -637,15 +723,43 @@ export default function CalendarSlam() {
     const usedReasons = new Set();
     let won = 0;
     const perSlam = SLAMS.map((s) => {
-      const r = simulateMajor(build, s, rand, usedReasons);
+      const r = simulateMajor(build, s, rand, usedReasons, T.field, T.draw);
       if (r.wonTitle) won++;
       return { ...s, ...r };
     });
     return { perSlam, won, tier: tierFor(won) };
   }, [phase, build, ranSim, seed]);
 
+  // Kick off a fresh live simulation: reset reveal, new seed, run sim.
+  function startSim() {
+    setReveal({ slam: 0, round: 0, done: false });
+    setSeed(Math.floor(Math.random() * 1e9));
+    setRanSim(true);
+  }
+
+  function skipSim() {
+    setReveal({ slam: SLAMS.length, round: 0, done: true });
+  }
+
+  // Drive the live reveal: step through each major's rounds, then the next major.
+  useEffect(() => {
+    if (!ranSim || !simResults || reveal.done) return;
+    const slam = simResults.perSlam[reveal.slam];
+    if (!slam) { setReveal((r) => ({ ...r, done: true })); return; }
+    const lastRound = slam.path.length - 1;
+    const delay = reduce ? 0 : 480;
+    const t = setTimeout(() => {
+      setReveal((r) => {
+        if (r.round < lastRound) return { ...r, round: r.round + 1 };
+        // finished this major's rounds; pause, then move to next major
+        if (r.slam + 1 >= SLAMS.length) return { ...r, done: true };
+        return { slam: r.slam + 1, round: 0, done: false };
+      });
+    }, reveal.round < lastRound ? delay : delay * 1.6);
+    return () => clearTimeout(t);
+  }, [ranSim, simResults, reveal, reduce]);
+
   return (
-    <div className="cs-page">
     <div className="cs-root">
       <style>{CSS}</style>
 
@@ -654,8 +768,38 @@ export default function CalendarSlam() {
         <div className="cs-tag">build a champion, shot by shot</div>
       </header>
 
+      {phase === "tour" && (
+        <section className="cs-tourpick">
+          <NetGraphic />
+          <h1 className="cs-h1">
+            Build a<br /><em>tennis god.</em>
+          </h1>
+          <p className="cs-lede">
+            Spin real players, draft their iconic weapons, and chase the rarest
+            prize in the sport: all four majors in a single year. Choose your tour.
+          </p>
+          <div className="cs-tour-btns">
+            <button
+              className="cs-tour-btn atp"
+              onClick={() => { setTour("atp"); setPhase("intro"); }}
+            >
+              <span className="cs-tour-label">ATP</span>
+              <span className="cs-tour-sub">Men's Tour</span>
+            </button>
+            <button
+              className="cs-tour-btn wta"
+              onClick={() => { setTour("wta"); setPhase("intro"); }}
+            >
+              <span className="cs-tour-label">WTA</span>
+              <span className="cs-tour-sub">Women's Tour</span>
+            </button>
+          </div>
+        </section>
+      )}
+
       {phase === "intro" && (
         <section className="cs-intro">
+          <div className="cs-intro-tour">{T.label} · {T.sub}</div>
           <h1 className="cs-h1">
             Can your player win<br />
             <em>all four majors</em> in one year?
@@ -673,19 +817,17 @@ export default function CalendarSlam() {
 
           <div className="cs-surfaces">
             {SLAMS.map((s) => (
-              <div key={s.key} className={`cs-surface-chip s-${s.surface.toLowerCase()}`}>
+              <div key={s.key} className={`cs-surface-chip slam-${s.key}`}>
                 <span className="cs-chip-name">{s.name}</span>
                 <span className="cs-chip-surface">{s.surface}</span>
               </div>
             ))}
           </div>
 
-          <p className="cs-fineprint">
-            Player ratings in this prototype are placeholders. The real version
-            derives them from public match data (Tennis Abstract).
-          </p>
-
-          <button className="cs-cta" onClick={startDraft}>Start drafting →</button>
+          <div className="cs-intro-actions">
+            <button className="cs-cta" onClick={startDraft}>Start drafting →</button>
+            <button className="cs-text-btn" onClick={() => setPhase("tour")}>← Change tour</button>
+          </div>
         </section>
       )}
 
@@ -700,41 +842,49 @@ export default function CalendarSlam() {
             </div>
           </div>
 
-          <div className="cs-stage">
-            <div className={`cs-card ${spinning ? "spin" : ""}`}>
-              <div className="cs-card-eyebrow">Now drafting from</div>
-              <div className="cs-card-name">{current.name}</div>
-              <div className="cs-card-hint">
-                {spinning ? "Spinning…" : "Take one shot for your build"}
-              </div>
-            </div>
-            <Figure build={build} hovered={hovered} />
-          </div>
-
-          <div className="cs-meters" role="group" aria-label="Surface readiness so far">
-            {["Clay", "Grass", "Hard"].map((surf) => {
-              const pct = displayMeter(build, surf);
-              const previewPct = hovered && build[hovered] == null
-                ? displayMeter({ ...build, [hovered]: { rating: current.stats[hovered], player: current.name } }, surf)
-                : null;
-              return (
-                <div key={surf} className={`cs-meter s-${surf.toLowerCase()}`}>
-                  <div className="cs-meter-top">
-                    <span className="cs-meter-name">{surf}</span>
-                    <span className="cs-meter-val">{pct}</span>
-                  </div>
-                  <div className="cs-meter-track">
-                    {previewPct != null && previewPct !== pct && (
-                      <div
-                        className={`cs-meter-preview ${previewPct < pct ? "down" : ""}`}
-                        style={{ width: `${Math.max(pct, previewPct)}%`, left: previewPct < pct ? `${previewPct}%` : 0 }}
-                      />
-                    )}
-                    <div className="cs-meter-fill" style={{ width: `${pct}%` }} />
-                  </div>
+          <div className="cs-sticky">
+            <div className="cs-stage">
+              <div className={`cs-card ${spinning ? "spin" : ""}`}>
+                <div className="cs-card-eyebrow">Now drafting from</div>
+                <div className="cs-card-name">
+                  <span className="cs-card-flag">{current.flag}</span>
+                  {current.name}
                 </div>
-              );
-            })}
+                {!spinning && current.fact && (
+                  <div className="cs-card-fact">{current.fact}</div>
+                )}
+                <div className="cs-card-hint">
+                  {spinning ? "Spinning…" : "Take one shot for your build"}
+                </div>
+              </div>
+              <Figure build={build} hovered={hovered} />
+            </div>
+
+            <div className="cs-meters" role="group" aria-label="Surface readiness so far">
+              {["Clay", "Grass", "Hard"].map((surf) => {
+                const pct = displayMeter(build, surf);
+                const previewPct = hovered && build[hovered] == null
+                  ? displayMeter({ ...build, [hovered]: { rating: current.stats[hovered], player: current.name } }, surf)
+                  : null;
+                return (
+                  <div key={surf} className={`cs-meter s-${surf.toLowerCase()}`}>
+                    <div className="cs-meter-top">
+                      <span className="cs-meter-name">{surf}</span>
+                      <span className="cs-meter-val">{pct}</span>
+                    </div>
+                    <div className="cs-meter-track">
+                      {previewPct != null && previewPct !== pct && (
+                        <div
+                          className={`cs-meter-preview ${previewPct < pct ? "down" : ""}`}
+                          style={{ width: `${Math.max(pct, previewPct)}%`, left: previewPct < pct ? `${previewPct}%` : 0 }}
+                        />
+                      )}
+                      <div className="cs-meter-fill" style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           <div className="cs-attr-grid">
@@ -756,8 +906,12 @@ export default function CalendarSlam() {
                 >
                   <span className="cs-attr-label">{a.label}</span>
                   {taken ? (
-                    <span className="cs-attr-owner">
-                      {build[a.key].rating} · {build[a.key].player.split(" ").slice(-1)[0]}
+                    <span className="cs-attr-locked">
+                      <span className="cs-attr-lock">🔒 Locked</span>
+                      <span className="cs-attr-owner">
+                        <span className="cs-attr-flag">{build[a.key].flag}</span>
+                        {build[a.key].player} · {build[a.key].rating}
+                      </span>
                     </span>
                   ) : (
                     <span className="cs-attr-val">{val}</span>
@@ -808,8 +962,8 @@ export default function CalendarSlam() {
 
           {!ranSim && (
             <div className="cs-sim-prompt">
-              <p>This is the quick projection. Want the real test? Play it out round by round against the field. It's harder, and the field is unforgiving.</p>
-              <button className="cs-sim-btn" onClick={() => { setSeed(Math.floor(Math.random() * 1e9)); setRanSim(true); }}>
+              <p>This is the quick projection. Want the real test? Play it out round by round against the field, live. It's harder, and the field is unforgiving.</p>
+              <button className="cs-sim-btn" onClick={startSim}>
                 ▶ Simulate match by match
               </button>
             </div>
@@ -817,43 +971,58 @@ export default function CalendarSlam() {
 
           {ranSim && simResults && (
             <>
-              <div className={`cs-tier ${simResults.tier.glow ? "glow" : ""}`}>
-                <div className="cs-tier-eyebrow">Simulated · live field</div>
-                <div className="cs-tier-count">{simResults.won} / 4</div>
-                <div className="cs-tier-name">{simResults.tier.name}</div>
-                <div className="cs-tier-note">{simResults.tier.note}</div>
-              </div>
+              {reveal.done ? (
+                <div className={`cs-tier ${simResults.tier.glow ? "glow" : ""}`}>
+                  <div className="cs-tier-eyebrow">Simulated · live {T.label} field</div>
+                  <div className="cs-tier-count">{simResults.won} / 4</div>
+                  <div className="cs-tier-name">{simResults.tier.name}</div>
+                  <div className="cs-tier-note">{simResults.tier.note}</div>
+                </div>
+              ) : (
+                <div className="cs-live-banner">
+                  <span className="cs-live-dot" />
+                  Playing {simResults.perSlam[reveal.slam]?.name}…
+                  <button className="cs-skip-btn" onClick={skipSim}>Skip ⏭</button>
+                </div>
+              )}
 
               <div className="cs-gauntlet">
-                {simResults.perSlam.map((s) => (
-                  <div key={s.key} className={`cs-leg s-${s.surface.toLowerCase()} ${s.wonTitle ? "win" : "loss"}`}>
-                    <div className="cs-leg-top">
-                      <span className="cs-leg-name">{s.name}</span>
-                      <span className="cs-leg-surface">{s.surface}</span>
-                    </div>
-
-                    {s.wonTitle ? (
-                      <div className="cs-leg-sim">
-                        <span className="cs-sim-champ">🏆 Champion</span>
-                        <span className="cs-sim-detail">
-                          Beat {s.finalOpp} in the final, {s.finalScore}. You {s.note}.
-                        </span>
+                {simResults.perSlam.map((s, si) => {
+                  if (si > reveal.slam) return null; // not reached yet
+                  const isCurrent = si === reveal.slam && !reveal.done;
+                  const roundsToShow = reveal.done || si < reveal.slam
+                    ? s.path.length
+                    : reveal.round + 1;
+                  const resolved = roundsToShow >= s.path.length;
+                  return (
+                    <div key={s.key} className={`cs-leg slam-${s.key} ${resolved ? (s.wonTitle ? "win" : "loss") : "playing"}`}>
+                      <div className="cs-leg-top">
+                        <span className="cs-leg-name">{s.name}</span>
+                        <span className="cs-leg-surface">{s.surface}</span>
                       </div>
-                    ) : (
-                      <div className="cs-leg-sim">
-                        <span className="cs-sim-out">
-                          Lost the {s.lostRound} to {s.opponent}, {s.setScore}
-                        </span>
-                        <span className="cs-sim-detail">
-                          Up against {s.weapon}, {s.reason}.
-                        </span>
-                      </div>
-                    )}
 
-                    <details className="cs-path">
-                      <summary>Round-by-round</summary>
-                      <ol className="cs-path-list">
-                        {s.path.map((p, i) => (
+                      {resolved && (
+                        s.wonTitle ? (
+                          <div className="cs-leg-sim">
+                            <span className="cs-sim-champ">🏆 Champion</span>
+                            <span className="cs-sim-detail">
+                              Beat {s.finalOpp} in the final, {s.finalScore}. You {s.note}.
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="cs-leg-sim">
+                            <span className="cs-sim-out">
+                              Lost the {s.lostRound} to {s.opponent}, {s.setScore}
+                            </span>
+                            <span className="cs-sim-detail">
+                              Up against {s.weapon}, {s.reason}.
+                            </span>
+                          </div>
+                        )
+                      )}
+
+                      <ol className="cs-path-list cs-path-live">
+                        {s.path.slice(0, roundsToShow).map((p, i) => (
                           <li key={i} className={p.won ? "won" : "lost"}>
                             <span className="cs-path-round">{p.round}</span>
                             <span className="cs-path-opp">
@@ -862,20 +1031,29 @@ export default function CalendarSlam() {
                             <span className="cs-path-score">{p.score}</span>
                           </li>
                         ))}
+                        {isCurrent && !resolved && (
+                          <li className="cs-path-playing">
+                            <span className="cs-path-round">{ROUNDS[roundsToShow]}</span>
+                            <span className="cs-path-opp">playing…</span>
+                            <span className="cs-path-score">—</span>
+                          </li>
+                        )}
                       </ol>
-                    </details>
-                  </div>
-                ))}
+                    </div>
+                  );
+                })}
               </div>
 
-              <div className="cs-sim-prompt">
-                <button className="cs-sim-btn" onClick={() => setSeed(Math.floor(Math.random() * 1e9))}>
-                  ↻ Run the year again (new draw)
-                </button>
-                <button className="cs-sim-btn cs-share-btn" onClick={() => setShowCard(true)}>
-                  ↗ Share result
-                </button>
-              </div>
+              {reveal.done && (
+                <div className="cs-sim-prompt">
+                  <button className="cs-sim-btn" onClick={startSim}>
+                    ↻ Run the year again (new draw)
+                  </button>
+                  <button className="cs-sim-btn cs-share-btn" onClick={() => setShowCard(true)}>
+                    ↗ Share result
+                  </button>
+                </div>
+              )}
             </>
           )}
 
@@ -910,18 +1088,18 @@ export default function CalendarSlam() {
           active={ranSim ? simResults : results}
           ranSim={ranSim}
           build={build}
+          tourLabel={T.label}
           onClose={() => setShowCard(false)}
         />
       )}
-    </div>
     </div>
   );
 }
 
 const CSS = `
-*, *::before, *::after { box-sizing: border-box; }
-body { margin: 0; }
-.cs-page {
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&display=swap');
+
+.cs-root {
   --grass-deep: #1f6b3f;
   --grass-mid: #2a7d4a;
   --grass-dark: #185733;
@@ -940,11 +1118,9 @@ body { margin: 0; }
   background:
     repeating-linear-gradient(90deg, transparent 0 38px, rgba(246,251,239,.025) 38px 76px),
     var(--grass-deep);
-  min-height: 100vh;
-}
-.cs-root {
   color: var(--chalk);
   font-family: "Barlow", ui-sans-serif, system-ui, sans-serif;
+  min-height: 100%;
   padding: 22px clamp(16px, 5vw, 48px) 56px;
   max-width: 860px;
   margin: 0 auto;
@@ -1019,12 +1195,15 @@ body { margin: 0; }
 .cs-attr { text-align:left; border:2px solid var(--line-soft); border-radius:5px; background:rgba(246,251,239,.05); padding:11px 13px; cursor:pointer; display:flex; flex-direction:column; gap:4px; transition:border-color .12s, transform .1s, background .15s; }
 .cs-attr:hover:not(:disabled) { border-color:var(--ball); background:rgba(216,240,0,.08); transform:translateY(-2px); }
 .cs-attr:focus-visible { outline:3px solid var(--ball); outline-offset:2px; }
-.cs-attr.taken { background:rgba(246,251,239,.03); cursor:not-allowed; opacity:.5; }
+.cs-attr.taken { background:rgba(216,240,0,.1); border-color:rgba(216,240,0,.4); cursor:default; opacity:1; }
 .cs-attr.armed { border-color:var(--ball); background:rgba(216,240,0,.12); transform:translateY(-2px); }
 .cs-attr-confirm { font-size:10px; letter-spacing:.06em; text-transform:uppercase; font-weight:800; color:var(--ball-soft); margin-top:2px; }
 .cs-attr-label { font-size:11px; letter-spacing:.08em; text-transform:uppercase; font-weight:700; color:var(--dim); }
 .cs-attr-val { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:32px; line-height:1; color:var(--chalk); }
-.cs-attr-owner { font-size:12px; font-weight:600; color:var(--chalk); }
+.cs-attr-locked { display:flex; flex-direction:column; gap:3px; }
+.cs-attr-lock { font-size:10px; letter-spacing:.08em; text-transform:uppercase; font-weight:800; color:var(--ball-soft); }
+.cs-attr-owner { font-size:12.5px; font-weight:700; color:var(--chalk); line-height:1.25; }
+.cs-attr-flag { margin-right:4px; }
 
 /* live surface meters */
 .cs-meters { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:18px; }
@@ -1041,6 +1220,61 @@ body { margin: 0; }
 .cs-meter.s-clay .cs-meter-fill, .cs-meter.s-clay .cs-meter-preview { background:var(--clay); }
 .cs-meter.s-grass .cs-meter-fill, .cs-meter.s-grass .cs-meter-preview { background:var(--grass); }
 .cs-meter.s-hard .cs-meter-fill, .cs-meter.s-hard .cs-meter-preview { background:var(--hard); }
+
+/* card flag + fact */
+.cs-card-flag { margin-right:8px; }
+.cs-card-fact { font-size:13px; line-height:1.45; color:var(--dim); margin:0 0 10px; max-width:42ch; }
+
+/* sticky stage on scroll so you always see who you're drafting */
+.cs-sticky { position:sticky; top:0; z-index:10; background:
+  repeating-linear-gradient(90deg, transparent 0 38px, rgba(246,251,239,.025) 38px 76px),
+  var(--grass-deep);
+  padding:10px 0 12px; margin-bottom:8px; border-bottom:1px solid var(--line-soft); }
+
+/* tour picker */
+.cs-tourpick { padding-top:20px; text-align:left; }
+.cs-net { width:100%; height:54px; display:block; margin-bottom:24px; opacity:.85; }
+.cs-tour-btns { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:8px; max-width:520px; }
+.cs-tour-btn { display:flex; flex-direction:column; align-items:flex-start; gap:4px; padding:22px 24px; border-radius:8px; border:2.5px solid var(--chalk); background:rgba(246,251,239,.05); cursor:pointer; transition:transform .12s, background .2s, border-color .2s; }
+.cs-tour-btn:hover { transform:translateY(-3px); background:rgba(216,240,0,.1); border-color:var(--ball); }
+.cs-tour-btn:focus-visible { outline:3px solid var(--ball); outline-offset:3px; }
+.cs-tour-label { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:40px; line-height:1; letter-spacing:.02em; color:var(--chalk); }
+.cs-tour-btn:hover .cs-tour-label { color:var(--ball); }
+.cs-tour-sub { font-size:12px; letter-spacing:.12em; text-transform:uppercase; font-weight:700; color:var(--dim); }
+.cs-intro-tour { font-size:11px; letter-spacing:.16em; text-transform:uppercase; font-weight:800; color:var(--ball); margin-bottom:10px; }
+.cs-intro-actions { display:flex; align-items:center; gap:18px; flex-wrap:wrap; }
+.cs-text-btn { background:none; border:none; color:var(--dim); font-size:14px; font-weight:600; cursor:pointer; padding:8px 4px; }
+.cs-text-btn:hover { color:var(--chalk); }
+
+/* live simulation banner + skip */
+.cs-live-banner { display:flex; align-items:center; gap:10px; font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:18px; letter-spacing:.04em; text-transform:uppercase; color:var(--chalk); margin-bottom:16px; padding:12px 16px; border:2px solid var(--ball); border-radius:6px; background:rgba(216,240,0,.08); }
+.cs-live-dot { width:10px; height:10px; border-radius:50%; background:var(--ball); animation:cs-blink 1s ease-in-out infinite; }
+@keyframes cs-blink { 0%,100%{opacity:1} 50%{opacity:.25} }
+.cs-skip-btn { margin-left:auto; background:var(--ball); color:var(--ink); border:none; border-radius:4px; font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:14px; letter-spacing:.06em; text-transform:uppercase; padding:7px 16px; cursor:pointer; }
+.cs-skip-btn:hover { filter:brightness(1.08); }
+.cs-leg.playing { border-color:var(--ball); animation:cs-legin .3s ease; }
+@keyframes cs-legin { from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none} }
+.cs-path-live li { animation:cs-rowin .25s ease; }
+@keyframes cs-rowin { from{opacity:0} to{opacity:1} }
+.cs-path-playing { opacity:.7; font-style:italic; }
+.cs-path-playing .cs-path-opp { color:var(--ball-soft) !important; }
+@media (prefers-reduced-motion: reduce) {
+  .cs-live-dot, .cs-leg.playing, .cs-path-live li { animation:none; }
+}
+
+/* major colour identities */
+.slam-ao .cs-chip-surface { color:#2b7de9; }
+.slam-rg .cs-chip-surface { color:#e07a3f; }
+.slam-wim .cs-chip-surface { color:#5a2d82; }
+.slam-uso .cs-chip-surface { color:#1a8fd0; }
+.cs-surface-chip.slam-ao { border-color:#2b7de9; background:rgba(43,125,233,.14); }
+.cs-surface-chip.slam-rg { border-color:#e07a3f; background:rgba(224,122,63,.14); }
+.cs-surface-chip.slam-wim { border-color:#5a2d82; background:rgba(90,45,130,.18); }
+.cs-surface-chip.slam-uso { border-color:#1a8fd0; background:rgba(26,143,208,.14); }
+.cs-leg.slam-ao { border-left-color:#2b7de9; }
+.cs-leg.slam-rg { border-left-color:#e07a3f; }
+.cs-leg.slam-wim { border-left-color:#5a2d82; }
+.cs-leg.slam-uso { border-left-color:#1a8fd0; }
 
 .cs-tier-eyebrow { font-size:10px; letter-spacing:.18em; text-transform:uppercase; font-weight:800; color:var(--dim); margin-bottom:4px; }
 .cs-sim-prompt { text-align:center; margin-bottom:22px; display:flex; flex-direction:column; align-items:center; gap:12px; }
@@ -1120,8 +1354,14 @@ body { margin: 0; }
 @media (max-width:520px){
   .cs-surfaces { grid-template-columns:repeat(2,1fr); }
   .cs-attr-grid { grid-template-columns:repeat(2,1fr); }
-  .cs-stage { flex-direction:column; align-items:center; }
-  .cs-court { width:140px; flex-basis:auto; }
-  .cs-figure { width:150px; flex-basis:auto; }
+  /* keep stage as a row on mobile so the sticky header stays short */
+  .cs-stage { flex-direction:row; align-items:stretch; gap:12px; }
+  .cs-figure { width:74px; flex:0 0 74px; }
+  .cs-card { padding:14px 16px; }
+  .cs-card-name { font-size:24px; }
+  .cs-card-fact { display:none; }
+  .cs-tour-btns { grid-template-columns:1fr 1fr; }
+  .cs-meters { gap:7px; margin-bottom:12px; }
+  .cs-sticky { padding-top:6px; }
 }
 `;
