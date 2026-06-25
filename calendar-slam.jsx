@@ -109,29 +109,29 @@ const POOL_WTA = [
 // --- The field: real current tour players. Each has a base level and
 // per-surface adjustments, plus a signature for loss narratives. Estimates. ---
 const FIELD_ATP = [
-  { name: "Jannik Sinner", base: 88, surf: { Hard: 4, Clay: 1, Grass: 2 }, weapon: "relentless flat hitting", style: "baseline" },
-  { name: "Carlos Alcaraz", base: 88, surf: { Hard: 2, Clay: 4, Grass: 3 }, weapon: "all-court variety", style: "allcourt" },
-  { name: "Alexander Zverev", base: 84, surf: { Hard: 2, Clay: 4, Grass: 0 }, weapon: "heavy serve and clay-court grind", style: "baseline" },
-  { name: "Felix Auger-Aliassime", base: 81, surf: { Hard: 3, Clay: 0, Grass: 3 }, weapon: "first-strike serving", style: "serve" },
-  { name: "Ben Shelton", base: 81, surf: { Hard: 2, Clay: -1, Grass: 3 }, weapon: "an explosive lefty serve", style: "serve" },
-  { name: "Alex De Minaur", base: 80, surf: { Hard: 2, Clay: 1, Grass: 2 }, weapon: "relentless speed and retrieving", style: "defence" },
-  { name: "Taylor Fritz", base: 80, surf: { Hard: 3, Clay: -1, Grass: 3 }, weapon: "a big serve and forehand", style: "serve" },
-  { name: "Novak Djokovic", base: 85, surf: { Hard: 4, Clay: 2, Grass: 3 }, weapon: "an impenetrable return and defence", style: "return" },
-  { name: "Daniil Medvedev", base: 81, surf: { Hard: 4, Clay: -2, Grass: 1 }, weapon: "deep-court counterpunching", style: "defence" },
-  { name: "Flavio Cobolli", base: 77, surf: { Hard: 1, Clay: 3, Grass: 1 }, weapon: "fearless ball-striking", style: "baseline" },
+  { name: "Jannik Sinner",        base: 88, born: 2001, surf: { Hard: 4, Clay: 1, Grass: 2 }, weapon: "relentless flat hitting", style: "baseline" },
+  { name: "Carlos Alcaraz",       base: 88, born: 2003, surf: { Hard: 2, Clay: 4, Grass: 3 }, weapon: "all-court variety", style: "allcourt" },
+  { name: "Alexander Zverev",     base: 84, born: 1997, surf: { Hard: 2, Clay: 4, Grass: 0 }, weapon: "heavy serve and clay-court grind", style: "baseline" },
+  { name: "Felix Auger-Aliassime",base: 81, born: 2000, surf: { Hard: 3, Clay: 0, Grass: 3 }, weapon: "first-strike serving", style: "serve" },
+  { name: "Ben Shelton",          base: 81, born: 2002, surf: { Hard: 2, Clay: -1, Grass: 3 }, weapon: "an explosive lefty serve", style: "serve" },
+  { name: "Alex De Minaur",       base: 80, born: 1999, surf: { Hard: 2, Clay: 1, Grass: 2 }, weapon: "relentless speed and retrieving", style: "defence" },
+  { name: "Taylor Fritz",         base: 80, born: 1997, surf: { Hard: 3, Clay: -1, Grass: 3 }, weapon: "a big serve and forehand", style: "serve" },
+  { name: "Novak Djokovic",       base: 85, born: 1987, surf: { Hard: 4, Clay: 2, Grass: 3 }, weapon: "an impenetrable return and defence", style: "return" },
+  { name: "Daniil Medvedev",      base: 81, born: 1996, surf: { Hard: 4, Clay: -2, Grass: 1 }, weapon: "deep-court counterpunching", style: "defence" },
+  { name: "Flavio Cobolli",       base: 77, born: 2002, surf: { Hard: 1, Clay: 3, Grass: 1 }, weapon: "fearless ball-striking", style: "baseline" },
 ];
 
 const FIELD_WTA = [
-  { name: "Aryna Sabalenka", base: 88, surf: { Hard: 4, Clay: 1, Grass: 2 }, weapon: "overwhelming power", style: "baseline" },
-  { name: "Iga Swiatek", base: 88, surf: { Hard: 2, Clay: 4, Grass: 1 }, weapon: "heavy topspin and relentless movement", style: "defence" },
-  { name: "Coco Gauff", base: 84, surf: { Hard: 3, Clay: 2, Grass: 2 }, weapon: "lightning speed and a big serve", style: "defence" },
-  { name: "Elena Rybakina", base: 83, surf: { Hard: 3, Clay: 0, Grass: 4 }, weapon: "one of the biggest serves on tour", style: "serve" },
-  { name: "Jessica Pegula", base: 80, surf: { Hard: 3, Clay: 1, Grass: 2 }, weapon: "clean, early ball-striking", style: "baseline" },
-  { name: "Jasmine Paolini", base: 79, surf: { Hard: 1, Clay: 3, Grass: 2 }, weapon: "fearless attacking tennis", style: "allcourt" },
-  { name: "Qinwen Zheng", base: 81, surf: { Hard: 3, Clay: 1, Grass: 1 }, weapon: "a powerful serve and forehand", style: "serve" },
-  { name: "Madison Keys", base: 80, surf: { Hard: 3, Clay: 0, Grass: 2 }, weapon: "thunderous flat hitting", style: "baseline" },
-  { name: "Mirra Andreeva", base: 80, surf: { Hard: 2, Clay: 2, Grass: 2 }, weapon: "precocious all-court maturity", style: "allcourt" },
-  { name: "Barbora Krejcikova", base: 78, surf: { Hard: 1, Clay: 3, Grass: 3 }, weapon: "craft, variety and slice", style: "allcourt" },
+  { name: "Aryna Sabalenka",      base: 88, born: 1998, surf: { Hard: 4, Clay: 1, Grass: 2 }, weapon: "overwhelming power", style: "baseline" },
+  { name: "Iga Swiatek",          base: 88, born: 2001, surf: { Hard: 2, Clay: 4, Grass: 1 }, weapon: "heavy topspin and relentless movement", style: "defence" },
+  { name: "Coco Gauff",           base: 84, born: 2004, surf: { Hard: 3, Clay: 2, Grass: 2 }, weapon: "lightning speed and a big serve", style: "defence" },
+  { name: "Elena Rybakina",       base: 83, born: 1999, surf: { Hard: 3, Clay: 0, Grass: 4 }, weapon: "one of the biggest serves on tour", style: "serve" },
+  { name: "Jessica Pegula",       base: 80, born: 1994, surf: { Hard: 3, Clay: 1, Grass: 2 }, weapon: "clean, early ball-striking", style: "baseline" },
+  { name: "Jasmine Paolini",      base: 79, born: 1996, surf: { Hard: 1, Clay: 3, Grass: 2 }, weapon: "fearless attacking tennis", style: "allcourt" },
+  { name: "Qinwen Zheng",         base: 81, born: 2002, surf: { Hard: 3, Clay: 1, Grass: 1 }, weapon: "a powerful serve and forehand", style: "serve" },
+  { name: "Madison Keys",         base: 80, born: 1995, surf: { Hard: 3, Clay: 0, Grass: 2 }, weapon: "thunderous flat hitting", style: "baseline" },
+  { name: "Mirra Andreeva",       base: 80, born: 2007, surf: { Hard: 2, Clay: 2, Grass: 2 }, weapon: "precocious all-court maturity", style: "allcourt" },
+  { name: "Barbora Krejcikova",   base: 78, born: 1995, surf: { Hard: 1, Clay: 3, Grass: 3 }, weapon: "craft, variety and slice", style: "allcourt" },
 ];
 
 // COSMETIC ONLY. The real win/loss engine uses SURFACE_WEIGHTS above. These
@@ -227,7 +227,7 @@ function buildDraw(slam, rand, field, drawPool, rival) {
 
   // Inject the rival deep in the draw on their specialist surface. They become
   // a genuine threat the player must beat to win this major.
-  if (rival && rival.surface === slam.surface) {
+  if (rival) {
     const rivalOpp = {
       name: rival.name,
       level: (rival.level ?? 85) + 2,
@@ -236,8 +236,16 @@ function buildDraw(slam, rand, field, drawPool, rival) {
       flag: rival.flag,
       isRival: true,
     };
-    // Rival appears as the Final (60%) or Semi-final (40%) obstacle.
-    draw[rand() < 0.6 ? 6 : 5] = rivalOpp;
+    const isSpecialist = rival.surface === slam.surface;
+    // On specialist surface: rival appears in Final 70% or SF 20%.
+    // On other surfaces: rival still appears in SF 25% — they're top-10, they reach late rounds.
+    const r = rand();
+    if (isSpecialist) {
+      if (r < 0.70) draw[6] = rivalOpp;
+      else if (r < 0.90) draw[5] = rivalOpp;
+    } else {
+      if (r < 0.25) draw[5] = rivalOpp;
+    }
   }
   return draw;
 }
@@ -256,14 +264,20 @@ const Sound = (() => {
   let muted = false;
   function ac() {
     if (typeof window === "undefined") return null;
-    if (!ctx) {
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return null;
-      ctx = new AC();
-    }
-    if (ctx.state === "suspended") ctx.resume();
-    return ctx;
+    try {
+      if (!ctx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return null;
+        ctx = new AC();
+      }
+      // Always attempt resume — required after browser autoplay policy suspends
+      if (ctx.state === "suspended") { ctx.resume().catch(() => {}); }
+      if (ctx.state === "closed") { ctx = null; return null; }
+      return ctx;
+    } catch(e) { return null; }
   }
+  // Call this on any user gesture to pre-warm the context
+  function prime() { if (!muted) ac(); }
   function setMuted(m) { muted = m; }
   function isMuted() { return muted; }
   // Short percussive racket "thock".
@@ -660,79 +674,86 @@ function ShareCard({ active, ranSim, build, tourLabel, onClose }) {
     } catch (e) { setCopied(false); }
   }
 
-  // Draw a share image on an offscreen canvas and download it.
-  function downloadImage() {
+  // Build the 1080×1080 share canvas from current results.
+  function buildShareCanvas() {
+    const canvas = document.createElement("canvas");
+    canvas.width = 1080; canvas.height = 1080;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    // Background
+    ctx.fillStyle = "#1f6b3f";
+    ctx.fillRect(0, 0, 1080, 1080);
+    // Mowing stripes
+    for (let i = 0; i < 12; i++) {
+      ctx.fillStyle = i % 2 === 0 ? "rgba(255,255,255,.03)" : "rgba(0,0,0,.03)";
+      ctx.fillRect(0, i * 90, 1080, 90);
+    }
+    // Header
+    ctx.fillStyle = "#f6fbef";
+    ctx.font = "bold 48px 'Arial Narrow', Arial, sans-serif";
+    ctx.fillText("CALENDAR", 80, 100);
+    ctx.fillStyle = "#d8f000";
+    ctx.font = "italic bold 52px 'Arial Narrow', Arial, sans-serif";
+    ctx.fillText("SLAM", 340, 100);
+    // Tour
+    ctx.fillStyle = "rgba(246,251,239,.5)";
+    ctx.font = "24px 'Arial Narrow', Arial, sans-serif";
+    ctx.fillText(tourLabel.toUpperCase() + " TOUR", 80, 148);
+    // Result headline
+    const headline = active.won === 4 ? "CALENDAR SLAM 🎾" :
+      active.won > 0 ? `${active.won} SLAM${active.won > 1 ? "S" : ""}` : "NO TITLES";
+    const scoreCol = active.won === 4 ? "#d8f000" : "#f6fbef";
+    ctx.fillStyle = scoreCol;
+    ctx.font = `bold ${active.won === 4 ? 88 : 72}px 'Arial Narrow', Arial, sans-serif`;
+    ctx.fillText(headline, 80, 260);
+    // Slam breakdown
+    const SLAM_COLS = { ao: "#2b7de9", rg: "#e07a3f", wim: "#5a2d82", uso: "#0e3f80" };
+    let y = 340;
+    (active.perSlam || []).filter(s => !s.isOlympics).forEach(s => {
+      ctx.fillStyle = SLAM_COLS[s.key] || "#555";
+      ctx.fillRect(80, y, 920, 78);
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 28px 'Arial Narrow', Arial, sans-serif";
+      ctx.fillText(s.name, 100, y + 30);
+      const result = ranSim
+        ? (s.wonTitle ? `🏆 Champion · def. ${s.finalOpp} ${s.finalScore}` : `❌ Out ${s.lostRound}`)
+        : (s.win ? "🏆 Projected win" : `${s.prob}% chance`);
+      ctx.font = "22px 'Arial Narrow', Arial, sans-serif";
+      ctx.fillStyle = "rgba(255,255,255,.85)";
+      ctx.fillText(result, 100, y + 58);
+      y += 94;
+    });
+    // Footer
+    ctx.fillStyle = "rgba(246,251,239,.35)";
+    ctx.font = "20px 'Arial Narrow', Arial, sans-serif";
+    ctx.fillText("calendarslam.com", 80, 1040);
+    return canvas;
+  }
+
+  // Download or share the canvas image.
+  async function downloadImage() {
     setDownloading(true);
     try {
-      const W = 1080, H = 1080;
-      const c = document.createElement("canvas");
-      c.width = W; c.height = H;
-      const ctx = c.getContext("2d");
-
-      // Background — grass green with stripes
-      ctx.fillStyle = "#1f6b3f";
-      ctx.fillRect(0, 0, W, H);
-      ctx.fillStyle = "rgba(246,251,239,.025)";
-      for (let x = 0; x < W; x += 76) ctx.fillRect(x, 0, 38, H);
-
-      // Top wordmark
-      ctx.fillStyle = "#f6fbef";
-      ctx.font = "bold 52px Arial Narrow, Arial, sans-serif";
-      ctx.letterSpacing = "4px";
-      ctx.fillText("CALENDAR SLAM", 80, 100);
-
-      // Score
-      const scoreCol = active.won === 4 ? "#d8f000" : "#f6fbef";
-      ctx.fillStyle = scoreCol;
-      ctx.font = "bold 200px Arial Narrow, Arial, sans-serif";
-      ctx.fillText(`${active.won}/4`, 80, 360);
-
-      // Tier name
-      ctx.fillStyle = scoreCol;
-      ctx.font = "bold 72px Arial Narrow, Arial, sans-serif";
-      ctx.fillText(active.tier.name.toUpperCase(), 80, 460);
-
-      // Note
-      ctx.fillStyle = "rgba(246,251,239,.65)";
-      ctx.font = "36px Arial, sans-serif";
-      ctx.fillText(active.tier.note, 80, 530);
-
-      // Slam chips
-      const SLAM_COLS = { ao: "#2b7de9", rg: "#e07a3f", wim: "#5a2d82", uso: "#0e3f80" };
-      SLAMS.forEach((s, i) => {
-        const leg = active.perSlam.find((p) => p.key === s.key);
-        const won = ranSim ? leg.wonTitle : leg.win;
-        const x = 80 + i * 240;
-        ctx.fillStyle = SLAM_COLS[s.key];
-        ctx.beginPath();
-        ctx.roundRect(x, 610, 210, 110, 12);
-        ctx.fill();
-        ctx.fillStyle = won ? "#d8f000" : "rgba(246,251,239,.5)";
-        ctx.font = "bold 44px Arial Narrow, Arial, sans-serif";
-        ctx.fillText(s.name.split(" ").slice(-1)[0].toUpperCase(), x + 14, 664);
-        ctx.font = "52px serif";
-        ctx.fillText(won ? "🏆" : "❌", x + 14, 710);
-      });
-
-      // Mode line
-      ctx.fillStyle = "rgba(246,251,239,.55)";
-      ctx.font = "32px Arial, sans-serif";
-      ctx.fillText(ranSim ? `Simulated vs the ${tourLabel} field` : "Quick projection", 80, 800);
-
-      // URL
-      ctx.fillStyle = "#d8f000";
-      ctx.font = "bold 36px Arial Narrow, Arial, sans-serif";
-      ctx.fillText("calendarslam.com", 80, H - 60);
-
-      c.toBlob((blob) => {
+      const canvas = await buildShareCanvas();
+      if (!canvas) { setDownloading(false); return; }
+      // Try Web Share API first (saves to camera roll on iOS/Android)
+      const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], 'calendar-slam.png', { type: 'image/png' })] })) {
+        await navigator.share({
+          files: [new File([blob], 'calendar-slam.png', { type: 'image/png' })],
+          title: 'Calendar Slam',
+        });
+      } else {
+        // Fallback: regular download link
         const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url; a.download = "calendar-slam-result.png";
-        a.click();
-        URL.revokeObjectURL(url);
-        setDownloading(false);
-      }, "image/png");
-    } catch (e) { setDownloading(false); }
+        const a = document.createElement('a');
+        a.href = url; a.download = 'calendar-slam.png'; a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 2000);
+      }
+    } catch (e) {
+      console.error('share/download failed', e);
+    }
+    setDownloading(false);
   }
 
   return (
@@ -784,7 +805,7 @@ function ShareCard({ active, ranSim, build, tourLabel, onClose }) {
             {copied ? "Copied ✓" : "Copy text"}
           </button>
           <button className="cs-cta cs-share-img" onClick={downloadImage} disabled={downloading}>
-            {downloading ? "…" : "⬇ Save image"}
+            {downloading ? "…" : "📸 Save image"}
           </button>
         </div>
         <pre className="cs-share-preview">{shareText}</pre>
@@ -955,17 +976,18 @@ function generatePlayer(rng) {
 
 // --- Off-season upgrades -----------------------------------------------------
 const UPGRADE_POOL = [
-  { id: "serve_coach",   label: "Hire a Serve Coach",          desc: "Refine your toss and kick serve with a specialist.",      effects: { serve: 4 },                   longevity: 0 },
-  { id: "fitness",       label: "Intensive Fitness Programme",  desc: "Pushing your body hard now. It'll pay off — for a while.", effects: { stamina: 3, movement: 2 },   longevity: -1, warning: "Heavy training can shorten careers. Proceed?" },
-  { id: "nutritionist",  label: "Elite Nutritionist",           desc: "Precision fuelling slows your body's decline.",            effects: { stamina: 2 },                 longevity: 2 },
-  { id: "mental_coach",  label: "Sports Psychologist",          desc: "Learn to thrive under pressure on the big points.",        effects: { mental: 4 },                  longevity: 0 },
-  { id: "fh_coach",      label: "Forehand Specialist",          desc: "Rebuild your forehand from the ground up.",                effects: { forehand: 4, touch: 1 },      longevity: 0 },
-  { id: "bh_coach",      label: "Backhand Specialist",          desc: "Work on disguise, slice, and two-handed drive.",           effects: { backhand: 4, touch: 1 },      longevity: 0 },
-  { id: "net_coach",     label: "Net Game Coach",               desc: "Volley clinic and approach shot drills.",                  effects: { net: 4, touch: 2 },           longevity: 0 },
-  { id: "return_coach",  label: "Return of Serve Coach",        desc: "Early ball, aggressive positioning.",                      effects: { return: 3, movement: 1 },     longevity: 0 },
-  { id: "movement",      label: "Movement & Footwork Trainer",  desc: "Court coverage, split step timing, lateral speed.",        effects: { movement: 3, defence: 2 },    longevity: 0 },
-  { id: "defence",       label: "Defensive Grinding Specialist",desc: "Learn to reset points and outlast opponents.",             effects: { defence: 3, stamina: 2 },     longevity: 0 },
-  { id: "rest",          label: "Rest & Recovery Season",       desc: "No gains. But your body will thank you later.",            effects: {},                             longevity: 3, recovery: true },
+  { id: "serve_coach",   label: "Hire a Serve Coach",           desc: "Refine your toss and kick serve with a specialist.",      effects: { serve: 4 } },
+  { id: "fitness",       label: "Intensive Fitness Programme",  desc: "Pushing your body hard. It will pay off.",               effects: { stamina: 3, movement: 2 } },
+  { id: "nutritionist",  label: "Elite Nutritionist",           desc: "Precision fuelling to stay sharp deep into the year.",   effects: { stamina: 2 } },
+  { id: "mental_coach",  label: "Sports Psychologist",          desc: "Learn to thrive under pressure on the big points.",      effects: { mental: 4 } },
+  { id: "fh_coach",      label: "Forehand Specialist",          desc: "Rebuild your forehand from the ground up.",              effects: { forehand: 4, touch: 1 } },
+  { id: "bh_coach",      label: "Backhand Specialist",          desc: "Work on disguise, slice, and two-handed drive.",         effects: { backhand: 4, touch: 1 } },
+  { id: "net_coach",     label: "Net Game Coach",               desc: "Volley clinic and approach shot drills.",                effects: { net: 4, touch: 2 } },
+  { id: "return_coach",  label: "Return of Serve Coach",        desc: "Early ball, aggressive positioning.",                    effects: { return: 3, movement: 1 } },
+  { id: "movement",      label: "Movement & Footwork Trainer",  desc: "Court coverage, split step timing, lateral speed.",      effects: { movement: 3, defence: 2 } },
+  { id: "defence",       label: "Defensive Grinding Specialist",desc: "Learn to reset points and outlast opponents.",           effects: { defence: 3, stamina: 2 } },
+  { id: "rest",          label: "Rest & Recovery Season",       desc: "No stat gains. The body will thank you later.",         effects: {}, recovery: true },
+  { id: "slice_clinic",  label: "Slice Clinic",                 desc: "Master the low skidder on grass and clay.",             effects: { slice: 5, touch: 1 } },
 ];
 
 // --- Injury pool (logical body mapping) --------------------------------------
@@ -1004,9 +1026,8 @@ function generateRival(playerBuild, playerTour, rng) {
 // Returns attribute reductions per season based on age. Tuned so a career
 // naturally winds down by the mid-30s: peak to ~27, gentle decline to 30,
 // real erosion from 31, steep past 33.
-function ageDecay(age, longevity) {
-  // Longevity bonus delays decay. Each +1 longevity adds ~0.8 years of peak.
-  const adjustedAge = age - longevity * 0.8;
+function ageDecay(age) {
+  const adjustedAge = age;
   if (adjustedAge <= 24) return {};
   if (adjustedAge <= 26) return { stamina: -1 };
   if (adjustedAge <= 28) return { stamina: -2, movement: -1 };
@@ -1213,10 +1234,12 @@ export default function CalendarSlam() {
 
   // Career: start a brand-new career.
   function startCareer() {
-    const rng = mulberry32((Date.now() & 0xffffffff) ^ 0xdeadbeef);
-    // If name mode is generate, generate now.
-    let name = playerName, flag = playerFlag;
-    if (playerNameMode === "generate" || !playerName.trim()) {
+    // Use whatever the generator/user already set. Only fall back to generating
+    // a new name if both are genuinely empty (shouldn't happen in practice).
+    let name = playerName.trim();
+    let flag = playerFlag;
+    if (!name) {
+      const rng = mulberry32((Date.now() & 0xffffffff) ^ 0xdeadbeef);
       const p = generatePlayer(rng);
       name = p.name; flag = p.flag;
       setPlayerName(name); setPlayerFlag(flag);
@@ -1234,12 +1257,15 @@ export default function CalendarSlam() {
     setBuild({});
     setRound(0);
     setEliteUsed(false);
+    setPlayerSkipUsed(false);
     setGenerationalPlayers([]);
     setPressPhase(false);
     setSeasonSummary(null);
     setChosenQuote(null);
     setShowRivalModal(false);
-    setPhase("intro");
+    // Go straight to draft — no intro screen for career mode.
+    setPhase("draft");
+    spinNext([], false);
   }
 
   // --- Procedural season report generator -----------------------------------
@@ -1446,7 +1472,7 @@ export default function CalendarSlam() {
     const upgrades = pickUpgrades(upgradeRng, build);
 
     // Roll for injury
-    const risk = injuryRisk(careerAge, careerLongevity, heavyTrainingLastSeason);
+    const risk = injuryRisk(careerAge, heavyTrainingLastSeason);
     const injuryRng = mulberry32((careerSeason * 11111 + 7) & 0xffffffff);
     let injury = null;
     if (injuryRng() < risk) {
@@ -1481,6 +1507,7 @@ export default function CalendarSlam() {
 
     // Straight to the off-season — no separate press-quote picker.
     setPressPhase(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
     setPhase("offseason");
   }
 
@@ -1490,10 +1517,9 @@ export default function CalendarSlam() {
     // Apply injury if present
     if (offseasonInjury) nextBuild = applyEffects(nextBuild, offseasonInjury.effects);
     // Apply age decay
-    const decay = ageDecay(careerAge + 1, careerLongevity + (upgrade.longevity || 0));
+    const decay = ageDecay(careerAge + 1);
     nextBuild = applyDecay(nextBuild, decay);
-    const newLongevity = careerLongevity + (upgrade.longevity || 0);
-    setCareerLongevity(newLongevity);
+
     setHeavyTrainingLastSeason(upgrade.id === "fitness");
     setBuild(nextBuild);
     setCareerSeason(s => s + 1);
@@ -1522,29 +1548,63 @@ export default function CalendarSlam() {
     if (!b || Object.keys(b).length === 0) return null;
     const lastSeason = careerSeasons[careerSeasons.length - 1];
     const results = lastSeason?.results?.filter(r => !r.isOlympics) || [];
-    // Surface scores, weakest first.
-    const surfScores = ["Clay", "Grass", "Hard"].map(s => ({ s, v: surfaceScore(b, s) }));
+    const surfScores = ["Clay","Grass","Hard"].map(s => ({ s, v: surfaceScore(b, s) }));
     surfScores.sort((a, b2) => a.v - b2.v);
     const weakestSurf = surfScores[0].s;
-    // Did an early exit happen on a particular surface this season?
-    const earlyExit = results.find(r => !r.wonTitle &&
-      ["Round 1", "Round 2", "Round 3"].includes(r.lostRound));
-    const surfName = { Clay: "clay", Grass: "grass", Hard: "hard-court" };
-    // The single weakest surface-critical attribute to call out.
+    const surfName = { Clay: "clay", Grass: "grass", Hard: "hard courts" };
     const w = SURFACE_WEIGHTS[weakestSurf];
     let worstAttr = null, worstVal = 999;
     for (const a of ATTRS) {
       const val = b[a.key]?.rating ?? 0;
       if (w[a.key] >= 1.1 && val < worstVal) { worstVal = val; worstAttr = a; }
     }
+
+    // Pull real match data for season-specific insight.
+    const earlyExit = results.find(r => !r.wonTitle && ["Round 1","Round 2","Round 3"].includes(r.lostRound));
+    const finalLoss = results.find(r => !r.wonTitle && r.lostRound === "Final");
+    const sfLoss = results.find(r => !r.wonTitle && r.lostRound === "Semi-final");
+    const rivalLoss = results.find(r => !r.wonTitle && r.lostToRival);
+    const closeLoss = results.find(r => !r.wonTitle && r.reason?.includes("epic"));
+    const wonCount = results.filter(r => r.wonTitle).length;
+
     let line;
-    if (earlyExit) {
-      line = `That early exit at ${earlyExit.name} stung. Your ${surfName[earlyExit.surface]} game is where we're losing matches — let's target it this off-season.`;
+
+    if (rivalLoss) {
+      // Lost to rival specifically
+      const lines = [
+        `${rivalLoss.opponent} had your number again at ${rivalLoss.name} — that's becoming a pattern. We need to work on ${surfName[rivalLoss.surface]} specifically, because that's where they keep hurting us.`,
+        `The loss to ${rivalLoss.opponent} in the ${rivalLoss.lostRound} at ${rivalLoss.name} wasn't just bad luck. They're targeting your ${worstAttr?.label.toLowerCase() || "weakest shot"} every time. We fix that this winter.`,
+      ];
+      line = lines[careerSeason % lines.length];
+    } else if (finalLoss) {
+      // Lost a final
+      const mentalLines = [
+        `You were right there in the ${finalLoss.name} final — the scoreline doesn't show how close it was. I think the pressure got to you on the big points. A session with a psychologist this off-season. Trust me.`,
+        `Losing the ${finalLoss.name} final to ${finalLoss.opponent} — that one's going to hurt for a while. But look at it this way: you belong in finals. Now we learn how to win them.`,
+      ];
+      line = mentalLines[careerSeason % mentalLines.length];
+    } else if (closeLoss) {
+      // An epic match loss
+      line = `That match at ${closeLoss.name} — the one that went the distance — you were a hair away. Your ${worstAttr?.label.toLowerCase() || "stamina"} in the deciding set let you down. That's our target this winter.`;
+    } else if (earlyExit) {
+      // Shock early exit
+      const earlyLines = [
+        `I'm not going to sugarcoat the early exit at ${earlyExit.name}. Your ${surfName[earlyExit.surface]} game is where we're losing matches before they've even started. That changes now.`,
+        `${earlyExit.name}, Round ${earlyExit.lostRound?.replace("Round ","")} — that result hurt the whole team. ${earlyExit.opponent} exposed your ${worstAttr?.label.toLowerCase() || "movement"} and we both know it. Let's be honest about it and fix it.`,
+      ];
+      line = earlyLines[careerSeason % earlyLines.length];
+    } else if (wonCount >= 2) {
+      // Great season — keep building
+      line = `Two titles this year — brilliant. But I still see the ${surfName[weakestSurf]} as the ceiling on what you can achieve. If we can close that gap this off-season, a Calendar Slam is genuinely within reach.`;
+    } else if (sfLoss) {
+      line = `Semi-finals are progress — genuinely. But ${sfLoss.opponent} in the last four at ${sfLoss.name} showed us exactly where the ceiling is right now. Your ${worstAttr?.label.toLowerCase() || "mental game"} under pressure. We work on that.`;
     } else {
-      line = `Your ${surfName[weakestSurf]} results are the soft spot in your game. If we want more deep runs, that's where the work goes.`;
-    }
-    if (worstAttr && worstVal < 86) {
-      line += ` Your ${worstAttr.label.toLowerCase()} (${worstVal}) is the shot holding that surface back.`;
+      // Generic but still specific to surface
+      const generic = [
+        `Your ${surfName[weakestSurf]} results are the soft spot in your game. If we want more deep runs, that's where the work goes this off-season — no shortcuts.`,
+        `I've been watching the tape from this season. The ${surfName[weakestSurf]} losses all share the same pattern — your ${worstAttr?.label.toLowerCase() || "game"} breaks down under pressure. We can fix it.`,
+      ];
+      line = generic[careerSeason % generic.length];
     }
     return { weakestSurf, line, worstAttr: worstAttr?.label };
   }
@@ -1584,26 +1644,49 @@ export default function CalendarSlam() {
     spinNext([], false);
   }
 
+  // Single season: called from the tour screen with the chosen tour key.
+  // Sets tour, resets draft state, and spins immediately — no intro screen.
+  function startSingleDraft(tourKey) {
+    const pool = TOURS[tourKey].pool;
+    setTour(tourKey);
+    setBuild({});
+    setRound(0);
+    setRanSim(false);
+    setReveal({ slam: 0, round: 0, done: false, scoreShown: false });
+    setShowCard(false);
+    setEliteUsed(false);
+    setPlayerSkipUsed(false);
+    setPhase("draft");
+    spinNext([], false, pool); // pass pool explicitly before tour state updates
+  }
+
   // Draft: skip the currently spun player once per draft — re-spins a fresh one.
   function skipPlayer() {
-    if (spinning || playerSkipUsed || !current) return;
+    if (spinning || playerSkipUsed || !lockedPlayer.current) return;
     setPlayerSkipUsed(true);
     const usedNames = Object.values(build).filter(Boolean).map((b) => b.player);
-    spinNext(usedNames.concat(current.name), eliteUsed);
+    spinNext(usedNames.concat(lockedPlayer.current.name), eliteUsed);
   }
 
   // Choose which sub-pool to spin from given challenge mode and elite status.
-  function spinNext(exclude, eliteAlreadyUsed) {
+  // The player that will be LOCKED when the user picks. Stored in a ref so
+  // pickAttr always reads the authoritative value, never the animation frame.
+  const lockedPlayer = React.useRef(null);
+
+  function spinNext(exclude, eliteAlreadyUsed, explicitPool) {
     setSpinning(true);
     setPreviewKey(null);
     setHovered(null);
-    let pool;
-    if (difficulty === "challenge") {
-      pool = eliteAlreadyUsed ? journeyPool : POOL; // before elite used: any; after: journeymen only
-    } else {
-      pool = POOL;
+    let pool = explicitPool;
+    if (!pool) {
+      if (difficulty === "challenge") {
+        pool = eliteAlreadyUsed ? journeyPool : POOL;
+      } else {
+        pool = POOL;
+      }
     }
     const final = rngPick(pool, exclude);
+    lockedPlayer.current = final; // always authoritative
     if (reduce) {
       setCurrent(final);
       setSpinning(false);
@@ -1647,18 +1730,19 @@ export default function CalendarSlam() {
   }
 
   function pickAttr(attrKey) {
-    if (spinning || !current) return;
+    if (spinning || !lockedPlayer.current) return;
     Sound.shot();
+    const locked = lockedPlayer.current; // always the final spun player
     const isElitePick = difficulty === "challenge" && !eliteUsed &&
-      elitePool.some((p) => p.name === current.name);
+      elitePool.some((p) => p.name === locked.name);
     const nextEliteUsed = eliteUsed || isElitePick;
     if (isElitePick) setEliteUsed(true);
     const next = {
       ...build,
       [attrKey]: {
-        rating: current.stats[attrKey],
-        player: current.name,
-        flag: current.flag,
+        rating: locked.stats[attrKey],
+        player: locked.name,
+        flag: locked.flag,
         elite: isElitePick,
       },
     };
@@ -1721,20 +1805,22 @@ export default function CalendarSlam() {
     let activeField = T.field;
     let activeDraw = T.draw;
     if (gameMode === "career") {
-      const seasonsIn = careerSeason - 1;
-      // Each season, the lowest-rated established names decline; after a few
-      // seasons they retire out of the field entirely, replaced by gen players.
-      const fade = Math.min(T.field.length - 4, Math.floor(seasonsIn / 2));
-      const sortedField = [...T.field].sort((a, b) => b.base - a.base);
-      const survivors = sortedField.slice(0, sortedField.length - fade)
-        .map((p, i) => ({ ...p, base: p.base - Math.min(6, Math.floor(seasonsIn / 3)) }));
-      // Promote the strongest generational players into the field.
+      const currentYear = 2024 + careerSeason;
+      // A real player retires from the elite field once they're ~37+, or earlier
+      // if they were born in the 80s (they'd be 40+ by the mid-career seasons).
+      // Level also decays once they pass peak age (~32).
+      const survivors = T.field.map(p => {
+        const age = p.born ? currentYear - p.born : 30;
+        if (age >= 38) return null; // retired
+        const decayFrom = 31;
+        const levelDrop = age > decayFrom ? Math.min(10, (age - decayFrom) * 1.5) : 0;
+        return { ...p, base: Math.max(68, p.base - levelDrop) };
+      }).filter(Boolean);
       const promoted = gens
-        .filter(p => p.base >= 76 || careerSeason >= 4)
-        .slice(0, fade + 2)
-        .map(p => ({ ...p, base: p.base + Math.min(8, seasonsIn) }));
-      activeField = [...survivors, ...promoted].slice(0, Math.max(10, survivors.length));
-      // Draw pool also takes in the remaining gen players.
+        .filter(p => p.base >= 74 || careerSeason >= 4)
+        .slice(0, Math.max(0, 10 - survivors.length) + 2)
+        .map(p => ({ ...p, base: p.base + Math.min(8, careerSeason) }));
+      activeField = [...survivors, ...promoted].slice(0, Math.max(8, survivors.length));
       activeDraw = [...T.draw, ...gens];
     }
 
@@ -1930,14 +2016,15 @@ export default function CalendarSlam() {
             the ultimate all-court champion. Then find out how far they can go.
           </p>
           <NetGraphic />
-          <p className="cs-tour-prompt">Choose your game</p>
           <div className="cs-mode-btns">
-            <button className="cs-mode-btn" onClick={() => { setGameMode("single"); setPhase("tour"); }}>
+            <button type="button" className="cs-mode-btn"
+              onClick={() => { setGameMode("single"); setPhase("tour"); }}>
               <span className="cs-mode-icon">🎾</span>
               <span className="cs-mode-label">Single Season</span>
               <span className="cs-mode-desc">Build the ultimate player and chase the Calendar Slam — all four majors in one year.</span>
             </button>
-            <button className="cs-mode-btn career" onClick={() => { setGameMode("career"); setPhase("tour"); }}>
+            <button type="button" className="cs-mode-btn career"
+              onClick={() => { setGameMode("career"); setPhase("tour"); }}>
               <span className="cs-mode-icon">🏆</span>
               <span className="cs-mode-label">Career Mode</span>
               <span className="cs-mode-desc">Guide your player from age 20 to retirement. Hire coaches, survive injuries, build a rivalry, and write your legacy before time catches up.</span>
@@ -1948,34 +2035,46 @@ export default function CalendarSlam() {
 
       {phase === "tour" && (
         <section className="cs-tourpick">
-          <h1 className="cs-h1">
-            Build a<br /><em>tennis god.</em>
-          </h1>
-          <p className="cs-lede">
-            Spin real players, draft their iconic weapons, and chase the rarest
-            prize in the sport: all four majors in a single year.
-          </p>
-          <div className="cs-surfaces cs-tour-slams">
-            {SLAMS.map((s) => (
-              <div key={s.key} className={`cs-surface-chip slam-${s.key}`}>
-                <span className="cs-chip-name">{s.name}</span>
-                <span className="cs-chip-surface">{s.surface}</span>
+          {gameMode === "single" ? (
+            <>
+              <h1 className="cs-h1">Build a<br /><em>tennis god.</em></h1>
+              <p className="cs-lede">
+                Spin real players from across eras, draft their iconic weapons, and build
+                a composite champion. You get 11 picks — one attribute per round. To win
+                the Calendar Slam you'll need to conquer all three surfaces.
+              </p>
+              <div className="cs-surfaces cs-tour-slams">
+                {SLAMS.map((s) => (
+                  <div key={s.key} className={`cs-surface-chip slam-${s.key}`}>
+                    <span className="cs-chip-name">{s.name}</span>
+                    <span className="cs-chip-surface">{s.surface}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </>
+          ) : (
+            <>
+              <h1 className="cs-h1">Build your<br /><em>player.</em></h1>
+              <p className="cs-lede">
+                Create a named player, draft their game from scratch, then guide them
+                through a full career — injuries, off-seasons, a rival, and the slow
+                march of time. Retire at 35 with a legacy worth remembering.
+              </p>
+            </>
+          )}
           <NetGraphic />
-          <p className="cs-tour-prompt">Choose your tour to begin</p>
+          <p className="cs-tour-prompt">Choose your tour</p>
           <div className="cs-tour-btns">
             <button
               className="cs-tour-btn atp"
-              onClick={() => { setTour("atp"); setPhase(gameMode === "career" ? "player-create" : "intro"); }}
+              onClick={() => gameMode === "career" ? (setTour("atp"), setPhase("player-create")) : startSingleDraft("atp")}
             >
               <span className="cs-tour-label">ATP</span>
               <span className="cs-tour-sub">Men's Tour</span>
             </button>
             <button
               className="cs-tour-btn wta"
-              onClick={() => { setTour("wta"); setPhase(gameMode === "career" ? "player-create" : "intro"); }}
+              onClick={() => gameMode === "career" ? (setTour("wta"), setPhase("player-create")) : startSingleDraft("wta")}
             >
               <span className="cs-tour-label">WTA</span>
               <span className="cs-tour-sub">Women's Tour</span>
@@ -2042,8 +2141,8 @@ export default function CalendarSlam() {
           </div>
 
           <button className="cs-cta" onClick={startCareer}
-            disabled={!playerName.trim() && playerNameMode === "custom"}>
-            Begin career →
+            disabled={playerNameMode === "custom" && !playerName.trim()}>
+            Begin drafting →
           </button>
         </section>
       )}
@@ -2070,7 +2169,7 @@ export default function CalendarSlam() {
                 ))}
               </div>
               <div className="cs-intro-actions">
-                <button className="cs-cta" onClick={startDraft}>Begin the draft →</button>
+                <button className="cs-cta" onClick={() => { try { Sound.prime(); } catch(e){} startDraft(); }}>Begin the draft →</button>
               </div>
             </>
           ) : (
@@ -2113,7 +2212,7 @@ export default function CalendarSlam() {
                 )}
               </div>
               <div className="cs-intro-actions">
-                <button className="cs-cta" onClick={startDraft}>Start drafting →</button>
+                <button className="cs-cta" onClick={() => { try { Sound.prime(); } catch(e){} startDraft(); }}>Start drafting →</button>
               </div>
             </>
           )}
@@ -2122,6 +2221,11 @@ export default function CalendarSlam() {
 
       {phase === "draft" && current && (
         <section className="cs-draft">
+          {gameMode === "career" && (
+            <div className="cs-draft-career-banner">
+              {playerFlag} <strong>{playerName}</strong> · {T.label} Career · Season {careerSeason} · Age {careerAge}
+            </div>
+          )}
           <div className="cs-progress-row">
             <span className="cs-round">Round {round + 1} / {TOTAL_ROUNDS}</span>
             <div className="cs-dots">
@@ -2150,14 +2254,13 @@ export default function CalendarSlam() {
                 <div className="cs-card-hint">
                   {spinning ? "Spinning…" : "Take one shot for your build"}
                 </div>
-                {!spinning && (
+                {!spinning && !playerSkipUsed && (
                   <button
                     className="cs-skip-player-btn"
                     onClick={skipPlayer}
-                    disabled={playerSkipUsed}
-                    title={playerSkipUsed ? "You've used your skip" : "Skip this player (once per draft)"}
+                    title="Skip this player — once per draft"
                   >
-                    {playerSkipUsed ? "Skip used" : "↻ Skip this player"}
+                    ↻ Skip this player <span className="cs-skip-once">(once per draft)</span>
                   </button>
                 )}
               </div>
@@ -2304,12 +2407,27 @@ export default function CalendarSlam() {
           {ranSim && simResults && (
             <>
               {reveal.done ? (
-                <div className={`cs-tier ${simResults.tier.glow ? "glow" : ""}`}>
+                <>
+                  {simResults.won === 4 && (
+                    <div className="cs-confetti" aria-hidden>
+                      {Array.from({length: 48}).map((_,i) => (
+                        <div key={i} className="cs-confetti-piece" style={{
+                          '--i': i,
+                          '--x': `${(i * 37 + 11) % 100}%`,
+                          '--hue': `${(i * 47) % 360}`,
+                          '--delay': `${(i * 0.04).toFixed(2)}s`,
+                          '--dur': `${0.9 + (i % 5) * 0.18}s`,
+                        }} />
+                      ))}
+                    </div>
+                  )}
+                  <div className={`cs-tier ${simResults.tier.glow ? "glow" : ""}`}>
                   <div className="cs-tier-eyebrow">Simulated · live {T.label} field</div>
                   <div className="cs-tier-count">{simResults.won} / 4</div>
                   <div className="cs-tier-name">{simResults.tier.name}</div>
                   <div className="cs-tier-note">{simResults.tier.note}</div>
                 </div>
+                </>
               ) : (
                 <>
                   <div className="cs-live-banner">
@@ -2468,11 +2586,21 @@ export default function CalendarSlam() {
                     )}
                     {careerSeasons.flatMap(s =>
                       s.olympics?.medal?.includes("Gold") ? [
-                        <div key={`oly-${s.season}`} className="cs-trophy cs-trophy-gold" title={`${s.olympics.city} Olympics`}>
+                        <button key={`oly-${s.season}`} className="cs-trophy cs-trophy-gold"
+                          title={`${s.olympics.city} Olympics — tap for detail`}
+                          onClick={() => setTrophyDetail({
+                            name: `${s.olympics.city} Olympics`,
+                            year: s.year,
+                            finalOpp: s.results?.find(r => r.isOlympics)?.finalOpp || "the field",
+                            finalScore: s.results?.find(r => r.isOlympics)?.finalScore || "",
+                            surface: s.results?.find(r => r.isOlympics)?.surface || "Hard",
+                            beatRival: false,
+                            isOlympics: true,
+                          })}>
                           <span className="cs-trophy-icon">🥇</span>
                           <span className="cs-trophy-name">Olympic</span>
                           <span className="cs-trophy-year">{s.year}</span>
-                        </div>
+                        </button>
                       ] : []
                     )}
                   </div>
@@ -2607,6 +2735,12 @@ export default function CalendarSlam() {
                 </details>
               </div>
 
+              {careerAge >= RETIRE_AGE - 2 && !retirementPrompt && (
+                <div className="cs-final-season-banner">
+                  ⏳ <strong>Final chapter.</strong> You'll turn {RETIRE_AGE} in {RETIRE_AGE - careerAge <= 1 ? "one season" : "two seasons"} — make it count.
+                </div>
+              )}
+
               {retirementPrompt && (
                 <div className="cs-retirement-prompt">
                   <p>{careerAge + 1 >= RETIRE_AGE
@@ -2628,6 +2762,32 @@ export default function CalendarSlam() {
       {/* RETIREMENT (career mode) */}
       {phase === "retirement" && (
         <section className="cs-retirement">
+          {/* Retirement press clipping */}
+          {(() => {
+            const retireYear = 2025 + careerSeason;
+            const tier = careerSlamCount >= 10 ? "All-Time Great" :
+                         careerSlamCount >= 5  ? "Legendary Champion" :
+                         careerSlamCount >= 2  ? "Grand Slam Champion" :
+                         careerSlamCount === 1 ? "Grand Slam Winner" : "Tour Professional";
+            const rivalLine = careerRival
+              ? ` The rivalry with ${careerRival.flag} ${careerRival.name} — ${careerRival.slamCount > careerSlamCount ? "won by their nemesis" : careerSlamCount > careerRival.slamCount ? "ultimately won" : "evenly matched"} — defined an era.`
+              : "";
+            const bodyText = careerSlamCount >= 10
+              ? `${playerName} retires at ${careerAge} as one of the most decorated players in the history of the sport. ${careerSlamCount} Grand Slam titles across a ${careerSeason}-season career speak for themselves.${rivalLine}`
+              : careerSlamCount >= 2
+              ? `After ${careerSeason} seasons on tour, ${playerName} hangs up the racket at ${careerAge} with ${careerSlamCount} Grand Slam titles to their name. A career that will be remembered.${rivalLine}`
+              : careerSlamCount === 1
+              ? `${playerName} retires after ${careerSeason} seasons. One Grand Slam title — a result that will always guarantee their place in the sport's history.${rivalLine}`
+              : `${playerName} retires after ${careerSeason} seasons of competing at the highest level. The title proved elusive — but few who saw them play would deny their commitment to the game.${rivalLine}`;
+            return (
+              <div className="cs-legacy-clipping">
+                <div className="cs-legacy-masthead">THE TENNIS TRIBUNE</div>
+                <div className="cs-legacy-subhead">RETIREMENT SPECIAL · {retireYear}</div>
+                <h2 className="cs-legacy-headline">{playerFlag} {playerName.toUpperCase()} RETIRES: {tier.toUpperCase()}</h2>
+                <p className="cs-legacy-body">{bodyText}</p>
+              </div>
+            );
+          })()}
           <div className="cs-retire-hero">
             <span className="cs-retire-flag">{playerFlag}</span>
             <h1 className="cs-h1">{playerName}</h1>
@@ -2708,7 +2868,7 @@ export default function CalendarSlam() {
         <div className="cs-modal" onClick={() => setTrophyDetail(null)}>
           <div className="cs-trophy-detail" onClick={e => e.stopPropagation()}>
             <button className="cs-modal-x" onClick={() => setTrophyDetail(null)} aria-label="Close">×</button>
-            <span className="cs-trophy-detail-icon">🏆</span>
+            <span className="cs-trophy-detail-icon">{trophyDetail.isOlympics ? "🥇" : "🏆"}</span>
             <h3 className="cs-trophy-detail-title">{trophyDetail.name}</h3>
             <span className="cs-trophy-detail-year">{trophyDetail.year} · {trophyDetail.surface} court</span>
             <div className="cs-trophy-detail-final">
@@ -2789,6 +2949,7 @@ body { background: #1f6b3f; margin: 0; }
 
 /* DRAFT */
 .cs-draft { padding-top:28px; }
+.cs-draft-career-banner { font-size:13px; color:var(--ball-soft); font-weight:700; letter-spacing:.04em; margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid var(--line); }
 .cs-progress-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
 .cs-round { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:17px; letter-spacing:.08em; text-transform:uppercase; color:var(--chalk); }
 .cs-dots { display:flex; gap:5px; }
@@ -2802,6 +2963,9 @@ body { background: #1f6b3f; margin: 0; }
 .cs-card-eyebrow { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--dim); font-weight:700; }
 .cs-card-name { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:clamp(28px,5.8vw,42px); line-height:1; letter-spacing:0; margin:6px 0 10px; color:var(--chalk); text-transform:uppercase; }
 .cs-card-hint { font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--ball-soft); font-weight:700; }
+.cs-skip-player-btn { margin-top:10px; background:transparent; border:2px solid var(--ball); color:var(--ball); font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:13px; letter-spacing:.1em; text-transform:uppercase; padding:7px 18px; border-radius:20px; cursor:pointer; transition:background .15s, color .15s, transform .1s; }
+.cs-skip-player-btn:hover { background:var(--ball); color:var(--ink); transform:scale(1.04); }
+.cs-skip-once { font-size:11px; font-weight:600; letter-spacing:.04em; opacity:.7; text-transform:none; }
 
 /* court diagram */
 .cs-court { width:120px; flex:0 0 120px; display:block; align-self:center; }
@@ -2993,7 +3157,16 @@ body { background: #1f6b3f; margin: 0; }
 
 /* Mode pick */
 .cs-mode-pick { padding-top:24px; }
-.cs-mode-btns { display:grid; grid-template-columns:1fr 1fr; gap:14px; max-width:600px; margin-top:4px; }
+.cs-mode-btns { display:flex; flex-direction:column; gap:14px; max-width:520px; margin-top:4px; }
+.cs-mode-single-wrap { border:2.5px solid var(--chalk); border-radius:8px; padding:20px 22px; background:rgba(246,251,239,.05); display:flex; flex-direction:column; gap:10px; position:relative; z-index:0; }
+.cs-mode-single-label { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:22px; text-transform:uppercase; color:var(--chalk); }
+.cs-mode-single-desc { font-size:14px; color:var(--dim); line-height:1.5; }
+.cs-mode-tour-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:4px; }
+.cs-mode-tour-btn { display:flex; flex-direction:column; align-items:center; gap:2px; padding:12px 8px; border-radius:6px; border:2px solid var(--ball); background:rgba(216,240,0,.08); cursor:pointer; transition:background .15s,transform .1s; font-family:inherit; touch-action:manipulation; -webkit-tap-highlight-color:rgba(216,240,0,.3); position:relative; z-index:1; }
+.cs-mode-tour-btn:hover { background:var(--ball); transform:translateY(-2px); }
+.cs-mode-tour-btn:hover .cs-mode-tour-name,.cs-mode-tour-btn:hover .cs-mode-tour-sub { color:var(--ink); }
+.cs-mode-tour-name { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:26px; color:var(--ball); line-height:1; }
+.cs-mode-tour-sub { font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--dim); font-weight:700; }
 .cs-mode-btn { display:flex; flex-direction:column; align-items:flex-start; gap:8px; padding:22px 20px; border-radius:10px; border:2.5px solid var(--chalk); background:rgba(246,251,239,.05); cursor:pointer; text-align:left; transition:transform .12s, background .2s, border-color .2s; }
 .cs-mode-btn:hover { transform:translateY(-3px); background:rgba(216,240,0,.1); border-color:var(--ball); }
 .cs-mode-btn.career { border-color:var(--ball); background:rgba(216,240,0,.08); }
@@ -3061,11 +3234,18 @@ body { background: #1f6b3f; margin: 0; }
 .cs-upgrade-effect.pos { background:rgba(111,191,115,.2); color:var(--grass); }
 .cs-upgrade-effect.neg { background:rgba(210,105,63,.18); color:var(--clay); }
 .cs-upgrade-warning { font-size:11px; color:var(--ball-soft); font-weight:700; }
+.cs-final-season-banner { background:rgba(216,240,0,.1); border:1.5px solid var(--ball); border-radius:8px; padding:12px 16px; font-size:14px; color:var(--chalk); margin-bottom:16px; line-height:1.5; }
+.cs-final-season-banner strong { color:var(--ball); }
 .cs-retirement-prompt { background:rgba(210,105,63,.1); border:1.5px solid rgba(210,105,63,.4); border-radius:8px; padding:16px; margin-top:16px; }
 .cs-retirement-prompt p { font-size:14px; color:var(--chalk); margin:0 0 12px; }
 .cs-retire-actions { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
 
 /* Retirement screen */
+.cs-legacy-clipping { background:#f5f0e4; color:#1a1a1a; border-radius:8px; padding:20px 22px; margin-bottom:28px; text-align:left; }
+.cs-legacy-masthead { font-family:"Barlow Condensed",sans-serif; font-weight:900; font-size:11px; letter-spacing:.32em; text-transform:uppercase; color:#555; border-bottom:2px solid #1a1a1a; padding-bottom:6px; margin-bottom:4px; }
+.cs-legacy-subhead { font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:#777; font-weight:700; margin-bottom:10px; }
+.cs-legacy-headline { font-family:"Barlow Condensed",sans-serif; font-weight:900; font-size:22px; line-height:1.1; text-transform:uppercase; margin:0 0 10px; color:#111; }
+.cs-legacy-body { font-size:14px; line-height:1.6; color:#333; margin:0; }
 .cs-retirement { padding-top:28px; text-align:center; }
 .cs-retire-hero { margin-bottom:28px; }
 .cs-retire-flag { font-size:64px; display:block; margin-bottom:8px; }
@@ -3081,7 +3261,6 @@ body { background: #1f6b3f; margin: 0; }
 .cs-season-result { color:var(--chalk); font-weight:700; }
 
 @media (max-width:520px) {
-  .cs-mode-btns { grid-template-columns:1fr; }
   .cs-retire-stat-grid { grid-template-columns:repeat(3,1fr); gap:6px; }
   .cs-retire-val { font-size:32px; }
 }
@@ -3214,6 +3393,9 @@ button.cs-trophy:focus-visible { outline:3px solid var(--ball); outline-offset:2
 
 /* RESULT */
 .cs-result { padding-top:28px; }
+.cs-confetti { position:fixed; inset:0; pointer-events:none; z-index:9999; overflow:hidden; }
+.cs-confetti-piece { position:absolute; top:-16px; left:var(--x); width:10px; height:10px; border-radius:2px; background:hsl(var(--hue),90%,60%); animation:cs-fall var(--dur,1s) var(--delay,0s) ease-in 1 forwards; transform-origin:center; }
+@keyframes cs-fall { 0%{transform:translateY(0) rotate(0deg) scale(1);opacity:1} 80%{opacity:1} 100%{transform:translateY(105vh) rotate(720deg) scale(0.7);opacity:0} }
 .cs-tier { border:2.5px solid var(--chalk); border-radius:6px; padding:26px; text-align:center; margin-bottom:22px; background:rgba(246,251,239,.04); }
 .cs-tier.glow { border-color:var(--ball); background:rgba(216,240,0,.1); box-shadow:0 0 0 4px rgba(216,240,0,.14); }
 .cs-tier-eyebrow { font-size:10px; letter-spacing:.18em; text-transform:uppercase; font-weight:800; color:var(--dim); margin-bottom:4px; }
