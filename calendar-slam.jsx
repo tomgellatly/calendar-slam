@@ -256,67 +256,119 @@ const TOURS = {
   wta: { pool: POOL_WTA, field: FIELD_WTA, draw: DRAW_WTA, label: "WTA", sub: "Women's Tour" },
 };
 
-// --- Sound engine ------------------------------------------------------------
-// Synthesised via Web Audio (no asset files, works offline). A short "thock"
-// for shots/taps and a crowd-cheer swell for slam wins. Respects a mute flag.
+// --- Sound + Haptics engine --------------------------------------------------
+// Sound: Web Audio synthesised entirely in JS — no asset files, works offline.
+// The key browser rule: AudioContext must be created (or resumed) INSIDE a user
+// gesture handler. We solve this with a one-time "unlock" listener that fires on
+// the first pointerdown anywhere in the document, creates the context there and
+// then immediately plays a silent buffer — after which the context stays running
+// for the session.
+//
+// Haptics: navigator.vibrate is called for short taps on supporting browsers.
+// Chrome on Android supports it; iOS Safari doesn't, but the call is safe.
 const Sound = (() => {
   let ctx = null;
   let muted = false;
-  function ac() {
-    if (typeof window === "undefined") return null;
+  let unlocked = false;
+
+  function unlock() {
+    if (unlocked) return;
+    unlocked = true;
     try {
-      if (!ctx) {
-        const AC = window.AudioContext || window.webkitAudioContext;
-        if (!AC) return null;
-        ctx = new AC();
-      }
-      // Always attempt resume — required after browser autoplay policy suspends
-      if (ctx.state === "suspended") { ctx.resume().catch(() => {}); }
-      if (ctx.state === "closed") { ctx = null; return null; }
-      return ctx;
-    } catch(e) { return null; }
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      ctx = new AC();
+      // Play a silent buffer to fully unlock autoplay policy
+      const buf = ctx.createBuffer(1, 1, 22050);
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.connect(ctx.destination);
+      src.start(0);
+      if (ctx.state === "suspended") ctx.resume().catch(() => {});
+    } catch (e) { ctx = null; }
   }
-  // Call this on any user gesture to pre-warm the context
-  function prime() { if (!muted) ac(); }
+
+  // Wire unlock to the first pointer event on the document
+  if (typeof document !== "undefined") {
+    document.addEventListener("pointerdown", unlock, { once: true, passive: true });
+  }
+
+  function ac() {
+    if (!ctx) return null;
+    if (ctx.state === "suspended") { ctx.resume().catch(() => {}); }
+    if (ctx.state === "closed") return null;
+    return ctx;
+  }
+
   function setMuted(m) { muted = m; }
   function isMuted() { return muted; }
-  // Short percussive racket "thock".
-  function shot() {
+
+  // Short percussive racket "thock" — plays on every button tap
+  function tap() {
     if (muted) return;
+    // Haptic: 8ms pulse, barely noticeable but gives physical feedback
+    if (navigator.vibrate) navigator.vibrate(8);
     const c = ac(); if (!c) return;
     const t = c.currentTime;
     const o = c.createOscillator();
     const g = c.createGain();
     o.type = "triangle";
-    o.frequency.setValueAtTime(420, t);
-    o.frequency.exponentialRampToValueAtTime(150, t + 0.07);
+    o.frequency.setValueAtTime(520, t);
+    o.frequency.exponentialRampToValueAtTime(180, t + 0.06);
     g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(0.16, t + 0.005);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.11);
+    g.gain.exponentialRampToValueAtTime(0.22, t + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.10);
     o.connect(g); g.connect(c.destination);
-    o.start(t); o.stop(t + 0.12);
+    o.start(t); o.stop(t + 0.11);
   }
-  // Crowd cheer: filtered noise swell.
-  function cheer() {
+
+  // Heavier "thock" for confirming a draft pick
+  function pick() {
     if (muted) return;
+    if (navigator.vibrate) navigator.vibrate([12, 20, 8]);
     const c = ac(); if (!c) return;
     const t = c.currentTime;
-    const dur = 1.4;
-    const buf = c.createBuffer(1, c.sampleRate * dur, c.sampleRate);
+    // Two-tone: low thud + high click
+    [[220, 80, 0.28], [660, 40, 0.14]].forEach(([freq, endFreq, vol]) => {
+      const o = c.createOscillator(); const g = c.createGain();
+      o.type = "triangle";
+      o.frequency.setValueAtTime(freq, t);
+      o.frequency.exponentialRampToValueAtTime(endFreq, t + 0.09);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(vol, t + 0.005);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.13);
+      o.connect(g); g.connect(c.destination);
+      o.start(t); o.stop(t + 0.14);
+    });
+  }
+
+  // Crowd cheer swell — plays when winning a slam
+  function cheer() {
+    if (muted) return;
+    if (navigator.vibrate) navigator.vibrate([30, 50, 60, 40, 80]);
+    const c = ac(); if (!c) return;
+    const t = c.currentTime;
+    const dur = 1.6;
+    const buf = c.createBuffer(1, Math.floor(c.sampleRate * dur), c.sampleRate);
     const data = buf.getChannelData(0);
-    for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * 0.6;
+    for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1);
     const src = c.createBufferSource(); src.buffer = buf;
     const bp = c.createBiquadFilter();
-    bp.type = "bandpass"; bp.frequency.value = 900; bp.Q.value = 0.7;
+    bp.type = "bandpass"; bp.frequency.value = 1100; bp.Q.value = 0.5;
     const g = c.createGain();
     g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(0.32, t + 0.25);
-    g.gain.setValueAtTime(0.32, t + 0.7);
+    g.gain.exponentialRampToValueAtTime(0.38, t + 0.2);
+    g.gain.setValueAtTime(0.38, t + 0.8);
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
     src.connect(bp); bp.connect(g); g.connect(c.destination);
     src.start(t); src.stop(t + dur);
   }
-  return { shot, cheer, setMuted, isMuted };
+
+  // Keep old aliases so existing call sites still work
+  const shot = pick;
+  const prime = () => {};  // no longer needed — unlock fires on first touch
+
+  return { tap, pick, shot, cheer, prime, setMuted, isMuted };
 })();
 
 function mulberry32(seed) {
@@ -1536,6 +1588,25 @@ export default function CalendarSlam() {
     setPhase("result");
   }
 
+  // Inject a tennis-ball SVG favicon programmatically — no extra file needed.
+  useEffect(() => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+      <circle cx="16" cy="16" r="15" fill="%231f6b3f"/>
+      <circle cx="16" cy="16" r="11" fill="%23d8f000"/>
+      <path d="M5 16 Q16 8 27 16" stroke="%231f6b3f" stroke-width="2.2" fill="none"/>
+      <path d="M5 16 Q16 24 27 16" stroke="%231f6b3f" stroke-width="2.2" fill="none"/>
+    </svg>`;
+    const url = `data:image/svg+xml,${svg}`;
+    let link = document.querySelector("link[rel~='icon']");
+    if (!link) {
+      link = document.createElement("link");
+      link.rel = "icon";
+      document.head.appendChild(link);
+    }
+    link.href = url;
+    document.title = "Calendar Slam";
+  }, []);
+
   useEffect(() => { Sound.setMuted(!soundOn); }, [soundOn]);
 
   // Career: retire and show the hall of fame summary.
@@ -1970,7 +2041,7 @@ export default function CalendarSlam() {
   }, [ranSim, simResults, reveal, reduce]);
 
   return (
-    <div className="cs-root">
+    <div className="cs-root" onPointerDown={() => Sound.tap()}>
       <style>{CSS}</style>
 
       <header className="cs-head">
@@ -2169,7 +2240,7 @@ export default function CalendarSlam() {
                 ))}
               </div>
               <div className="cs-intro-actions">
-                <button className="cs-cta" onClick={() => { try { Sound.prime(); } catch(e){} startDraft(); }}>Begin the draft →</button>
+                <button className="cs-cta" onClick={startDraft}>Begin the draft →</button>
               </div>
             </>
           ) : (
@@ -2212,7 +2283,7 @@ export default function CalendarSlam() {
                 )}
               </div>
               <div className="cs-intro-actions">
-                <button className="cs-cta" onClick={() => { try { Sound.prime(); } catch(e){} startDraft(); }}>Start drafting →</button>
+                <button className="cs-cta" onClick={startDraft}>Start drafting →</button>
               </div>
             </>
           )}
