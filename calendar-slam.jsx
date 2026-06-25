@@ -66,6 +66,17 @@ const POOL_ATP = [
   { name: "Robin Soderling",    flag: "🇸🇪", fact: "The only man to beat Nadal at Roland Garros during his peak.", stats: { serve: 90, return: 82, forehand: 95, backhand: 82, net: 78, movement: 80, defence: 80, stamina: 82, mental: 80, slice: 77 } },
   { name: "Andy Roddick",       flag: "🇺🇸", fact: "A US Open champion with one of the hardest serves in history.", stats: { serve: 97, return: 80, forehand: 90, backhand: 78, net: 80, movement: 82, defence: 78, stamina: 84, mental: 84, slice: 76 } },
   { name: "Nikolay Davydenko",  flag: "🇷🇺", fact: "A technically pristine baseliner who troubled every top player.", stats: { serve: 80, return: 86, forehand: 88, backhand: 88, net: 78, movement: 88, defence: 86, stamina: 90, mental: 82, slice: 83 } },
+  { name: "Marin Cilic",        flag: "🇭🇷", fact: "A US Open champion who could blast opponents off the court on a hot day.", stats: { serve: 93, return: 82, forehand: 91, backhand: 86, net: 80, movement: 80, defence: 80, stamina: 84, mental: 80, slice: 80 } },
+  { name: "Kei Nishikori",      flag: "🇯🇵", fact: "A lightning-quick shotmaker who took the ball early off both wings.", stats: { serve: 80, return: 88, forehand: 90, backhand: 90, net: 80, movement: 92, defence: 88, stamina: 84, mental: 82, slice: 82 } },
+  { name: "Grigor Dimitrov",    flag: "🇧🇬", fact: "An elegant all-courter whose one-hander drew Federer comparisons.", stats: { serve: 88, return: 82, forehand: 89, backhand: 86, net: 86, movement: 88, defence: 84, stamina: 84, mental: 78, slice: 92 } },
+  { name: "Gael Monfils",       flag: "🇫🇷", fact: "An electric athlete and showman with freakish defensive range.", stats: { serve: 88, return: 86, forehand: 88, backhand: 82, net: 80, movement: 97, defence: 94, stamina: 84, mental: 76, slice: 82 } },
+  { name: "Jo-Wilfried Tsonga", flag: "🇫🇷", fact: "A powerful, athletic attacker with explosive serve-and-forehand.", stats: { serve: 92, return: 80, forehand: 92, backhand: 80, net: 88, movement: 84, defence: 78, stamina: 82, mental: 80, slice: 80 } },
+  { name: "Tomas Berdych",      flag: "🇨🇿", fact: "A tall, flat-hitting ball-striker who overpowered opponents from the back.", stats: { serve: 91, return: 82, forehand: 92, backhand: 88, net: 80, movement: 80, defence: 80, stamina: 84, mental: 78, slice: 78 } },
+  { name: "David Nalbandian",   flag: "🇦🇷", fact: "A supreme ball-striker with arguably the best backhand of his era.", stats: { serve: 84, return: 90, forehand: 90, backhand: 94, net: 82, movement: 86, defence: 88, stamina: 82, mental: 80, slice: 84 } },
+  { name: "Nick Kyrgios",       flag: "🇦🇺", fact: "A mercurial talent with a colossal serve and pure shotmaking instinct.", stats: { serve: 96, return: 80, forehand: 90, backhand: 84, net: 88, movement: 84, defence: 76, stamina: 76, mental: 70, slice: 88 } },
+  { name: "Dominic Thiem",      flag: "🇦🇹", fact: "A US Open champion with a ferocious one-handed backhand and heavy topspin.", stats: { serve: 88, return: 86, forehand: 93, backhand: 92, net: 80, movement: 86, defence: 86, stamina: 88, mental: 84, slice: 84 } },
+  { name: "Casper Ruud",        flag: "🇳🇴", fact: "A clay-court specialist with relentless topspin and a heavy forehand.", stats: { serve: 84, return: 84, forehand: 91, backhand: 84, net: 76, movement: 88, defence: 90, stamina: 90, mental: 86, slice: 80 } },
+  { name: "Taylor Fritz",       flag: "🇺🇸", fact: "A big-serving American who thrives on quick surfaces.", stats: { serve: 92, return: 82, forehand: 90, backhand: 84, net: 80, movement: 82, defence: 80, stamina: 84, mental: 82, slice: 78 } },
   // Current era
   { name: "Jannik Sinner",      flag: "🇮🇹", fact: "The ice-cold Italian No. 1 with flat, relentless ball-striking.", stats: { serve: 90, return: 92, forehand: 95, backhand: 94, net: 82, movement: 92, defence: 90, stamina: 92, mental: 93, slice: 85 } },
   { name: "Carlos Alcaraz",     flag: "🇪🇸", fact: "The electric all-court prodigy with dazzling variety.", stats: { serve: 88, return: 90, forehand: 96, backhand: 88, net: 90, movement: 97, defence: 92, stamina: 93, mental: 90, slice: 92 } },
@@ -221,7 +232,7 @@ function buildDraw(slam, rand, field, drawPool, rival) {
   const top5 = top.slice(-5);
   const boost = (p, by) => ({ ...p, level: p.level + by });
   draw.push(top5[Math.floor(rand() * 2)]);                 // QF (no boost — easier to reach SF)
-  draw.push(boost(top5[2 + Math.floor(rand() * 2)], 1));   // SF
+  draw.push(top5[2 + Math.floor(rand() * 2)]);             // SF (no boost now — eases reaching the final)
   draw.push(boost(top[top.length - 1], 1));                // Final: surface king
 
   // Inject the rival deep in the draw on their specialist surface. They become
@@ -308,94 +319,69 @@ const Sound = (() => {
   function setMuted(m) { muted = m; }
   function isMuted() { return muted; }
 
-  // A realistic tennis-ball strike: a sharp filtered-noise "pock" transient
-  // (string-bed impact) layered over a fast pitch-swept body. Short and crisp.
-  function ballHit(power) {
+  // A subtle soft click — quiet, short, non-intrusive. Used for all taps/picks.
+  function softClick(vol) {
     const c = ac(); if (!c) return;
     const t = c.currentTime;
-    const vol = power === "hard" ? 0.42 : 0.30;
-
-    // 1) Noise transient — the crack of strings on ball
-    const noiseDur = 0.05;
-    const nbuf = c.createBuffer(1, Math.floor(c.sampleRate * noiseDur), c.sampleRate);
-    const nd = nbuf.getChannelData(0);
-    for (let i = 0; i < nd.length; i++) {
-      // decaying noise
-      nd[i] = (Math.random() * 2 - 1) * (1 - i / nd.length);
-    }
-    const nsrc = c.createBufferSource(); nsrc.buffer = nbuf;
-    const nbp = c.createBiquadFilter();
-    nbp.type = "bandpass"; nbp.frequency.value = 2600; nbp.Q.value = 1.1;
-    const ng = c.createGain();
-    ng.gain.setValueAtTime(vol * 1.1, t);
-    ng.gain.exponentialRampToValueAtTime(0.0001, t + noiseDur);
-    nsrc.connect(nbp); nbp.connect(ng); ng.connect(c.destination);
-    nsrc.start(t); nsrc.stop(t + noiseDur);
-
-    // 2) Tonal body — the "pock" thud, pitch sweeps down fast
     const o = c.createOscillator();
     const g = c.createGain();
     o.type = "sine";
-    o.frequency.setValueAtTime(power === "hard" ? 280 : 340, t);
-    o.frequency.exponentialRampToValueAtTime(90, t + 0.08);
+    o.frequency.setValueAtTime(440, t);
+    o.frequency.exponentialRampToValueAtTime(280, t + 0.04);
     g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(vol, t + 0.003);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.07);
     o.connect(g); g.connect(c.destination);
-    o.start(t); o.stop(t + 0.13);
+    o.start(t); o.stop(t + 0.08);
   }
 
-  // Light tap for general buttons
+  // Light tap for general buttons — very quiet
   function tap() {
     if (muted) return;
-    if (navigator.vibrate) navigator.vibrate(8);
-    ballHit("soft");
+    if (navigator.vibrate) navigator.vibrate(6);
+    softClick(0.05);
   }
 
-  // Heavier strike for confirming a draft pick
+  // Slightly more present click for confirming a draft pick
   function pick() {
     if (muted) return;
-    if (navigator.vibrate) navigator.vibrate([12, 18, 10]);
-    ballHit("hard");
+    if (navigator.vibrate) navigator.vibrate(10);
+    softClick(0.09);
   }
 
-  // Crowd cheer swell — plays when winning a slam
+  // Soft celebratory chime — gentle rising two notes, not a roaring crowd
   function cheer() {
     if (muted) return;
-    if (navigator.vibrate) navigator.vibrate([30, 50, 60, 40, 80]);
+    if (navigator.vibrate) navigator.vibrate([15, 30, 20]);
     const c = ac(); if (!c) return;
     const t = c.currentTime;
-    const dur = 1.6;
-    const buf = c.createBuffer(1, Math.floor(c.sampleRate * dur), c.sampleRate);
-    const data = buf.getChannelData(0);
-    for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1);
-    const src = c.createBufferSource(); src.buffer = buf;
-    const bp = c.createBiquadFilter();
-    bp.type = "bandpass"; bp.frequency.value = 1100; bp.Q.value = 0.5;
-    const g = c.createGain();
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(0.38, t + 0.2);
-    g.gain.setValueAtTime(0.38, t + 0.8);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    src.connect(bp); bp.connect(g); g.connect(c.destination);
-    src.start(t); src.stop(t + dur);
+    [[523, 0], [784, 0.12]].forEach(([freq, offset]) => {
+      const o = c.createOscillator(); const g = c.createGain();
+      o.type = "sine";
+      o.frequency.setValueAtTime(freq, t + offset);
+      g.gain.setValueAtTime(0.0001, t + offset);
+      g.gain.exponentialRampToValueAtTime(0.11, t + offset + 0.03);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + offset + 0.4);
+      o.connect(g); g.connect(c.destination);
+      o.start(t + offset); o.stop(t + offset + 0.42);
+    });
   }
 
-  // Tense double-thump heartbeat before a championship-deciding match
+  // Subtle low pulse before a championship-deciding match — quiet tension
   function heartbeat() {
     if (muted) return;
     const c = ac(); if (!c) return;
     const t = c.currentTime;
-    [0, 0.28].forEach((offset) => {
+    [0, 0.3].forEach((offset) => {
       const o = c.createOscillator(); const g = c.createGain();
       o.type = "sine";
-      o.frequency.setValueAtTime(70, t + offset);
-      o.frequency.exponentialRampToValueAtTime(45, t + offset + 0.14);
+      o.frequency.setValueAtTime(72, t + offset);
+      o.frequency.exponentialRampToValueAtTime(48, t + offset + 0.12);
       g.gain.setValueAtTime(0.0001, t + offset);
-      g.gain.exponentialRampToValueAtTime(0.34, t + offset + 0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + offset + 0.18);
+      g.gain.exponentialRampToValueAtTime(0.12, t + offset + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + offset + 0.16);
       o.connect(g); g.connect(c.destination);
-      o.start(t + offset); o.stop(t + offset + 0.2);
+      o.start(t + offset); o.stop(t + offset + 0.18);
     });
   }
 
@@ -517,7 +503,7 @@ function simulateMajor(build, slam, rand, usedReasons, field, drawPool, rival) {
     // average set probability for this match. Noise narrowed (±8 → fewer flukey
     // upsets) so genuine quality wins out more often — the "earned" feel.
     const noise = (rand() - 0.5) * 8;
-    const pSet = 1 / (1 + Math.exp(-((myForm + noise - opp.level) / 6.5)));
+    const pSet = 1 / (1 + Math.exp(-((myForm + noise - opp.level) / 7)));
     const m = playMatch(pSet, rand);
     const won = m.mySets === 3;
     const close = matchCloseness(m.sets);
@@ -821,33 +807,39 @@ function ShareCard({ active, ranSim, build, tourLabel, onClose }) {
       y += 94;
     });
 
-    // Build summary — the 10 drafted attributes in two columns, so the shared
-    // image always shows what you actually built.
-    y += 6;
+    // Build summary — the 10 drafted attributes with the player each shot came
+    // from, so the shared image shows exactly what (and who) you built from.
+    y += 4;
     ctx.fillStyle = "#d8f000";
-    ctx.font = "bold 26px 'Arial Narrow', Arial, sans-serif";
-    ctx.fillText("YOUR BUILD", 80, y + 24);
-    y += 44;
-    const col2x = 540;
-    const rowH = 40;
-    ATTRS.forEach((a, i) => {
+    ctx.font = "bold 24px 'Arial Narrow', Arial, sans-serif";
+    ctx.fillText("YOUR BUILD", 80, y + 22);
+    y += 36;
+    const rowH = 30;
+    ATTRS.forEach((a) => {
       const b = build[a.key];
-      const colX = i < 5 ? 80 : col2x;
-      const rowY = y + (i % 5) * rowH;
-      ctx.fillStyle = "rgba(246,251,239,.7)";
-      ctx.font = "22px 'Arial Narrow', Arial, sans-serif";
-      ctx.fillText(a.label, colX, rowY + 16);
+      // Attribute label (left)
+      ctx.fillStyle = "rgba(246,251,239,.85)";
+      ctx.font = "bold 22px 'Arial Narrow', Arial, sans-serif";
+      ctx.textAlign = "left";
+      ctx.fillText(a.label, 80, y + 16);
+      // Rating
       ctx.fillStyle = b ? "#d8f000" : "rgba(246,251,239,.3)";
       ctx.font = "bold 24px 'Arial Narrow', Arial, sans-serif";
-      ctx.textAlign = "right";
-      ctx.fillText(b ? String(b.rating) : "—", colX + (i < 5 ? 420 : 420), rowY + 16);
+      ctx.fillText(b ? String(b.rating) : "—", 320, y + 16);
+      // Player it came from (right)
+      if (b && b.player) {
+        ctx.fillStyle = "rgba(246,251,239,.55)";
+        ctx.font = "20px 'Arial Narrow', Arial, sans-serif";
+        ctx.fillText(`${b.flag || ""} ${b.player}`, 400, y + 16);
+      }
       ctx.textAlign = "left";
+      y += rowH;
     });
 
     // Footer
     ctx.fillStyle = "rgba(246,251,239,.35)";
     ctx.font = "20px 'Arial Narrow', Arial, sans-serif";
-    ctx.fillText("calendarslam.com", 80, 1040);
+    ctx.fillText("calendarslam.com", 80, 1052);
     return canvas;
   }
 
@@ -930,6 +922,7 @@ function ShareCard({ active, ranSim, build, tourLabel, onClose }) {
           </button>
         </div>
         <pre className="cs-share-preview">{shareText}</pre>
+        <button className="cs-share-done" onClick={onClose}>← Back to results</button>
       </div>
     </div>
   );
@@ -1700,22 +1693,28 @@ export default function CalendarSlam() {
     setPhase("result");
   }
 
-  // Inject a tennis-ball SVG favicon programmatically — no extra file needed.
+  // Inject a tennis-ball favicon programmatically — no extra file needed.
+  // SVG must be fully URI-encoded or mobile browsers (esp. iOS Safari) reject it.
   useEffect(() => {
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-      <circle cx="16" cy="16" r="15" fill="%231f6b3f"/>
-      <circle cx="16" cy="16" r="11" fill="%23d8f000"/>
-      <path d="M5 16 Q16 8 27 16" stroke="%231f6b3f" stroke-width="2.2" fill="none"/>
-      <path d="M5 16 Q16 24 27 16" stroke="%231f6b3f" stroke-width="2.2" fill="none"/>
-    </svg>`;
-    const url = `data:image/svg+xml,${svg}`;
-    let link = document.querySelector("link[rel~='icon']");
-    if (!link) {
-      link = document.createElement("link");
-      link.rel = "icon";
-      document.head.appendChild(link);
-    }
-    link.href = url;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="#1f6b3f"/><circle cx="16" cy="16" r="11" fill="#d8f000"/><path d="M5 16 Q16 8 27 16" stroke="#1f6b3f" stroke-width="2.2" fill="none"/><path d="M5 16 Q16 24 27 16" stroke="#1f6b3f" stroke-width="2.2" fill="none"/></svg>`;
+    const url = `data:image/svg+xml,${encodeURIComponent(svg)}`;
+
+    // Remove any existing icons so ours wins
+    document.querySelectorAll("link[rel~='icon'], link[rel='apple-touch-icon']").forEach(el => el.remove());
+
+    // Standard favicon
+    const icon = document.createElement("link");
+    icon.rel = "icon";
+    icon.type = "image/svg+xml";
+    icon.href = url;
+    document.head.appendChild(icon);
+
+    // Apple touch icon (iOS home screen / some mobile tab contexts)
+    const apple = document.createElement("link");
+    apple.rel = "apple-touch-icon";
+    apple.href = url;
+    document.head.appendChild(apple);
+
     document.title = "Calendar Slam";
   }, []);
 
@@ -2142,40 +2141,65 @@ export default function CalendarSlam() {
     setReveal({ slam: total, round: 0, done: true, scoreShown: true });
   }
 
-  // Drive the live reveal. Each round reveals in two beats: the opponent's name
-  // appears first (scoreShown:false), then ~260ms later the score lands, then it
-  // advances. This makes you register WHO you're playing before the result.
+  // Drive the live reveal. Each round reveals in two beats: the opponent appears
+  // (scoreShown:false), then the score lands. Pacing is deliberately uneven so
+  // you FOLLOW the story rather than watch a uniform crawl: routine early rounds
+  // move briskly, the business end of the draw slows down, the final is an event,
+  // and there's a beat to absorb each major's outcome before the next one starts.
   useEffect(() => {
     if (!ranSim || !simResults || reveal.done) return;
     const slam = simResults.perSlam[reveal.slam];
     if (!slam) { setReveal((r) => ({ ...r, done: true })); return; }
     const lastRound = slam.path.length - 1;
-    const isFinalRound = reveal.round === lastRound;
-    const isSemiOrLater = reveal.round >= lastRound - 1;
-    // Escalating drama: early rounds zip by, the back end of the draw lingers.
-    const nameBeat = reduce ? 0 : (isFinalRound ? 650 : isSemiOrLater ? 440 : 240);
-    const advanceBeat = reduce ? 0 : (isFinalRound ? 700 : isSemiOrLater ? 460 : 300);
+    const r = reveal.round;
+    const isFinalRound = r === lastRound;
+    const isSemi = r === lastRound - 1;
+    const isQF = r === lastRound - 2;
+    const justLost = slam.path[r] && !slam.path[r].won; // an upset loss is a moment too
+
+    // Beat durations. Early rounds (R1-R4) are quick; QF/SF build; the final is
+    // an event. A loss at any stage gets extra dwell because it ends your run.
+    let nameBeat, scoreBeat;
+    if (reduce) {
+      nameBeat = 0; scoreBeat = 0;
+    } else if (isFinalRound) {
+      nameBeat = 700; scoreBeat = 1100;       // championship: real suspense
+    } else if (isSemi) {
+      nameBeat = 480; scoreBeat = 700;
+    } else if (isQF) {
+      nameBeat = 380; scoreBeat = 560;
+    } else {
+      nameBeat = 230; scoreBeat = 360;        // routine early rounds — brisk
+    }
+    // If you just lost (run over), linger so it sinks in before moving on.
+    if (justLost && reveal.scoreShown && !reduce) scoreBeat = Math.max(scoreBeat, 1000);
 
     if (!reveal.scoreShown) {
-      // Name showing. On the final, play a tense heartbeat before the score lands.
       if (isFinalRound && !reduce) Sound.heartbeat();
       const t = setTimeout(() => {
-        const p = slam.path[reveal.round];
-        // Sound matches the outcome: cheer-ish pick for a win, duller for a loss.
-        Sound.shot();
-        setReveal((r) => ({ ...r, scoreShown: true }));
+        // Only sound the meaningful rounds (QF onward) to avoid constant clicking
+        if (isQF || isSemi || isFinalRound) Sound.tap();
+        setReveal((rr) => ({ ...rr, scoreShown: true }));
       }, nameBeat);
       return () => clearTimeout(t);
     }
-    const isLastRound = reveal.round >= lastRound;
+
+    const isLastRound = r >= lastRound;
     if (isLastRound && slam.wonTitle) Sound.cheer();
+
+    // After the last shown round of a slam, hold on the RESULT before the next
+    // major begins, so each slam reads as its own chapter.
+    const isSlamResolved = r >= lastRound || justLost;
+    const moreSlams = reveal.slam + 1 < simResults.perSlam.length;
+    const interSlamHold = (isSlamResolved && moreSlams && !reduce) ? 900 : 0;
+
     const t = setTimeout(() => {
-      setReveal((r) => {
-        if (r.round < lastRound) return { ...r, round: r.round + 1, scoreShown: false };
-        if (r.slam + 1 >= simResults.perSlam.length) return { ...r, done: true };
-        return { slam: r.slam + 1, round: 0, done: false, scoreShown: false };
+      setReveal((rr) => {
+        if (rr.round < lastRound) return { ...rr, round: rr.round + 1, scoreShown: false };
+        if (rr.slam + 1 >= simResults.perSlam.length) return { ...rr, done: true };
+        return { slam: rr.slam + 1, round: 0, done: false, scoreShown: false };
       });
-    }, advanceBeat);
+    }, scoreBeat + interSlamHold);
     return () => clearTimeout(t);
   }, [ranSim, simResults, reveal, reduce]);
 
@@ -2662,16 +2686,34 @@ export default function CalendarSlam() {
                   const nearMisses = lost.filter(l => l.nearMiss).sort((a,b) =>
                     roundOrder.indexOf(b.lostRound) - roundOrder.indexOf(a.lostRound));
                   const tease = nearMisses[0];
+
+                  // For the specific near-miss match, work out the EXACT attribute the
+                  // opponent exploited (from their style), so the analysis is coherent:
+                  // the stat we tell you to improve is the one that actually lost it,
+                  // and the opponent's edge is phrased to match.
+                  const STYLE_KEY = { serve:"return", return:"serve", defence:"stamina", baseline:"forehand", allcourt:"mental" };
+                  // How the opponent's strength reads, by the player's exploited weakness:
+                  const EDGE_PHRASE = {
+                    return: "their serve was firing and you couldn't get a look on return",
+                    serve:  "they picked your serve apart and broke at the worst moments",
+                    stamina:"they outlasted you once the rallies turned into a war of attrition",
+                    forehand:"they overpowered you from the baseline",
+                    mental: "their superior mentality gave them the edge in the big points",
+                  };
+                  const ATTR_LABEL = { return:"return", serve:"serve", stamina:"stamina", forehand:"forehand", mental:"mentality" };
+                  const teaseKey = tease ? (STYLE_KEY[tease.oppStyle] || "return") : null;
+                  const teaseAttrLabel = teaseKey ? ATTR_LABEL[teaseKey] : null;
+                  const teaseEdge = teaseKey ? EDGE_PHRASE[teaseKey] : null;
                   return (
                     <div className="cs-diagnosis">
                       <div className="cs-diagnosis-title">📋 The post-match analysis</div>
                       {tease ? (
                         <p className="cs-diagnosis-body">
-                          So close at {tease.name}. If your {worstAttr ? worstAttr.label.toLowerCase() : surfShot[weak] + " game"} had
-                          been about <strong>{tease.pointsNeeded} points higher</strong>, you'd
-                          have beaten {tease.opponent} in the {tease.lostRound.toLowerCase()} — but
-                          {" "}{tease.oppWeapon} was just too much for you on the day. Strengthen
-                          your {surfName[weak]} game and that title is yours next time.
+                          So close at {tease.name}. You pushed {tease.opponent} hard in
+                          the {tease.lostRound.toLowerCase()}, but {teaseEdge}. If your{" "}
+                          <strong>{teaseAttrLabel}</strong> had been a few points higher,
+                          that match — and the title — might have been yours. Draft to
+                          shore it up next time.
                         </p>
                       ) : (
                         <p className="cs-diagnosis-body">
@@ -2713,6 +2755,13 @@ export default function CalendarSlam() {
                             ? <>{p.won ? "WON" : "LOST"} <span className="cs-now-score-line">{p.score}</span></>
                             : <span className="cs-now-serving">{isFinal ? "Championship point…" : "Playing…"}</span>}
                         </div>
+                        {reveal.scoreShown && (isFinal || !p.won) && (
+                          <div className={`cs-now-outcome ${p.won && isFinal ? "champ" : "out"}`}>
+                            {p.won && isFinal
+                              ? `🏆 ${s.isOlympics ? "GOLD MEDAL" : "CHAMPION"}`
+                              : `Knocked out · ${p.round}`}
+                          </div>
+                        )}
                       </div>
                     );
                   })()}
@@ -3390,6 +3439,9 @@ body { background: #1f6b3f; margin: 0; }
 .cs-now-score.lost { color:var(--clay); animation:cs-pop .35s ease; }
 .cs-now-score-line { font-size:24px; opacity:.9; margin-left:8px; }
 .cs-now-serving { font-size:18px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; animation:cs-blink .8s ease-in-out infinite; }
+.cs-now-outcome { margin-top:12px; font-family:"Barlow Condensed",sans-serif; font-weight:900; font-size:20px; letter-spacing:.08em; text-transform:uppercase; animation:cs-pop .4s ease; }
+.cs-now-outcome.champ { color:var(--ball); }
+.cs-now-outcome.out { color:var(--clay); }
 @keyframes cs-pop { 0%{transform:scale(.7);opacity:0} 60%{transform:scale(1.12)} 100%{transform:scale(1);opacity:1} }
 .cs-now-playing.slam-ao { border-left-color:#2b7de9; }
 .cs-now-playing.slam-rg { border-left-color:#e07a3f; }
@@ -3454,9 +3506,12 @@ body { background: #1f6b3f; margin: 0; }
 .cs-path-score { font-variant-numeric:tabular-nums; font-weight:600; color:var(--dim); }
 
 /* share modal */
-.cs-modal { position:fixed; inset:0; background:rgba(7,28,16,.78); display:flex; align-items:center; justify-content:center; padding:20px; z-index:50; }
-.cs-card-share { background:var(--grass-mid); border:2.5px solid var(--chalk); border-radius:8px; max-width:380px; width:100%; padding:28px 26px 24px; position:relative; text-align:center; }
-.cs-modal-x { position:absolute; top:10px; right:14px; background:none; border:none; font-size:26px; line-height:1; cursor:pointer; color:var(--chalk); }
+.cs-modal { position:fixed; inset:0; background:rgba(7,28,16,.78); display:flex; align-items:center; justify-content:center; padding:20px; z-index:50; overflow-y:auto; }
+.cs-card-share { background:var(--grass-mid); border:2.5px solid var(--chalk); border-radius:8px; max-width:380px; width:100%; padding:28px 26px 24px; position:relative; text-align:center; max-height:90vh; overflow-y:auto; }
+.cs-modal-x { position:sticky; top:0; float:right; margin:-12px -10px 0 0; background:var(--grass-mid); border:none; font-size:30px; line-height:1; cursor:pointer; color:var(--chalk); z-index:2; width:40px; height:40px; border-radius:50%; }
+.cs-modal-x:hover { color:var(--ball); }
+.cs-share-done { margin-top:14px; width:100%; background:transparent; border:2px solid var(--chalk); color:var(--chalk); font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:15px; letter-spacing:.06em; text-transform:uppercase; padding:12px; border-radius:6px; cursor:pointer; transition:background .15s,color .15s; }
+.cs-share-done:hover { background:var(--chalk); color:var(--grass-deep); }
 .cs-share-brand { font-family:"Barlow Condensed",sans-serif; font-weight:800; letter-spacing:.16em; font-size:13px; color:var(--ball); text-transform:uppercase; }
 .cs-share-headline { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:34px; line-height:1.05; letter-spacing:0; margin:6px 0 18px; text-transform:uppercase; color:var(--chalk); }
 .cs-share-headline.slam { color:var(--ball); }
