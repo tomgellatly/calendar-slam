@@ -2679,9 +2679,9 @@ export default function CalendarSlam() {
                   <span className="cs-card-flag">{current.flag}</span>
                   {current.name}
                 </div>
-                {!spinning && current.fact && (
-                  <div className="cs-card-fact">{current.fact}</div>
-                )}
+                <div className={`cs-card-fact ${spinning ? "cs-fact-hidden" : ""}`}>
+                  {current.fact || "\u00a0"}
+                </div>
                 <div className="cs-card-hint">
                   {spinning ? "Spinning…" : "Take one shot for your build"}
                 </div>
@@ -3490,7 +3490,9 @@ body { background: #1f6b3f; margin: 0; }
 .cs-dot.on { background:var(--ball); border-color:var(--ball); }
 
 .cs-stage { display:flex; gap:18px; align-items:stretch; margin-bottom:22px; }
-.cs-card { flex:1; border:2.5px solid var(--chalk); border-radius:6px; padding:22px 24px; position:relative; overflow:hidden; background:rgba(246,251,239,.06); display:flex; flex-direction:column; justify-content:center; }
+.cs-card { flex:1; border:2.5px solid var(--chalk); border-radius:6px; padding:22px 24px; position:relative; overflow:hidden; background:rgba(246,251,239,.06); display:flex; flex-direction:column; justify-content:center; min-height:210px; }
+.cs-card-fact { font-size:13px; line-height:1.45; color:var(--dim); margin:0 0 10px; max-width:42ch; min-height:38px; transition:opacity .15s; }
+.cs-fact-hidden { opacity:0; }
 .cs-card.spin { animation:flick .09s linear infinite; }
 @keyframes flick { 0%{opacity:.65} 50%{opacity:1} 100%{opacity:.65} }
 .cs-card-eyebrow { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--dim); font-weight:700; }
@@ -3588,7 +3590,6 @@ body { background: #1f6b3f; margin: 0; }
 
 /* card flag + fact */
 .cs-card-flag { margin-right:8px; }
-.cs-card-fact { font-size:13px; line-height:1.45; color:var(--dim); margin:0 0 10px; max-width:42ch; }
 
 /* sticky stage on scroll so you always see who you're drafting */
 .cs-sticky { position:sticky; top:0; z-index:10; background:
@@ -4012,9 +4013,9 @@ button.cs-trophy:focus-visible { outline:3px solid var(--ball); outline-offset:2
   .cs-stage { flex-direction:row; align-items:stretch; gap:12px; }
   .cs-court { width:104px; flex:0 0 104px; filter:drop-shadow(0 2px 8px rgba(0,0,0,.35)); }
   .cs-figure { width:104px; flex:0 0 104px; }
-  .cs-card { padding:14px 16px; }
+  .cs-card { padding:14px 16px; min-height:200px; }
   .cs-card-name { font-size:22px; }
-  .cs-card-fact { font-size:12px; }
+  .cs-card-fact { font-size:12px; min-height:34px; }
   .cs-mobile-fact { display:block; }
   .cs-tour-btns { grid-template-columns:1fr 1fr; }
   .cs-meters { gap:7px; margin-bottom:12px; }
