@@ -771,13 +771,15 @@ function ShareCard({ active, ranSim, build, tourLabel, onClose }) {
       ctx.fillStyle = i % 2 === 0 ? "rgba(255,255,255,.03)" : "rgba(0,0,0,.03)";
       ctx.fillRect(0, i * 90, 1080, 90);
     }
-    // Header
+    // Header wordmark — measure CALENDAR so SLAM sits right after it, no gap.
+    ctx.textAlign = "left";
     ctx.fillStyle = "#f6fbef";
     ctx.font = "bold 48px 'Arial Narrow', Arial, sans-serif";
     ctx.fillText("CALENDAR", 80, 100);
+    const calW = ctx.measureText("CALENDAR").width;
     ctx.fillStyle = "#d8f000";
-    ctx.font = "italic bold 52px 'Arial Narrow', Arial, sans-serif";
-    ctx.fillText("SLAM", 340, 100);
+    ctx.font = "italic bold 50px 'Arial Narrow', Arial, sans-serif";
+    ctx.fillText("SLAM", 80 + calW + 12, 100);
     // Tour
     ctx.fillStyle = "rgba(246,251,239,.5)";
     ctx.font = "24px 'Arial Narrow', Arial, sans-serif";
@@ -787,59 +789,64 @@ function ShareCard({ active, ranSim, build, tourLabel, onClose }) {
       active.won > 0 ? `${active.won} SLAM${active.won > 1 ? "S" : ""}` : "NO TITLES";
     const scoreCol = active.won === 4 ? "#d8f000" : "#f6fbef";
     ctx.fillStyle = scoreCol;
-    ctx.font = `bold ${active.won === 4 ? 88 : 72}px 'Arial Narrow', Arial, sans-serif`;
-    ctx.fillText(headline, 80, 260);
-    // Slam breakdown
+    ctx.font = `bold ${active.won === 4 ? 84 : 72}px 'Arial Narrow', Arial, sans-serif`;
+    ctx.fillText(headline, 80, 252);
+    // Slam breakdown — slightly tighter so the build has room below
     const SLAM_COLS = { ao: "#2b7de9", rg: "#e07a3f", wim: "#5a2d82", uso: "#0e3f80" };
-    let y = 340;
+    let y = 320;
     (active.perSlam || []).filter(s => !s.isOlympics).forEach(s => {
       ctx.fillStyle = SLAM_COLS[s.key] || "#555";
-      ctx.fillRect(80, y, 920, 78);
+      ctx.fillRect(80, y, 920, 72);
       ctx.fillStyle = "#fff";
-      ctx.font = "bold 28px 'Arial Narrow', Arial, sans-serif";
-      ctx.fillText(s.name, 100, y + 30);
+      ctx.font = "bold 27px 'Arial Narrow', Arial, sans-serif";
+      ctx.fillText(s.name, 100, y + 29);
       const result = ranSim
         ? (s.wonTitle ? `🏆 Champion · def. ${s.finalOpp} ${s.finalScore}` : `❌ Out ${s.lostRound}`)
         : (s.win ? "🏆 Projected win" : `${s.prob}% chance`);
-      ctx.font = "22px 'Arial Narrow', Arial, sans-serif";
+      ctx.font = "21px 'Arial Narrow', Arial, sans-serif";
       ctx.fillStyle = "rgba(255,255,255,.85)";
-      ctx.fillText(result, 100, y + 58);
-      y += 94;
+      ctx.fillText(result, 100, y + 56);
+      y += 86;
     });
 
-    // Build summary — the 10 drafted attributes with the player each shot came
-    // from, so the shared image shows exactly what (and who) you built from.
-    y += 4;
+    // Build summary — two columns of 5, each: attribute · rating · player.
+    y += 10;
     ctx.fillStyle = "#d8f000";
     ctx.font = "bold 24px 'Arial Narrow', Arial, sans-serif";
-    ctx.fillText("YOUR BUILD", 80, y + 22);
+    ctx.textAlign = "left";
+    ctx.fillText("YOUR BUILD", 80, y + 20);
     y += 36;
-    const rowH = 30;
-    ATTRS.forEach((a) => {
+    const colW = 470;
+    const cols = [80, 80 + colW + 20];
+    const rowH = 38;
+    ATTRS.forEach((a, i) => {
       const b = build[a.key];
-      // Attribute label (left)
-      ctx.fillStyle = "rgba(246,251,239,.85)";
-      ctx.font = "bold 22px 'Arial Narrow', Arial, sans-serif";
+      const colX = cols[i < 5 ? 0 : 1];
+      const rowY = y + (i % 5) * rowH;
+      // Attribute label
+      ctx.fillStyle = "rgba(246,251,239,.9)";
+      ctx.font = "bold 21px 'Arial Narrow', Arial, sans-serif";
       ctx.textAlign = "left";
-      ctx.fillText(a.label, 80, y + 16);
+      ctx.fillText(a.label, colX, rowY + 15);
       // Rating
       ctx.fillStyle = b ? "#d8f000" : "rgba(246,251,239,.3)";
-      ctx.font = "bold 24px 'Arial Narrow', Arial, sans-serif";
-      ctx.fillText(b ? String(b.rating) : "—", 320, y + 16);
-      // Player it came from (right)
+      ctx.font = "bold 22px 'Arial Narrow', Arial, sans-serif";
+      ctx.fillText(b ? String(b.rating) : "—", colX + 175, rowY + 15);
+      // Player it came from
       if (b && b.player) {
         ctx.fillStyle = "rgba(246,251,239,.55)";
-        ctx.font = "20px 'Arial Narrow', Arial, sans-serif";
-        ctx.fillText(`${b.flag || ""} ${b.player}`, 400, y + 16);
+        ctx.font = "18px 'Arial Narrow', Arial, sans-serif";
+        const nm = b.player.length > 16 ? b.player.slice(0, 15) + "…" : b.player;
+        ctx.fillText(`${b.flag || ""} ${nm}`, colX + 230, rowY + 15);
       }
-      ctx.textAlign = "left";
-      y += rowH;
     });
+    y += 5 * rowH;
 
-    // Footer
-    ctx.fillStyle = "rgba(246,251,239,.35)";
+    // Footer — clear of the build now
+    ctx.textAlign = "left";
+    ctx.fillStyle = "rgba(246,251,239,.4)";
     ctx.font = "20px 'Arial Narrow', Arial, sans-serif";
-    ctx.fillText("calendarslam.com", 80, 1052);
+    ctx.fillText("calendarslam.com", 80, Math.min(1058, y + 30));
     return canvas;
   }
 
@@ -929,8 +936,130 @@ function ShareCard({ active, ranSim, build, tourLabel, onClose }) {
 }
 
 // ============================================================================
+// CAREER SHARE CARD — shareable summary of a whole career at retirement
+// ============================================================================
+function CareerShareCard({ playerName, playerFlag, tourLabel, careerSlamCount, careerSeasons, careerAge, careerRival, build, onClose }) {
+  const [copied, setCopied] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
-// A simple tennis net graphic used as a divider / motif.
+  const olympicGolds = careerSeasons.filter(s => s.olympics?.medal?.includes("Gold")).length;
+  const tier = careerSlamCount >= 10 ? "ALL-TIME GREAT" :
+               careerSlamCount >= 5  ? "LEGENDARY CHAMPION" :
+               careerSlamCount >= 2  ? "GRAND SLAM CHAMPION" :
+               careerSlamCount === 1 ? "GRAND SLAM WINNER" : "TOUR PROFESSIONAL";
+  // Slam wins by major
+  const slamsByType = {};
+  careerSeasons.forEach(s => (s.results || []).filter(r => !r.isOlympics && r.wonTitle).forEach(r => {
+    slamsByType[r.name] = (slamsByType[r.name] || 0) + 1;
+  }));
+
+  const shareText =
+    `${playerFlag} ${playerName} — ${tier}\n${careerSlamCount} Grand Slam title${careerSlamCount!==1?"s":""}${olympicGolds?` · ${olympicGolds} Olympic gold${olympicGolds>1?"s":""}`:""}\n${careerSeasons.length} seasons on the ${tourLabel} tour\nplay: calendarslam.com`;
+
+  function copy() {
+    try { navigator.clipboard.writeText(shareText); setCopied(true); setTimeout(() => setCopied(false), 1800); }
+    catch (e) { setCopied(false); }
+  }
+
+  function buildCareerCanvas() {
+    const canvas = document.createElement("canvas");
+    canvas.width = 1080; canvas.height = 1080;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.fillStyle = "#1f6b3f"; ctx.fillRect(0, 0, 1080, 1080);
+    for (let i = 0; i < 12; i++) { ctx.fillStyle = i % 2 === 0 ? "rgba(255,255,255,.03)" : "rgba(0,0,0,.03)"; ctx.fillRect(0, i * 90, 1080, 90); }
+    ctx.textAlign = "left";
+    // Wordmark
+    ctx.fillStyle = "#f6fbef"; ctx.font = "bold 44px 'Arial Narrow', Arial, sans-serif";
+    ctx.fillText("CALENDAR", 80, 92);
+    const calW = ctx.measureText("CALENDAR").width;
+    ctx.fillStyle = "#d8f000"; ctx.font = "italic bold 46px 'Arial Narrow', Arial, sans-serif";
+    ctx.fillText("SLAM", 80 + calW + 12, 92);
+    ctx.fillStyle = "rgba(246,251,239,.5)"; ctx.font = "22px 'Arial Narrow', Arial, sans-serif";
+    ctx.fillText("CAREER RETROSPECTIVE", 80, 132);
+    // Player name + flag
+    ctx.fillStyle = "#f6fbef"; ctx.font = "bold 72px 'Arial Narrow', Arial, sans-serif";
+    ctx.fillText(`${playerFlag} ${playerName}`, 80, 230);
+    // Tier
+    ctx.fillStyle = "#d8f000"; ctx.font = "bold 40px 'Arial Narrow', Arial, sans-serif";
+    ctx.fillText(tier, 80, 290);
+    // Big stats
+    let y = 380;
+    const bigStat = (label, val, color) => {
+      ctx.fillStyle = color || "#f6fbef"; ctx.font = "bold 84px 'Arial Narrow', Arial, sans-serif";
+      ctx.fillText(String(val), 80, y);
+      ctx.fillStyle = "rgba(246,251,239,.6)"; ctx.font = "26px 'Arial Narrow', Arial, sans-serif";
+      ctx.fillText(label, 230, y - 12);
+      y += 96;
+    };
+    bigStat("Grand Slam titles", careerSlamCount, "#d8f000");
+    if (olympicGolds) bigStat("Olympic gold medals", olympicGolds, "#ffd24a");
+    bigStat("Seasons on tour", careerSeasons.length);
+    // Slam breakdown
+    y += 10;
+    ctx.fillStyle = "#d8f000"; ctx.font = "bold 24px 'Arial Narrow', Arial, sans-serif";
+    ctx.fillText("TITLES BY MAJOR", 80, y); y += 40;
+    const majors = ["Australian Open", "Roland Garros", "Wimbledon", "US Open"];
+    majors.forEach(m => {
+      ctx.fillStyle = "rgba(246,251,239,.85)"; ctx.font = "22px 'Arial Narrow', Arial, sans-serif";
+      ctx.fillText(m, 80, y);
+      ctx.fillStyle = "#d8f000"; ctx.font = "bold 24px 'Arial Narrow', Arial, sans-serif";
+      ctx.fillText(`× ${slamsByType[m] || 0}`, 500, y);
+      y += 36;
+    });
+    if (careerRival) {
+      y += 16;
+      ctx.fillStyle = "rgba(246,251,239,.7)"; ctx.font = "italic 22px 'Arial Narrow', Arial, sans-serif";
+      ctx.fillText(`Career rival: ${careerRival.flag} ${careerRival.name} (${careerRival.slamCount} slams)`, 80, y);
+    }
+    ctx.fillStyle = "rgba(246,251,239,.4)"; ctx.font = "20px 'Arial Narrow', Arial, sans-serif";
+    ctx.fillText("calendarslam.com", 80, 1052);
+    return canvas;
+  }
+
+  async function downloadImage() {
+    setDownloading(true);
+    try {
+      const canvas = buildCareerCanvas();
+      if (!canvas) { setDownloading(false); return; }
+      const blob = await new Promise(res => canvas.toBlob(res, "image/png"));
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], "career.png", { type: "image/png" })] })) {
+        await navigator.share({ files: [new File([blob], "calendar-slam-career.png", { type: "image/png" })], title: "Calendar Slam" });
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a"); a.href = url; a.download = "calendar-slam-career.png"; a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 2000);
+      }
+    } catch (e) { /* ignore */ }
+    setDownloading(false);
+  }
+
+  return (
+    <div className="cs-modal" onClick={onClose}>
+      <div className="cs-card-share" onClick={(e) => e.stopPropagation()}>
+        <button className="cs-modal-x" onClick={onClose} aria-label="Close">×</button>
+        <div className="cs-share-brand">CALENDAR SLAM</div>
+        <div className="cs-share-headline">{playerFlag} {playerName}</div>
+        <div className="cs-career-share-tier">{tier}</div>
+        <div className="cs-career-share-stats">
+          <div className="cs-career-share-stat"><span className="cs-css-num">{careerSlamCount}</span><span className="cs-css-lbl">Grand Slams</span></div>
+          {olympicGolds > 0 && <div className="cs-career-share-stat"><span className="cs-css-num">{olympicGolds}</span><span className="cs-css-lbl">Olympic golds</span></div>}
+          <div className="cs-career-share-stat"><span className="cs-css-num">{careerSeasons.length}</span><span className="cs-css-lbl">Seasons</span></div>
+        </div>
+        <div className="cs-share-actions">
+          <button className="cs-cta cs-share-copy" onClick={copy}>{copied ? "Copied ✓" : "Copy text"}</button>
+          <button className="cs-cta cs-share-img" onClick={downloadImage} disabled={downloading}>{downloading ? "…" : "📸 Save image"}</button>
+        </div>
+        <pre className="cs-share-preview">{shareText}</pre>
+        <button className="cs-share-done" onClick={onClose}>← Back</button>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+
+
 // ============================================================================
 // RIVAL MODAL — newspaper reveal of the player's nemesis
 // ============================================================================
@@ -1197,30 +1326,64 @@ function pickUpgrades(rng, currentBuild) {
     });
   });
 
+  // Identify the build's single weakest surface-critical attribute, so we can
+  // GUARANTEE at least one offered upgrade addresses it. This stops the off-season
+  // feeling pointless when the random draw never offers what you actually need.
+  let targetUpgrade = null;
+  if (currentBuild) {
+    // Find weakest surface, then its weakest high-weight attribute.
+    const surfScore = (surf) => {
+      const w = SURFACE_WEIGHTS[surf]; let num = 0, den = 0;
+      for (const a of ATTRS) { den += w[a.key]; num += (currentBuild[a.key]?.rating ?? 0) * w[a.key]; }
+      return num / den;
+    };
+    const weakestSurf = ["Clay","Grass","Hard"].sort((a,b) => surfScore(a) - surfScore(b))[0];
+    const w = SURFACE_WEIGHTS[weakestSurf];
+    let worstKey = null, worstVal = 999;
+    for (const a of ATTRS) {
+      const v = currentBuild[a.key]?.rating ?? 0;
+      if (w[a.key] >= 1.0 && v < worstVal && v < NEAR_CAP) { worstVal = v; worstKey = a.key; }
+    }
+    // Find an upgrade whose main positive effect boosts that attribute.
+    if (worstKey) {
+      const candidates = UPGRADE_POOL.filter(u => (u.effects[worstKey] ?? 0) > 0);
+      if (candidates.length) targetUpgrade = candidates[Math.floor(rng() * candidates.length)];
+    }
+  }
+
   // Use full pool as fallback if filtering left too few options
   const pool = [...(useful.length >= 3 ? useful : UPGRADE_POOL)];
   const chosen = [];
+
+  // Seed the guaranteed weakness-targeting upgrade first.
+  if (targetUpgrade) {
+    const idx = pool.findIndex(u => u.id === targetUpgrade.id);
+    if (idx >= 0) pool.splice(idx, 1);
+    chosen.push(targetUpgrade);
+  }
+
   while (chosen.length < 3 && pool.length > 0) {
     const i = Math.floor(rng() * pool.length);
     const u = pool.splice(i, 1)[0];
-    // Trim advertised effects to show realistic headroom
-    if (currentBuild) {
-      const trimmedEffects = {};
-      for (const [k, v] of Object.entries(u.effects)) {
-        if (v > 0) {
-          const cur = currentBuild[k]?.rating ?? 0;
-          const actual = Math.min(v, CAP - cur);
-          if (actual > 0) trimmedEffects[k] = actual;
-        } else {
-          trimmedEffects[k] = v; // keep negative effects (injuries etc) as-is
-        }
-      }
-      chosen.push({ ...u, effects: trimmedEffects });
-    } else {
-      chosen.push(u);
-    }
+    if (chosen.some(c => c.id === u.id)) continue;
+    chosen.push(u);
   }
-  return chosen;
+
+  // Trim advertised effects to realistic headroom, for every chosen upgrade.
+  return chosen.map(u => {
+    if (!currentBuild) return u;
+    const trimmedEffects = {};
+    for (const [k, v] of Object.entries(u.effects)) {
+      if (v > 0) {
+        const cur = currentBuild[k]?.rating ?? 0;
+        const actual = Math.min(v, CAP - cur);
+        if (actual > 0) trimmedEffects[k] = actual;
+      } else {
+        trimmedEffects[k] = v;
+      }
+    }
+    return { ...u, effects: trimmedEffects };
+  });
 }
 
 // Apply effects to a build (clamp 0-99).
@@ -1274,6 +1437,7 @@ export default function CalendarSlam() {
   const [ranSim, setRanSim] = useState(false);
   const [seed, setSeed] = useState(1);
   const [showCard, setShowCard] = useState(false);
+  const [showCareerCard, setShowCareerCard] = useState(false);
   const [isTouch, setIsTouch] = useState(false);
   const [previewKey, setPreviewKey] = useState(null);
   const [reveal, setReveal] = useState({ slam: 0, round: 0, done: false, scoreShown: true });
@@ -1323,31 +1487,27 @@ export default function CalendarSlam() {
   });
   const statsRecorded = React.useRef(false); // guard so we only record a result once
 
-  // Load saved stats on mount.
+  // Load saved stats on mount (localStorage — persists on the live site).
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        if (typeof window !== "undefined" && window.storage) {
-          const res = await window.storage.get("cs_player_stats");
-          if (!cancelled && res && res.value) {
-            const saved = JSON.parse(res.value);
-            setPlayerStats({ ...saved, loaded: true });
-            return;
-          }
+    try {
+      if (typeof window !== "undefined" && window.localStorage) {
+        const raw = window.localStorage.getItem("cs_player_stats");
+        if (raw) {
+          const saved = JSON.parse(raw);
+          setPlayerStats({ ...saved, loaded: true });
+          return;
         }
-      } catch (e) { /* no saved stats yet */ }
-      if (!cancelled) setPlayerStats(s => ({ ...s, loaded: true }));
-    })();
-    return () => { cancelled = true; };
+      }
+    } catch (e) { /* no saved stats yet / storage blocked */ }
+    setPlayerStats(s => ({ ...s, loaded: true }));
   }, []);
 
   // Persist stats whenever they change (after initial load).
   function saveStats(next) {
     setPlayerStats(next);
     try {
-      if (typeof window !== "undefined" && window.storage) {
-        window.storage.set("cs_player_stats", JSON.stringify(next), false).catch(() => {});
+      if (typeof window !== "undefined" && window.localStorage) {
+        window.localStorage.setItem("cs_player_stats", JSON.stringify(next));
       }
     } catch (e) { /* storage unavailable */ }
   }
@@ -1693,29 +1853,47 @@ export default function CalendarSlam() {
     setPhase("result");
   }
 
-  // Inject a tennis-ball favicon programmatically — no extra file needed.
-  // SVG must be fully URI-encoded or mobile browsers (esp. iOS Safari) reject it.
+  // Inject a tennis-ball favicon. We render it to a PNG via canvas because PNG
+  // data-URIs are far more reliable than SVG ones across browsers — especially
+  // on mobile, where SVG favicons often silently fail.
   useEffect(() => {
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="#1f6b3f"/><circle cx="16" cy="16" r="11" fill="#d8f000"/><path d="M5 16 Q16 8 27 16" stroke="#1f6b3f" stroke-width="2.2" fill="none"/><path d="M5 16 Q16 24 27 16" stroke="#1f6b3f" stroke-width="2.2" fill="none"/></svg>`;
-    const url = `data:image/svg+xml,${encodeURIComponent(svg)}`;
+    try {
+      const size = 64;
+      const cv = document.createElement("canvas");
+      cv.width = size; cv.height = size;
+      const x = cv.getContext("2d");
+      if (!x) return;
+      const c = size / 2;
+      // Green backing circle
+      x.fillStyle = "#1f6b3f";
+      x.beginPath(); x.arc(c, c, c, 0, Math.PI * 2); x.fill();
+      // Yellow ball
+      x.fillStyle = "#d8f000";
+      x.beginPath(); x.arc(c, c, size * 0.34, 0, Math.PI * 2); x.fill();
+      // Seam curves
+      x.strokeStyle = "#1f6b3f";
+      x.lineWidth = size * 0.07;
+      x.lineCap = "round";
+      x.beginPath(); x.moveTo(size * 0.16, c); x.quadraticCurveTo(c, size * 0.26, size * 0.84, c); x.stroke();
+      x.beginPath(); x.moveTo(size * 0.16, c); x.quadraticCurveTo(c, size * 0.74, size * 0.84, c); x.stroke();
 
-    // Remove any existing icons so ours wins
-    document.querySelectorAll("link[rel~='icon'], link[rel='apple-touch-icon']").forEach(el => el.remove());
+      const url = cv.toDataURL("image/png");
 
-    // Standard favicon
-    const icon = document.createElement("link");
-    icon.rel = "icon";
-    icon.type = "image/svg+xml";
-    icon.href = url;
-    document.head.appendChild(icon);
+      document.querySelectorAll("link[rel~='icon'], link[rel='apple-touch-icon'], link[rel='shortcut icon']").forEach(el => el.remove());
 
-    // Apple touch icon (iOS home screen / some mobile tab contexts)
-    const apple = document.createElement("link");
-    apple.rel = "apple-touch-icon";
-    apple.href = url;
-    document.head.appendChild(apple);
+      const mk = (rel) => {
+        const link = document.createElement("link");
+        link.rel = rel;
+        link.type = "image/png";
+        link.href = url;
+        document.head.appendChild(link);
+      };
+      mk("icon");
+      mk("shortcut icon");
+      mk("apple-touch-icon");
 
-    document.title = "Calendar Slam";
+      document.title = "Calendar Slam";
+    } catch (e) { /* favicon optional */ }
   }, []);
 
   useEffect(() => { Sound.setMuted(!soundOn); }, [soundOn]);
@@ -3020,15 +3198,17 @@ export default function CalendarSlam() {
                 })()}
                 <p className="cs-upgrade-sub">Tap once to preview, tap again to confirm.</p>
                 <div className="cs-upgrade-grid">
-                  {offseasonUpgrades.map(u => {
+                  {offseasonUpgrades.map((u, ui) => {
                     const armed = upgradeArmed === u.id;
+                    const isCoachPick = ui === 0; // first slot is the guaranteed weakness-targeting upgrade
                     return (
                       <button key={u.id}
-                        className={`cs-upgrade-btn ${u.recovery ? "recovery" : ""} ${armed ? "armed" : ""}`}
+                        className={`cs-upgrade-btn ${u.recovery ? "recovery" : ""} ${armed ? "armed" : ""} ${isCoachPick ? "coach-pick" : ""}`}
                         onClick={() => {
                           if (armed) applyUpgrade(u);
                           else setUpgradeArmed(u.id);
                         }}>
+                        {isCoachPick && <span className="cs-coach-pick-badge">⭐ Coach recommends</span>}
                         <span className="cs-upgrade-label">{u.label}</span>
                         <span className="cs-upgrade-desc">{u.desc}</span>
                         <div className="cs-upgrade-effects">
@@ -3176,8 +3356,25 @@ export default function CalendarSlam() {
             ))}
           </div>
 
-          <button className="cs-cta" onClick={() => setPhase("mode")}>Play again →</button>
+          <div className="cs-retire-actions-row">
+            <button className="cs-sim-btn cs-share-btn" onClick={() => setShowCareerCard(true)}>↗ Share career</button>
+            <button className="cs-cta" onClick={() => setPhase("mode")}>Play again →</button>
+          </div>
         </section>
+      )}
+
+      {showCareerCard && gameMode === "career" && (
+        <CareerShareCard
+          playerName={playerName}
+          playerFlag={playerFlag}
+          tourLabel={T.label}
+          careerSlamCount={careerSlamCount}
+          careerSeasons={careerSeasons}
+          careerAge={careerAge}
+          careerRival={careerRival}
+          build={build}
+          onClose={() => setShowCareerCard(false)}
+        />
       )}
 
       {showCard && simResults && (
@@ -3512,6 +3709,12 @@ body { background: #1f6b3f; margin: 0; }
 .cs-modal-x:hover { color:var(--ball); }
 .cs-share-done { margin-top:14px; width:100%; background:transparent; border:2px solid var(--chalk); color:var(--chalk); font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:15px; letter-spacing:.06em; text-transform:uppercase; padding:12px; border-radius:6px; cursor:pointer; transition:background .15s,color .15s; }
 .cs-share-done:hover { background:var(--chalk); color:var(--grass-deep); }
+.cs-career-share-tier { font-family:"Barlow Condensed",sans-serif; font-weight:900; font-size:20px; letter-spacing:.04em; color:var(--ball); text-transform:uppercase; margin:4px 0 16px; }
+.cs-career-share-stats { display:flex; justify-content:center; gap:18px; margin-bottom:18px; }
+.cs-career-share-stat { display:flex; flex-direction:column; align-items:center; }
+.cs-css-num { font-family:"Barlow Condensed",sans-serif; font-weight:900; font-size:40px; color:var(--ball); line-height:1; }
+.cs-css-lbl { font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--dim); font-weight:700; }
+.cs-retire-actions-row { display:flex; flex-direction:column; gap:10px; max-width:340px; margin:0 auto; }
 .cs-share-brand { font-family:"Barlow Condensed",sans-serif; font-weight:800; letter-spacing:.16em; font-size:13px; color:var(--ball); text-transform:uppercase; }
 .cs-share-headline { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:34px; line-height:1.05; letter-spacing:0; margin:6px 0 18px; text-transform:uppercase; color:var(--chalk); }
 .cs-share-headline.slam { color:var(--ball); }
@@ -3591,7 +3794,9 @@ body { background: #1f6b3f; margin: 0; }
 .cs-upgrade-title { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:20px; text-transform:uppercase; color:var(--chalk); margin:0 0 4px; }
 .cs-upgrade-sub { font-size:13px; color:var(--dim); margin:0 0 14px; }
 .cs-upgrade-grid { display:flex; flex-direction:column; gap:10px; }
-.cs-upgrade-btn { display:flex; flex-direction:column; gap:6px; padding:16px 18px; border:2px solid var(--line-soft); border-radius:8px; background:rgba(246,251,239,.05); cursor:pointer; text-align:left; transition:.18s; }
+.cs-upgrade-btn { display:flex; flex-direction:column; gap:6px; padding:16px 18px; border:2px solid var(--line-soft); border-radius:8px; background:rgba(246,251,239,.05); cursor:pointer; text-align:left; transition:.18s; position:relative; }
+.cs-upgrade-btn.coach-pick { border-color:var(--ball); background:rgba(216,240,0,.07); }
+.cs-coach-pick-badge { font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--ink); background:var(--ball); border-radius:10px; padding:2px 8px; align-self:flex-start; margin-bottom:2px; }
 .cs-upgrade-btn:hover { border-color:var(--ball); background:rgba(216,240,0,.08); transform:translateX(4px); }
 .cs-upgrade-btn.recovery { border-color:rgba(111,191,115,.4); background:rgba(111,191,115,.07); }
 .cs-upgrade-label { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:18px; text-transform:uppercase; color:var(--chalk); }
