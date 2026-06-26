@@ -16,16 +16,20 @@ const ATTRS = [
   { key: "movement", label: "Court coverage" },
   { key: "defence", label: "Defence" },
   { key: "stamina", label: "Stamina" },
-  { key: "mental", label: "Mental" },
+  { key: "mental", label: "Mental strength" },
   { key: "slice", label: "Slice" },
 ];
 
 // --- The four majors, in calendar order, with surface ------------------------
 const SLAMS = [
-  { key: "ao", name: "Australian Open", surface: "Hard", short: "AO" },
-  { key: "rg", name: "Roland Garros", surface: "Clay", short: "RG" },
-  { key: "wim", name: "Wimbledon", surface: "Grass", short: "W" },
-  { key: "uso", name: "US Open", surface: "Hard", short: "US" },
+  { key: "ao", name: "Australian Open", surface: "Hard", short: "AO",
+    tip: "Melbourne's hard courts play at a medium pace in fierce summer heat. It rewards a balanced all-court game — but stamina and mental strength are what carry you through gruelling five-setters in the sun." },
+  { key: "rg", name: "Roland Garros", surface: "Clay", short: "RG",
+    tip: "The Parisian clay is slow with a high bounce, dragging out long rallies. Defence and court coverage are a must to outlast opponents, and stamina decides who's still standing in hour four." },
+  { key: "wim", name: "Wimbledon", surface: "Grass", short: "W",
+    tip: "London's grass is fast and low — points end quickly. A big serve and a sharp net game let you finish rallies early, and slice stays low and skids through the lawn." },
+  { key: "uso", name: "US Open", surface: "Hard", short: "US",
+    tip: "New York's hard courts play quicker than Melbourne, especially under the lights. Serve and forehand carry you, but the long night matches still demand real stamina." },
 ];
 
 // How much each attribute matters on each surface (the heart of the sim).
@@ -41,7 +45,7 @@ const SURFACE_WEIGHTS = {
 const POOL_ATP = [
   { name: "Pete Sampras",       flag: "🇺🇸", fact: "Serve-and-volley king who ruled the grass of the 1990s.", stats: { serve: 97, return: 78, forehand: 90, backhand: 84, net: 95, movement: 86, defence: 80, stamina: 84, mental: 92, slice: 88 } },
   { name: "Andre Agassi",       flag: "🇺🇸", fact: "The great returner whose ball-striking redefined the baseline.", stats: { serve: 80, return: 96, forehand: 93, backhand: 92, net: 78, movement: 85, defence: 88, stamina: 86, mental: 84, slice: 83 } },
-  { name: "Roger Federer",      flag: "🇨🇭", fact: "The most elegant all-courter the game has ever seen.", stats: { serve: 92, return: 86, forehand: 97, backhand: 84, net: 92, movement: 95, defence: 88, stamina: 90, mental: 93, slice: 99 } },
+  { name: "Roger Federer",      flag: "🇨🇭", fact: "The most elegant all-courter the game has ever seen.", stats: { serve: 97, return: 86, forehand: 97, backhand: 84, net: 92, movement: 95, defence: 88, stamina: 90, mental: 93, slice: 99 } },
   { name: "Rafael Nadal",       flag: "🇪🇸", fact: "The King of Clay, famed for relentless topspin and iron will.", stats: { serve: 85, return: 92, forehand: 98, backhand: 88, net: 82, movement: 96, defence: 97, stamina: 98, mental: 97, slice: 85 } },
   { name: "Novak Djokovic",     flag: "🇷🇸", fact: "The supreme returner and defender, bending matches to his will.", stats: { serve: 88, return: 99, forehand: 92, backhand: 97, net: 84, movement: 97, defence: 96, stamina: 96, mental: 95, slice: 89 } },
   { name: "Ivan Lendl",         flag: "🇨🇿", fact: "The ruthless baseliner who industrialised the modern forehand.", stats: { serve: 88, return: 84, forehand: 94, backhand: 86, net: 76, movement: 84, defence: 86, stamina: 92, mental: 90, slice: 78 } },
@@ -495,7 +499,13 @@ function matchClosenessFromScore(scoreStr) {
 // Set shared across majors so loss explanations never repeat.
 function simulateMajor(build, slam, rand, usedReasons, field, drawPool, rival) {
   const draw = buildDraw(slam, rand, field, drawPool, rival);
-  const myForm = surfaceScore(build, slam.surface);
+  // A small "championship form" premium: a genuinely complete build should be a
+  // clear favourite at each major, not a coin-flip dragged down by the
+  // compounding of seven best-of-five matches. +3 lifts an elite, balanced build
+  // to ~40% per major (so 0/4 seasons become rare) while a merely-good build
+  // still rarely survives the field — difficulty stays earned. Calendar Slam
+  // rate for a flawless build lands around 3-4%.
+  const myForm = surfaceScore(build, slam.surface) + 3;
   const path = [];
 
   for (let r = 0; r < ROUNDS.length; r++) {
@@ -518,7 +528,7 @@ function simulateMajor(build, slam, rand, usedReasons, field, drawPool, rival) {
     if (!won) {
       const press = STYLE_PRESSURE[opp.style] || STYLE_PRESSURE.baseline;
       const exploited = build[press.key] ? build[press.key].rating : 25;
-      const options = exploited >= 88 ? press.strong : press.weak(RATING_WORD(exploited));
+      const options = exploited >= 86 ? press.strong : press.weak(RATING_WORD(exploited));
       // pick a variant not already used this year
       let reason = options.find((o) => !usedReasons.has(o)) || options[0];
       usedReasons.add(reason);
@@ -578,7 +588,9 @@ const TOTAL_ROUNDS = ATTRS.length;
 
 function rngPick(arr, exclude = []) {
   const opts = arr.filter((p) => !exclude.includes(p.name));
-  return opts[Math.floor(Math.random() * opts.length)];
+  const src = opts.length ? opts : arr; // never return undefined if all excluded
+  if (!src.length) return null;
+  return src[Math.floor(Math.random() * src.length)];
 }
 
 // Score one surface. Two parts: (1) the weighted average of your shots, and
@@ -613,7 +625,10 @@ function surfaceScore(build, surface) {
 // comfortably and wins often, while a merely-good build fades fast. ~86 is a
 // coin-flip; 90+ is a strong favourite; below ~80 you rarely survive the field.
 function winProb(score) {
-  const x = (score - 86) / 5.5;
+  // Centre shifted to 83 (from 86) to reflect the +3 championship-form premium
+  // the live match engine now applies, so projections and the retirement
+  // "slam hope" check stay consistent with actual results.
+  const x = (score - 83) / 5.5;
   const p = 1 / (1 + Math.exp(-x * 2.9));
   return Math.max(0.004, Math.min(0.99, p));
 }
@@ -801,10 +816,19 @@ function ShareCard({ active, ranSim, build, tourLabel, onClose }) {
       ctx.font = "bold 27px 'Arial Narrow', Arial, sans-serif";
       ctx.fillText(s.name, 100, y + 29);
       const result = ranSim
-        ? (s.wonTitle ? `🏆 Champion · def. ${s.finalOpp} ${s.finalScore}` : `❌ Out ${s.lostRound}`)
+        ? (s.wonTitle
+            ? `🏆 Champion · def. ${s.finalOpp} ${s.finalScore}`
+            : `❌ Out ${s.lostRound}${s.opponent ? ` · lost to ${s.opponent} ${s.setScore || ""}`.trimEnd() : ""}`)
         : (s.win ? "🏆 Projected win" : `${s.prob}% chance`);
-      ctx.font = "21px 'Arial Narrow', Arial, sans-serif";
       ctx.fillStyle = "rgba(255,255,255,.85)";
+      // Shrink the result line if it would overflow the coloured box (loss lines
+      // now include opponent + score and can be long).
+      let resFont = 21;
+      ctx.font = `${resFont}px 'Arial Narrow', Arial, sans-serif`;
+      while (ctx.measureText(result).width > 880 && resFont > 14) {
+        resFont -= 1;
+        ctx.font = `${resFont}px 'Arial Narrow', Arial, sans-serif`;
+      }
       ctx.fillText(result, 100, y + 56);
       y += 86;
     });
@@ -943,7 +967,8 @@ function CareerShareCard({ playerName, playerFlag, tourLabel, careerSlamCount, c
   const [downloading, setDownloading] = useState(false);
 
   const olympicGolds = careerSeasons.filter(s => s.olympics?.medal?.includes("Gold")).length;
-  const tier = careerSlamCount >= 10 ? "ALL-TIME GREAT" :
+  const tier = careerSlamCount >= 25 ? "UNDISPUTED GOAT" :
+               careerSlamCount >= 10 ? "ALL-TIME GREAT" :
                careerSlamCount >= 5  ? "LEGENDARY CHAMPION" :
                careerSlamCount >= 2  ? "GRAND SLAM CHAMPION" :
                careerSlamCount === 1 ? "GRAND SLAM WINNER" : "TOUR PROFESSIONAL";
@@ -1447,6 +1472,9 @@ export default function CalendarSlam() {
   const [nameRolling, setNameRolling] = useState(false);
   const [trophyDetail, setTrophyDetail] = useState(null);
   const [soundOn, setSoundOn] = useState(true);
+  const [expandedSlam, setExpandedSlam] = useState(null); // surface tip on tour screen
+  const [reachedGoat, setReachedGoat] = useState(false);  // career: hit 25 slams
+  const [showGoatScreen, setShowGoatScreen] = useState(false);
 
   // Career mode state
   const [playerName, setPlayerName] = useState("");
@@ -1565,6 +1593,8 @@ export default function CalendarSlam() {
     setCareerAge(20);
     setCareerLongevity(0);
     setCareerSlamCount(0);
+    setReachedGoat(false);
+    setShowGoatScreen(false);
     setCareerSeasons([]);
     setCareerRival(null);
     setConsecutiveLowSeasons(0);
@@ -1725,6 +1755,13 @@ export default function CalendarSlam() {
     const wonThisSeason = slamResults.filter(r => !r.isOlympics && r.wonTitle).length;
     const newTotal = careerSlamCount + wonThisSeason;
     setCareerSlamCount(newTotal);
+    // GOAT milestone: hitting 25 surpasses the all-time record (24). Fire the
+    // special screen once, the first time you cross it — the career still
+    // continues to the age cap so you can keep padding the count.
+    if (!reachedGoat && newTotal >= 25) {
+      setReachedGoat(true);
+      setShowGoatScreen(true);
+    }
     // The rival emerges a couple of seasons in (end of season 2 → active from
     // season 3), so they're an established same-generation force, not there from
     // day one. Name is freshly random each career.
@@ -1933,7 +1970,7 @@ export default function CalendarSlam() {
       // Lost to rival specifically
       const lines = [
         `${rivalLoss.opponent} had your number again at ${rivalLoss.name} — that's becoming a pattern. We need to work on ${surfName[rivalLoss.surface]} specifically, because that's where they keep hurting us.`,
-        `The loss to ${rivalLoss.opponent} in the ${rivalLoss.lostRound} at ${rivalLoss.name} wasn't just bad luck. They're targeting your ${worstAttr?.label.toLowerCase() || "weakest shot"} every time. We fix that this winter.`,
+        `The loss to ${rivalLoss.opponent} in the ${rivalLoss.lostRound} at ${rivalLoss.name} wasn't just bad luck. They're exploiting your weak ${worstAttr?.label.toLowerCase() || "shot"} every time. We fix that this winter.`,
       ];
       line = lines[careerSeason % lines.length];
     } else if (finalLoss) {
@@ -2045,7 +2082,15 @@ export default function CalendarSlam() {
         pool = POOL;
       }
     }
-    const final = rngPick(pool, exclude);
+    // Players already locked into the build must never reappear — exclude them
+    // from BOTH the final pick and every animation frame, so a drafted player
+    // can't flash up or be locked twice.
+    const exMerged = Array.from(new Set([
+      ...(exclude || []),
+      ...Object.values(build).filter(Boolean).map((b) => b.player),
+    ]));
+    const final = rngPick(pool, exMerged);
+    if (!final) { setSpinning(false); return; } // pool exhausted (shouldn't happen)
     lockedPlayer.current = final; // always authoritative
     if (reduce) {
       setCurrent(final);
@@ -2054,7 +2099,7 @@ export default function CalendarSlam() {
     }
     let ticks = 0;
     const iv = setInterval(() => {
-      setCurrent(rngPick(pool));
+      setCurrent(rngPick(pool, exMerged) || final);
       ticks++;
       if (ticks > 12) {
         clearInterval(iv);
@@ -2409,7 +2454,9 @@ export default function CalendarSlam() {
           )}
           {gameMode === "career" && careerSeason > 1 && (
             <div className="cs-career-badge">
-              {playerFlag} {playerName} · Season {careerSeason} · {careerSlamCount} slam{careerSlamCount !== 1 ? "s" : ""}
+              {playerFlag} {playerName} · Season {careerSeason} · {reachedGoat
+                ? `🐐 ${careerSlamCount} slams`
+                : `${careerSlamCount}/25 slams`}
             </div>
           )}
           <div className="cs-tag">build a champion, shot by shot</div>
@@ -2458,7 +2505,7 @@ export default function CalendarSlam() {
               onClick={() => { setGameMode("career"); setPhase("tour"); }}>
               <span className="cs-mode-icon">🏆</span>
               <span className="cs-mode-label">Career Mode</span>
-              <span className="cs-mode-desc">Guide your player from age 20 to retirement. Hire coaches, survive injuries, build a rivalry, and write your legacy before time catches up.</span>
+              <span className="cs-mode-desc">Try and become the undisputed GOAT by reaching 25 slams, with a player you guide from age 20 to retirement. Hire coaches, survive injuries, trade blows with your rival — before time catches up with you.</span>
             </button>
           </div>
         </section>
@@ -2471,17 +2518,29 @@ export default function CalendarSlam() {
               <h1 className="cs-h1">Build a<br /><em>tennis god.</em></h1>
               <p className="cs-lede">
                 Spin real players from across eras, draft their iconic weapons, and build
-                a composite champion. You get 11 picks — one attribute per round. To win
+                a composite champion. You get 10 picks — one attribute per round. To win
                 the Calendar Slam you'll need to conquer all three surfaces.
               </p>
               <div className="cs-surfaces cs-tour-slams">
                 {SLAMS.map((s) => (
-                  <div key={s.key} className={`cs-surface-chip slam-${s.key}`}>
-                    <span className="cs-chip-name">{s.name}</span>
-                    <span className="cs-chip-surface">{s.surface}</span>
-                  </div>
+                  <button
+                    key={s.key}
+                    type="button"
+                    className={`cs-surface-chip slam-${s.key} ${expandedSlam === s.key ? "expanded" : ""}`}
+                    onClick={() => setExpandedSlam(expandedSlam === s.key ? null : s.key)}
+                    aria-expanded={expandedSlam === s.key}
+                  >
+                    <span className="cs-chip-row">
+                      <span className="cs-chip-name">{s.name}</span>
+                      <span className="cs-chip-surface">{s.surface} {expandedSlam === s.key ? "▴" : "▾"}</span>
+                    </span>
+                    {expandedSlam === s.key && (
+                      <span className="cs-chip-tip">{s.tip}</span>
+                    )}
+                  </button>
                 ))}
               </div>
+              <p className="cs-chip-hint">Tap a major to see what its surface rewards.</p>
             </>
           ) : (
             <>
@@ -2588,8 +2647,12 @@ export default function CalendarSlam() {
               </h1>
               <p className="cs-lede">
                 Spin legends from different eras and draft their iconic weapons into your player's game.
-                You have <strong>11 picks</strong> — choose wisely. This build will carry through your career,
+                You have <strong>10 picks</strong> — choose wisely. This build will carry through your career,
                 shaped by coaches, injuries and the passage of time.
+              </p>
+              <p className="cs-goal-line">
+                🐐 <strong>The goal:</strong> win <strong>25 Grand Slams</strong> to surpass the all-time
+                record and retire as the undisputed GOAT.
               </p>
               <div className="cs-surfaces">
                 {SLAMS.map((s) => (
@@ -2820,6 +2883,14 @@ export default function CalendarSlam() {
                   ))}
                 </div>
               </details>
+              {gameMode === "single" && (
+                <button
+                  className="cs-redraft-link"
+                  onClick={() => startSingleDraft(tour)}
+                >
+                  Don't like your player? <span className="cs-redraft-strong">Draft again</span>
+                </button>
+              )}
             </div>
           )}
 
@@ -2883,17 +2954,34 @@ export default function CalendarSlam() {
                   const teaseKey = tease ? (STYLE_KEY[tease.oppStyle] || "return") : null;
                   const teaseAttrLabel = teaseKey ? ATTR_LABEL[teaseKey] : null;
                   const teaseEdge = teaseKey ? EDGE_PHRASE[teaseKey] : null;
+                  // Your own rating in the attribute the opponent pressured. If it's
+                  // already strong, we must NOT frame it as your weakness — a build
+                  // with elite mentality losing a final is bad luck or a great
+                  // opponent, not a flaw to "shore up".
+                  const teaseOwnVal = teaseKey ? (build[teaseKey]?.rating ?? 0) : 0;
+                  const teaseIsWeak = teaseOwnVal < 86;
                   return (
                     <div className="cs-diagnosis">
                       <div className="cs-diagnosis-title">📋 The post-match analysis</div>
                       {tease ? (
-                        <p className="cs-diagnosis-body">
-                          So close at {tease.name}. You pushed {tease.opponent} hard in
-                          the {tease.lostRound.toLowerCase()}, but {teaseEdge}. If your{" "}
-                          <strong>{teaseAttrLabel}</strong> had been a few points higher,
-                          that match — and the title — might have been yours. Draft to
-                          shore it up next time.
-                        </p>
+                        teaseIsWeak ? (
+                          <p className="cs-diagnosis-body">
+                            So close at {tease.name}. You pushed {tease.opponent} hard in
+                            the {tease.lostRound.toLowerCase()}, but {teaseEdge}. If your{" "}
+                            <strong>{teaseAttrLabel}</strong> ({teaseOwnVal}) had been a few
+                            points higher, that match — and the title — might have been
+                            yours. Draft to shore it up next time.
+                          </p>
+                        ) : (
+                          <p className="cs-diagnosis-body">
+                            Heartbreakingly close at {tease.name}. You pushed{" "}
+                            {tease.opponent} all the way in the {tease.lostRound.toLowerCase()} —
+                            your <strong>{teaseAttrLabel}</strong> ({teaseOwnVal}) held up,
+                            this one simply came down to a handful of points against a
+                            top-class opponent. Nothing wrong with the build — run it back
+                            and the result could easily flip.
+                          </p>
+                        )
                       ) : (
                         <p className="cs-diagnosis-body">
                           {simResults.won === 0
@@ -2920,7 +3008,7 @@ export default function CalendarSlam() {
                       <div className={`cs-now-playing ${s.isOlympics ? "oly" : `slam-${s.key}`} ${isFinal ? "is-final" : ""}`}>
                         <div className="cs-now-meta">
                           <span className="cs-now-event">{s.isOlympics ? "🏅 " : ""}{s.name}</span>
-                          <span className="cs-now-round">{roundName}{isFinal ? " · CHAMPIONSHIP" : ""}</span>
+                          <span className="cs-now-round">{roundName}</span>
                         </div>
                         <div className="cs-now-match">
                           <span className="cs-now-you">{playerFlag || "🎾"} You</span>
@@ -3281,14 +3369,17 @@ export default function CalendarSlam() {
           {/* Retirement press clipping */}
           {(() => {
             const retireYear = 2025 + careerSeason;
-            const tier = careerSlamCount >= 10 ? "All-Time Great" :
+            const tier = careerSlamCount >= 25 ? "Undisputed GOAT" :
+                         careerSlamCount >= 10 ? "All-Time Great" :
                          careerSlamCount >= 5  ? "Legendary Champion" :
                          careerSlamCount >= 2  ? "Grand Slam Champion" :
                          careerSlamCount === 1 ? "Grand Slam Winner" : "Tour Professional";
             const rivalLine = careerRival
               ? ` The rivalry with ${careerRival.flag} ${careerRival.name} — ${careerRival.slamCount > careerSlamCount ? "won by their nemesis" : careerSlamCount > careerRival.slamCount ? "ultimately won" : "evenly matched"} — defined an era.`
               : "";
-            const bodyText = careerSlamCount >= 10
+            const bodyText = careerSlamCount >= 25
+              ? `${playerName} retires at ${careerAge} as the undisputed greatest of all time. ${careerSlamCount} Grand Slam titles — past the record of 24 — across a ${careerSeason}-season career put them above everyone who has ever played the game.${rivalLine}`
+              : careerSlamCount >= 10
               ? `${playerName} retires at ${careerAge} as one of the most decorated players in the history of the sport. ${careerSlamCount} Grand Slam titles across a ${careerSeason}-season career speak for themselves.${rivalLine}`
               : careerSlamCount >= 2
               ? `After ${careerSeason} seasons on tour, ${playerName} hangs up the racket at ${careerAge} with ${careerSlamCount} Grand Slam titles to their name. A career that will be remembered.${rivalLine}`
@@ -3326,7 +3417,8 @@ export default function CalendarSlam() {
           </div>
 
           <div className="cs-retire-tier">
-            {careerSlamCount >= 10 ? "🐐 All-Time Great" :
+            {careerSlamCount >= 25 ? "🐐 Undisputed GOAT" :
+             careerSlamCount >= 10 ? "🐐 All-Time Great" :
              careerSlamCount >= 5  ? "⭐ Legendary Champion" :
              careerSlamCount >= 2  ? "🏆 Grand Slam Champion" :
              careerSlamCount === 1 ? "🎾 Grand Slam Winner" :
@@ -3395,6 +3487,28 @@ export default function CalendarSlam() {
           playerFlag={playerFlag}
           onClose={() => setShowRivalModal(false)}
         />
+      )}
+
+      {showGoatScreen && (
+        <div className="cs-modal" onClick={() => setShowGoatScreen(false)}>
+          <div className="cs-goat-modal" onClick={e => e.stopPropagation()}>
+            <button className="cs-modal-x" onClick={() => setShowGoatScreen(false)} aria-label="Close">×</button>
+            <div className="cs-goat-icon">🐐</div>
+            <div className="cs-goat-eyebrow">The record falls</div>
+            <h2 className="cs-goat-title">UNDISPUTED GOAT</h2>
+            <p className="cs-goat-body">
+              {playerFlag} <strong>{playerName}</strong> has won a <strong>{careerSlamCount}th</strong> Grand
+              Slam — surpassing the all-time record of 24 to stand alone as the greatest
+              of all time. No one in the history of the sport has won more.
+            </p>
+            <p className="cs-goat-sub">
+              The career isn't over — keep playing and extend the record even further before you retire.
+            </p>
+            <button className="cs-cta cs-goat-btn" onClick={() => setShowGoatScreen(false)}>
+              Play on →
+            </button>
+          </div>
+        </div>
       )}
 
       {trophyDetail && (
@@ -3469,10 +3583,16 @@ body { background: #1f6b3f; margin: 0; }
 .cs-lede { font-size:16.5px; line-height:1.6; max-width:60ch; color:var(--chalk); margin:0 0 18px; }
 .cs-lede:last-of-type { margin-bottom:28px; }
 .cs-lede strong { color:var(--ball-soft); font-weight:700; }
-.cs-surfaces { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:24px; }
-.cs-surface-chip { border:none; border-radius:10px; padding:14px 12px; display:flex; flex-direction:column; gap:5px; cursor:default; }
+.cs-surfaces { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:10px; }
+.cs-surface-chip { border:none; border-radius:10px; padding:14px 12px; display:flex; flex-direction:column; gap:5px; cursor:pointer; text-align:left; transition:transform .12s; font-family:inherit; }
+.cs-surface-chip:hover { transform:translateY(-2px); }
+.cs-surface-chip.expanded { grid-column:1 / -1; }
+.cs-chip-row { display:flex; flex-direction:column; gap:5px; }
+.cs-surface-chip.expanded .cs-chip-row { flex-direction:row; align-items:baseline; justify-content:space-between; }
+.cs-chip-tip { margin-top:10px; font-size:13.5px; line-height:1.5; color:rgba(255,255,255,.95); font-weight:500; }
+.cs-chip-hint { font-size:12px; color:var(--dim); margin:0 0 24px; text-align:center; }
 .cs-chip-name { font-weight:700; font-size:13px; line-height:1.15; color:#fff; }
-.cs-chip-surface { font-size:10px; letter-spacing:.12em; text-transform:uppercase; font-weight:700; color:rgba(255,255,255,.75); }
+.cs-chip-surface { font-size:10px; letter-spacing:.12em; text-transform:uppercase; font-weight:700; color:rgba(255,255,255,.75); white-space:nowrap; }
 .cs-fineprint { font-size:12px; color:var(--dim); margin:0 0 26px; max-width:54ch; }
 
 .cs-cta { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:18px; letter-spacing:.06em; text-transform:uppercase; background:var(--ball); color:var(--ink); border:none; border-radius:4px; padding:15px 30px; cursor:pointer; transition:transform .12s ease, box-shadow .2s; box-shadow:0 3px 0 rgba(14,42,26,.4); }
@@ -3693,21 +3813,31 @@ body { background: #1f6b3f; margin: 0; }
 .cs-share-btn { background:var(--hard); color:#fff; }
 .cs-share-btn:hover { background:#46b0e8; color:#fff; }
 
-.cs-leg-sim { display:flex; flex-direction:column; gap:3px; margin-top:4px; }
-.cs-sim-champ { color:var(--ball-soft); font-weight:800; font-size:14px; }
-.cs-sim-out { color:var(--clay); font-weight:700; font-size:13.5px; }
-.cs-sim-detail { font-size:13px; color:var(--dim); line-height:1.45; }
+.cs-leg-sim { display:flex; flex-direction:column; gap:5px; margin-top:6px; }
+.cs-sim-champ { color:var(--ball-soft); font-weight:800; font-size:15px; letter-spacing:.01em; }
+.cs-sim-out { color:#ff8a6b; font-weight:800; font-size:14.5px; letter-spacing:.01em; }
+.cs-sim-detail { font-size:13.5px; color:rgba(246,251,239,.82); line-height:1.5; }
+.cs-path-list { list-style:none; margin:10px 0 0; padding:0; display:flex; flex-direction:column; gap:1px; }
+.cs-path-list li { display:grid; grid-template-columns:96px 1fr auto; gap:10px; align-items:baseline; font-size:13px; padding:5px 0; border-bottom:1px solid var(--line-soft); }
+.cs-path-round { font-weight:700; font-size:10.5px; letter-spacing:.07em; text-transform:uppercase; color:rgba(246,251,239,.55); }
+.cs-path-opp { color:rgba(246,251,239,.92); }
+.cs-path-list li.won .cs-path-opp { color:rgba(246,251,239,.92); }
+.cs-path-list li.lost .cs-path-opp { color:#ff8a6b; font-weight:700; }
+.cs-path-score { font-variant-numeric:tabular-nums; font-weight:700; color:rgba(246,251,239,.7); }
 .cs-path { margin-top:8px; }
 .cs-path summary { cursor:pointer; font-size:11px; letter-spacing:.1em; text-transform:uppercase; font-weight:700; color:var(--dim); }
-.cs-path-list { list-style:none; margin:8px 0 0; padding:0; display:flex; flex-direction:column; gap:1px; }
-.cs-path-list li { display:grid; grid-template-columns:88px 1fr auto; gap:8px; align-items:baseline; font-size:12.5px; padding:4px 0; border-bottom:1px solid var(--line-soft); }
-.cs-path-round { font-weight:700; font-size:10px; letter-spacing:.06em; text-transform:uppercase; color:var(--dim); }
-.cs-path-opp { color:var(--chalk); }
-.cs-path-list li.lost .cs-path-opp { color:var(--clay); font-weight:700; }
-.cs-path-score { font-variant-numeric:tabular-nums; font-weight:600; color:var(--dim); }
+.cs-path-playing .cs-path-opp { color:var(--ball-soft) !important; }
 
 /* share modal */
 .cs-modal { position:fixed; inset:0; background:rgba(7,28,16,.78); display:flex; align-items:center; justify-content:center; padding:20px; z-index:50; overflow-y:auto; }
+.cs-goat-modal { position:relative; background:linear-gradient(160deg,#1f6b3f,#0e2a1a); border:2.5px solid var(--ball); border-radius:16px; padding:36px 30px 30px; max-width:440px; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,.5); }
+.cs-goat-icon { font-size:64px; line-height:1; animation:cs-pop .5s ease; }
+.cs-goat-eyebrow { margin-top:10px; font-family:"Barlow Condensed",sans-serif; font-weight:700; font-size:13px; letter-spacing:.18em; text-transform:uppercase; color:var(--ball-soft); }
+.cs-goat-title { font-family:"Barlow Condensed",sans-serif; font-weight:900; font-size:46px; line-height:1; letter-spacing:.02em; text-transform:uppercase; color:var(--ball); margin:6px 0 16px; }
+.cs-goat-body { font-size:15px; line-height:1.6; color:var(--chalk); margin:0 0 14px; }
+.cs-goat-body strong { color:var(--ball-soft); }
+.cs-goat-sub { font-size:13.5px; line-height:1.5; color:var(--dim); margin:0 0 22px; }
+.cs-goat-btn { font-size:18px; }
 .cs-card-share { background:var(--grass-mid); border:2.5px solid var(--chalk); border-radius:8px; max-width:380px; width:100%; padding:28px 26px 24px; position:relative; text-align:center; max-height:90vh; overflow-y:auto; }
 .cs-modal-x { position:sticky; top:0; float:right; margin:-12px -10px 0 0; background:var(--grass-mid); border:none; font-size:30px; line-height:1; cursor:pointer; color:var(--chalk); z-index:2; width:40px; height:40px; border-radius:50%; }
 .cs-modal-x:hover { color:var(--ball); }
@@ -3743,7 +3873,7 @@ body { background: #1f6b3f; margin: 0; }
 .cs-mode-tour-sub { font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--dim); font-weight:700; }
 .cs-mode-btn { display:flex; flex-direction:column; align-items:flex-start; gap:8px; padding:22px 20px; border-radius:10px; border:2.5px solid var(--chalk); background:rgba(246,251,239,.05); cursor:pointer; text-align:left; transition:transform .12s, background .2s, border-color .2s; }
 .cs-mode-btn:hover { transform:translateY(-3px); background:rgba(216,240,0,.1); border-color:var(--ball); }
-.cs-mode-btn.career { border-color:var(--ball); background:rgba(216,240,0,.08); }
+.cs-mode-btn.career { border-color:var(--chalk); background:rgba(246,251,239,.05); }
 .cs-mode-icon { font-size:30px; }
 .cs-mode-label { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:22px; text-transform:uppercase; color:var(--chalk); line-height:1; }
 .cs-mode-desc { font-size:13px; color:var(--dim); line-height:1.45; }
@@ -3943,6 +4073,11 @@ button.cs-trophy:focus-visible { outline:3px solid var(--ball); outline-offset:2
 .cs-begin-title { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:42px; line-height:1; text-transform:uppercase; color:var(--chalk); margin:0; }
 .cs-begin-sub { font-size:16px; color:var(--dim); max-width:40ch; margin:0; line-height:1.5; }
 .cs-begin-btn { font-size:22px; padding:18px 40px; }
+.cs-redraft-link { margin-top:4px; background:none; border:none; cursor:pointer; font-family:inherit; font-size:13.5px; color:var(--dim); padding:8px 10px; transition:color .15s; }
+.cs-redraft-link:hover { color:var(--chalk); }
+.cs-redraft-strong { color:var(--ball-soft); font-weight:700; text-decoration:underline; text-underline-offset:2px; }
+.cs-goal-line { font-size:14.5px; line-height:1.5; color:rgba(246,251,239,.92); background:rgba(216,240,0,.08); border:1.5px solid rgba(216,240,0,.35); border-radius:8px; padding:12px 16px; margin:0 0 22px; max-width:52ch; }
+.cs-goal-line strong { color:var(--ball-soft); }
 .cs-breakdown-pre { width:100%; max-width:580px; margin-top:8px; }
 
 /* share slam buttons — solid fills, stacked */
