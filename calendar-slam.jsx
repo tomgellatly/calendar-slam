@@ -2091,7 +2091,6 @@ export default function CalendarSlam() {
 
   function pickAttr(attrKey) {
     if (spinning || !lockedPlayer.current) return;
-    Sound.shot();
     const locked = lockedPlayer.current; // always the final spun player
     const isElitePick = difficulty === "challenge" && !eliteUsed &&
       elitePool.some((p) => p.name === locked.name);
@@ -2686,15 +2685,17 @@ export default function CalendarSlam() {
                 <div className="cs-card-hint">
                   {spinning ? "Spinning…" : "Take one shot for your build"}
                 </div>
-                {!spinning && !playerSkipUsed && (
+                <div className="cs-skip-slot">
                   <button
-                    className="cs-skip-player-btn"
+                    className={`cs-skip-player-btn ${(spinning || playerSkipUsed) ? "cs-skip-hidden" : ""}`}
                     onClick={skipPlayer}
+                    disabled={spinning || playerSkipUsed}
+                    aria-hidden={spinning || playerSkipUsed}
                     title="Skip this player — once per draft"
                   >
                     ↻ Skip this player <span className="cs-skip-once">(once per draft)</span>
                   </button>
-                )}
+                </div>
               </div>
               <CourtDiagram build={build} hovered={hovered} />
             </div>
@@ -3495,8 +3496,10 @@ body { background: #1f6b3f; margin: 0; }
 .cs-card-eyebrow { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--dim); font-weight:700; }
 .cs-card-name { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:clamp(28px,5.8vw,42px); line-height:1; letter-spacing:0; margin:6px 0 10px; color:var(--chalk); text-transform:uppercase; }
 .cs-card-hint { font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--ball-soft); font-weight:700; }
-.cs-skip-player-btn { margin-top:10px; background:transparent; border:2px solid var(--ball); color:var(--ball); font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:13px; letter-spacing:.1em; text-transform:uppercase; padding:7px 18px; border-radius:20px; cursor:pointer; transition:background .15s, color .15s, transform .1s; }
-.cs-skip-player-btn:hover { background:var(--ball); color:var(--ink); transform:scale(1.04); }
+.cs-skip-slot { min-height:42px; display:flex; align-items:center; margin-top:10px; }
+.cs-skip-player-btn { background:transparent; border:2px solid var(--ball); color:var(--ball); font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:13px; letter-spacing:.1em; text-transform:uppercase; padding:7px 18px; border-radius:20px; cursor:pointer; transition:background .15s, color .15s, opacity .15s; }
+.cs-skip-player-btn:hover { background:var(--ball); color:var(--ink); }
+.cs-skip-player-btn.cs-skip-hidden { opacity:0; pointer-events:none; }
 .cs-skip-once { font-size:11px; font-weight:600; letter-spacing:.04em; opacity:.7; text-transform:none; }
 
 /* court diagram */
