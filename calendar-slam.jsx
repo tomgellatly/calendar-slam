@@ -438,14 +438,54 @@ const STYLE_PRESSURE = {
 const RATING_WORD = (r) =>
   r >= 92 ? "elite" : r >= 86 ? "strong" : r >= 78 ? "solid" : r >= 68 ? "shaky" : "weak";
 
-const WIN_NOTES = [
-  "served big when it mattered and never looked back",
-  "controlled the baseline and dictated from the first ball",
-  "dug out the tight sets and pulled away late",
-  "was simply too complete across every phase",
-  "weathered an early storm then took over",
-  "broke early in each set and held comfortably",
+// Win descriptions, written to read correctly after "You ...". Kept varied and
+// specific — by surface, by how the final actually went, and against a rival —
+// so winning a slam never feels boilerplate.
+const WIN_NOTES_BY_SURFACE = {
+  Hard: [
+    "dictated from the baseline and flushed winners off both wings",
+    "served with ice in your veins and never faced a break point that mattered",
+    "out-hit them in the long exchanges and took over after the first set",
+    "absorbed the pace and redirected it for clean winners all afternoon",
+  ],
+  Clay: [
+    "out-lasted them in brutal rallies and never stopped chasing balls down",
+    "constructed points patiently and broke their spirit in the long exchanges",
+    "slid into every corner and turned defence into attack on the dirt",
+    "ground them down over four hours until they had nothing left",
+  ],
+  Grass: [
+    "served bombs and finished points at the net before they could settle",
+    "kept the ball low with biting slice and pounced on anything short",
+    "took the ball early and gave them no time to breathe on the lawn",
+    "served-and-volleyed your way to a grass-court masterclass",
+  ],
+};
+const WIN_NOTES_RIVAL = [
+  "finally got the better of your great rival on the biggest stage",
+  "stared down your nemesis and refused to blink when it mattered",
+  "settled the rivalry — at least for today — with your best tennis when it counted",
 ];
+const WIN_NOTES_TIGHT = [
+  "saved the big points, held your nerve in the decider, and got over the line",
+  "were taken the distance but found one more gear when it mattered most",
+  "edged a final that could have gone either way, point for point",
+];
+const WIN_NOTES_ROUTINE = [
+  "were simply too complete across every phase and never let them in",
+  "made it look routine — a level above the field from the first ball",
+  "controlled it start to finish and never gave them a sniff",
+];
+function winNote(surface, finalScoreStr, beatRival, rand) {
+  const close = matchClosenessFromScore(finalScoreStr);
+  if (beatRival && rand() < 0.7) return WIN_NOTES_RIVAL[Math.floor(rand() * WIN_NOTES_RIVAL.length)];
+  if (close.wentLong || close.word === "an epic" || close.word === "a tight")
+    return WIN_NOTES_TIGHT[Math.floor(rand() * WIN_NOTES_TIGHT.length)];
+  if (close.word === "a routine" || close.word === "a solid")
+    return WIN_NOTES_ROUTINE[Math.floor(rand() * WIN_NOTES_ROUTINE.length)];
+  const pool = WIN_NOTES_BY_SURFACE[surface] || WIN_NOTES_BY_SURFACE.Hard;
+  return pool[Math.floor(rand() * pool.length)];
+}
 
 // Generate a realistic best-of-5 set score given your set-win probability.
 // Returns { sets:[[you,opp],...], mySets, oppSets } with 6-4 / 7-6 / 7-5 style games.
@@ -497,15 +537,15 @@ function matchClosenessFromScore(scoreStr) {
 // Simulate one major: seven rounds against the real draw, each best-of-5 with
 // per-set noise. Records the full path with real set scores. `usedReasons` is a
 // Set shared across majors so loss explanations never repeat.
-function simulateMajor(build, slam, rand, usedReasons, field, drawPool, rival) {
+function simulateMajor(build, slam, rand, usedReasons, field, drawPool, rival, formBonus = 3) {
   const draw = buildDraw(slam, rand, field, drawPool, rival);
-  // A small "championship form" premium: a genuinely complete build should be a
-  // clear favourite at each major, not a coin-flip dragged down by the
-  // compounding of seven best-of-five matches. +3 lifts an elite, balanced build
-  // to ~40% per major (so 0/4 seasons become rare) while a merely-good build
-  // still rarely survives the field — difficulty stays earned. Calendar Slam
-  // rate for a flawless build lands around 3-4%.
-  const myForm = surfaceScore(build, slam.surface) + 3;
+  // A small "championship form" premium so a complete build is a clear favourite
+  // rather than a coin-flip dragged down by seven best-of-five matches. The
+  // bonus is mode-dependent (passed in): single-season play is more generous so
+  // a flawless build can chase the Calendar Slam, while career mode is tougher —
+  // the field is genuinely hard, so a 25-slam GOAT run demands a great build AND
+  // good fortune across fifteen seasons.
+  const myForm = surfaceScore(build, slam.surface) + formBonus;
   const path = [];
 
   for (let r = 0; r < ROUNDS.length; r++) {
@@ -561,10 +601,9 @@ function simulateMajor(build, slam, rand, usedReasons, field, drawPool, rival) {
       };
     }
   }
-  // Win note should reflect how the final actually went.
-  const note = path[6] && matchClosenessFromScore(path[6].score).wentLong
-    ? "came through an epic final to seal it"
-    : WIN_NOTES[Math.floor(rand() * WIN_NOTES.length)];
+  // Win note should reflect the surface, how the final actually went, and
+  // whether it came against your rival — kept specific so it never feels generic.
+  const note = winNote(slam.surface, path[6] ? path[6].score : "", !!draw[6].isRival, rand);
   return {
     wonTitle: true,
     finalOpp: draw[6].name,
@@ -1254,8 +1293,16 @@ const UPGRADE_POOL = [
   { id: "return_coach",  label: "Return of Serve Coach",        desc: "Early ball, aggressive positioning.",                    effects: { return: 3, movement: 1 } },
   { id: "movement",      label: "Movement & Footwork Trainer",  desc: "Court coverage, split step timing, lateral speed.",      effects: { movement: 3, defence: 2 } },
   { id: "defence",       label: "Defensive Grinding Specialist",desc: "Learn to reset points and outlast opponents.",           effects: { defence: 3, stamina: 2 } },
-  { id: "rest",          label: "Rest & Recovery Season",       desc: "No stat gains. The body will thank you later.",         effects: {}, recovery: true },
+  { id: "rest",          label: "Rest & Recovery Season",       desc: "Skip stat gains this winter to recover — sharply lowers your injury risk next season.",         effects: {}, recovery: true },
   { id: "slice_clinic",  label: "Slice Clinic",                 desc: "Master the low skidder on grass and clay.",             effects: { slice: 5 } },
+  // --- High-impact specialist upgrades: a big gain in one area, a small cost
+  // elsewhere. These make the off-season a real choice — you sculpt a build with
+  // genuine strengths and weaknesses rather than maxing every stat to 99.
+  { id: "big_serve",     label: "Rebuild the Serve (all-in)",   desc: "Add huge power and a kick second serve — but the extra effort costs movement.", effects: { serve: 7, movement: -2 }, tradeoff: true },
+  { id: "aggression",    label: "First-Strike Tennis",          desc: "Take every ball early and dictate — thrilling, but riskier defensively.", effects: { forehand: 5, net: 3, defence: -3 }, tradeoff: true },
+  { id: "counterpunch",  label: "Become a Counterpuncher",      desc: "Turn defence into a weapon and grind opponents down — at the expense of net play.", effects: { defence: 5, movement: 3, net: -3 }, tradeoff: true },
+  { id: "power_baseline",label: "Heavy Baseline Game",          desc: "Brutal groundstrokes from both wings, but the bulk slows you down.", effects: { forehand: 4, backhand: 4, stamina: -2, movement: -1 }, tradeoff: true },
+  { id: "iron_mind",     label: "Ruthless Match Mentality",     desc: "Ice in the veins on the big points — single-minded focus dulls the touch.", effects: { mental: 6, slice: -2 }, tradeoff: true },
 ];
 
 // --- Injury pool (logical body mapping) --------------------------------------
@@ -1305,12 +1352,12 @@ function ageDecay(age) {
   return { stamina: -4, movement: -3, defence: -3, serve: -2, forehand: -2, backhand: -2, mental: -1 };
 }
 
-// Injury risk rises with age and heavy training history.
-function injuryRisk(age, longevity, heavyTrainingSeason) {
+// Injury risk rises with age and heavy training; a recovery season lowers it.
+function injuryRisk(age, heavyTrainingSeason, restedSeason) {
   const base = Math.max(0, (age - 24) * 0.04);
-  const decay = longevity < 0 ? 0.1 * Math.abs(longevity) : 0;
   const fatigue = heavyTrainingSeason ? 0.12 : 0;
-  return Math.min(0.55, base + decay + fatigue);
+  const rested = restedSeason ? -0.15 : 0; // a rest season meaningfully cuts risk
+  return Math.max(0.02, Math.min(0.55, base + fatigue + rested));
 }
 
 // Retirement logic. Forced at 35 (career naturally winds down by mid-30s).
@@ -1387,11 +1434,38 @@ function pickUpgrades(rng, currentBuild) {
     chosen.push(targetUpgrade);
   }
 
+  // GUARANTEE a genuine trade-off upgrade is on offer (when one is useful), so
+  // the coach's "bold but risky" recommendation always has real teeth — a big
+  // gain that genuinely costs you something elsewhere. Without this, a round
+  // with no trade-off option made the coach flag a safe pick as "bold".
+  const tradeoffCandidates = pool.filter(u => u.tradeoff && (() => {
+    if (!currentBuild) return true;
+    // The main gain must not be wasted (target stat below the near-cap)...
+    const gains = Object.entries(u.effects).filter(([,v]) => v > 0);
+    const gainUseful = gains.some(([k]) => (currentBuild[k]?.rating ?? 0) < NEAR_CAP);
+    // ...and the cost must not drop a stat below a floor that would be punishing.
+    const costSafe = Object.entries(u.effects).filter(([,v]) => v < 0)
+      .every(([k, v]) => (currentBuild[k]?.rating ?? 0) + v >= 60);
+    return gainUseful && costSafe;
+  })());
+  if (tradeoffCandidates.length) {
+    const pick = tradeoffCandidates[Math.floor(rng() * tradeoffCandidates.length)];
+    const idx = pool.findIndex(u => u.id === pick.id);
+    if (idx >= 0) pool.splice(idx, 1);
+    chosen.push(pick);
+  }
+
   while (chosen.length < 3 && pool.length > 0) {
     const i = Math.floor(rng() * pool.length);
     const u = pool.splice(i, 1)[0];
     if (chosen.some(c => c.id === u.id)) continue;
     chosen.push(u);
+  }
+
+  // Shuffle so the guaranteed picks aren't always in the same slot.
+  for (let i = chosen.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [chosen[i], chosen[j]] = [chosen[j], chosen[i]];
   }
 
   // Trim advertised effects to realistic headroom, for every chosen upgrade.
@@ -1493,6 +1567,7 @@ export default function CalendarSlam() {
   const [retirementPrompt, setRetirementPrompt] = useState(false);
   const [consecutiveLowSeasons, setConsecutiveLowSeasons] = useState(0);
   const [heavyTrainingLastSeason, setHeavyTrainingLastSeason] = useState(false);
+  const [restedLastSeason, setRestedLastSeason] = useState(false);
   const [olympicResult, setOlympicResult] = useState(null);
   const [showRivalModal, setShowRivalModal] = useState(false);
   const [seasonSummary, setSeasonSummary] = useState(null); // {report, quotes} for current season
@@ -1599,6 +1674,7 @@ export default function CalendarSlam() {
     setCareerRival(null);
     setConsecutiveLowSeasons(0);
     setHeavyTrainingLastSeason(false);
+    setRestedLastSeason(false);
     setRetirementPrompt(false);
     setRanSim(false);
     setBuild({});
@@ -1825,8 +1901,8 @@ export default function CalendarSlam() {
     const upgradeRng = mulberry32((careerSeason * 54321) & 0xffffffff);
     const upgrades = pickUpgrades(upgradeRng, build);
 
-    // Roll for injury
-    const risk = injuryRisk(careerAge, heavyTrainingLastSeason);
+    // Roll for injury (a recovery season last winter lowers the risk)
+    const risk = injuryRisk(careerAge, heavyTrainingLastSeason, restedLastSeason);
     const injuryRng = mulberry32((careerSeason * 11111 + 7) & 0xffffffff);
     let injury = null;
     if (injuryRng() < risk) {
@@ -1875,16 +1951,26 @@ export default function CalendarSlam() {
     nextBuild = applyDecay(nextBuild, decay);
 
     setHeavyTrainingLastSeason(upgrade.id === "fitness");
+    setRestedLastSeason(upgrade.id === "rest");
     setBuild(nextBuild);
+    const newAge = careerAge + 1;
     setCareerSeason(s => s + 1);
-    setCareerAge(a => a + 1);
+    setCareerAge(newAge);
+    setRetirementPrompt(false);
+    setUpgradeArmed(null);
+    setPressPhase(false);
+    // Hard age cap: 35 is the final playable season. Once a player would advance
+    // PAST 35, the career is over — no further seasons, regardless of form or
+    // GOAT status. This guarantees the game always ends, even for a 25-slam GOAT.
+    if (newAge > RETIRE_AGE) {
+      setPhase("retirement");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
     setRanSim(false);
     setReveal({ slam: 0, round: 0, done: false, scoreShown: false });
     setEliteUsed(false);
     setRound(0);
-    setRetirementPrompt(false);
-    setUpgradeArmed(null);
-    setPressPhase(false);
     // Go straight to result screen (which shows "Begin season X") —
     // no new draft needed, the build carries over with the upgrade applied.
     setPhase("result");
@@ -2318,7 +2404,8 @@ export default function CalendarSlam() {
           weapon: "the world's best",
         };
       }
-      const r = simulateMajor(build, s, rand, usedReasons, activeField, activeDraw, rivalForDraw);
+      const formBonus = gameMode === "career" ? 1 : 3;
+      const r = simulateMajor(build, s, rand, usedReasons, activeField, activeDraw, rivalForDraw, formBonus);
       if (r.wonTitle) won++;
       return { ...s, ...r };
     });
@@ -3287,9 +3374,23 @@ export default function CalendarSlam() {
                 })()}
                 <p className="cs-upgrade-sub">Tap once to preview, tap again to confirm.</p>
                 <div className="cs-upgrade-grid">
-                  {offseasonUpgrades.map((u, ui) => {
+                  {(() => {
+                    // The coach recommends a genuinely BOLD play — a trade-off
+                    // upgrade with a real downside, the upgrade with the biggest
+                    // single-stat upside among those that cost something elsewhere.
+                    // It must actually have a trade-off to earn the "bold but
+                    // risky" badge — never flag a safe, pure-upside pick as bold.
+                    let coachIdx = -1, bestSwing = -1;
+                    offseasonUpgrades.forEach((u, i) => {
+                      if (u.recovery) return;
+                      const hasCost = Object.values(u.effects).some(v => v < 0);
+                      if (!hasCost) return; // only genuine trade-offs qualify
+                      const maxGain = Math.max(0, ...Object.values(u.effects).filter(v => v > 0));
+                      if (maxGain > bestSwing) { bestSwing = maxGain; coachIdx = i; }
+                    });
+                    return offseasonUpgrades.map((u, ui) => {
                     const armed = upgradeArmed === u.id;
-                    const isCoachPick = ui === 0; // first slot is the guaranteed weakness-targeting upgrade
+                    const isCoachPick = ui === coachIdx;
                     return (
                       <button key={u.id}
                         className={`cs-upgrade-btn ${u.recovery ? "recovery" : ""} ${armed ? "armed" : ""} ${isCoachPick ? "coach-pick" : ""}`}
@@ -3297,7 +3398,7 @@ export default function CalendarSlam() {
                           if (armed) applyUpgrade(u);
                           else setUpgradeArmed(u.id);
                         }}>
-                        {isCoachPick && <span className="cs-coach-pick-badge">⭐ Coach recommends</span>}
+                        {isCoachPick && <span className="cs-coach-pick-badge">⭐ Coach's call — bold but risky</span>}
                         <span className="cs-upgrade-label">{u.label}</span>
                         <span className="cs-upgrade-desc">{u.desc}</span>
                         <div className="cs-upgrade-effects">
@@ -3308,13 +3409,14 @@ export default function CalendarSlam() {
                           ))}
                           {u.longevity > 0 && <span className="cs-upgrade-effect pos">+{u.longevity} longevity</span>}
                           {u.longevity < 0 && <span className="cs-upgrade-effect neg">{u.longevity} longevity</span>}
-                          {Object.keys(u.effects).length === 0 && <span className="cs-upgrade-effect pos">Body recovery</span>}
+                          {Object.keys(u.effects).length === 0 && <span className="cs-upgrade-effect pos">↓ Injury risk next season</span>}
                         </div>
                         {armed && <span className="cs-upgrade-confirm">Tap again to confirm ✓</span>}
                         {u.warning && !armed && <span className="cs-upgrade-warning">⚠ {u.warning}</span>}
                       </button>
                     );
-                  })}
+                  });
+                  })()}
                 </div>
 
                 {/* Current stats panel — helps you decide where to invest */}
@@ -3744,31 +3846,31 @@ body { background: #1f6b3f; margin: 0; }
 }
 
 /* live simulation banner + skip */
-.cs-now-playing { border-radius:10px; padding:22px 20px 26px; margin-bottom:14px; background:rgba(246,251,239,.05); border:2px solid var(--line); border-left-width:6px; text-align:center; transition:border-color .3s; }
-.cs-now-playing.is-final { border-color:var(--ball); box-shadow:0 0 28px rgba(216,240,0,.18); animation:cs-final-pulse 1.4s ease-in-out infinite; }
+.cs-now-playing { border-radius:14px; padding:24px 20px 28px; margin-bottom:14px; background:rgba(246,251,239,.05); border:none; text-align:center; transition:background .3s; box-shadow:0 4px 0 rgba(0,0,0,.28); overflow:hidden; }
+.cs-now-playing.is-final { box-shadow:0 0 28px rgba(216,240,0,.32), 0 4px 0 rgba(0,0,0,.28); animation:cs-final-pulse 1.4s ease-in-out infinite; }
 @keyframes cs-final-pulse { 0%,100%{box-shadow:0 0 20px rgba(216,240,0,.12)} 50%{box-shadow:0 0 36px rgba(216,240,0,.3)} }
 .cs-now-meta { display:flex; flex-direction:column; gap:2px; margin-bottom:14px; }
-.cs-now-event { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:22px; text-transform:uppercase; color:var(--chalk); letter-spacing:.02em; }
-.cs-now-round { font-size:11px; letter-spacing:.18em; text-transform:uppercase; font-weight:800; color:var(--ball-soft); }
+.cs-now-event { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:22px; text-transform:uppercase; color:#fff; letter-spacing:.02em; }
+.cs-now-round { font-size:11px; letter-spacing:.18em; text-transform:uppercase; font-weight:800; color:rgba(255,255,255,.85); }
 .cs-now-match { display:flex; align-items:center; justify-content:center; gap:14px; margin-bottom:16px; flex-wrap:wrap; }
 .cs-now-you { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:24px; color:var(--ball); }
-.cs-now-vs { font-size:13px; color:var(--dim); text-transform:uppercase; letter-spacing:.1em; }
-.cs-now-opp { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:24px; color:var(--chalk); }
+.cs-now-vs { font-size:13px; color:rgba(255,255,255,.72); text-transform:uppercase; letter-spacing:.1em; }
+.cs-now-opp { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:24px; color:#fff; }
 .cs-now-score { font-family:"Barlow Condensed",sans-serif; font-weight:900; font-size:30px; letter-spacing:.04em; min-height:38px; }
-.cs-now-score.pending { color:var(--dim); }
+.cs-now-score.pending { color:rgba(255,255,255,.6); }
 .cs-now-score.won { color:var(--ball); animation:cs-pop .35s ease; }
-.cs-now-score.lost { color:var(--clay); animation:cs-pop .35s ease; }
-.cs-now-score-line { font-size:24px; opacity:.9; margin-left:8px; }
-.cs-now-serving { font-size:18px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; animation:cs-blink .8s ease-in-out infinite; }
+.cs-now-score.lost { color:#ffd2c4; animation:cs-pop .35s ease; }
+.cs-now-score-line { font-size:24px; opacity:.95; margin-left:8px; }
+.cs-now-serving { font-size:18px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:rgba(255,255,255,.72); animation:cs-blink .8s ease-in-out infinite; }
 .cs-now-outcome { margin-top:12px; font-family:"Barlow Condensed",sans-serif; font-weight:900; font-size:20px; letter-spacing:.08em; text-transform:uppercase; animation:cs-pop .4s ease; }
 .cs-now-outcome.champ { color:var(--ball); }
-.cs-now-outcome.out { color:var(--clay); }
+.cs-now-outcome.out { color:#ffd2c4; }
 @keyframes cs-pop { 0%{transform:scale(.7);opacity:0} 60%{transform:scale(1.12)} 100%{transform:scale(1);opacity:1} }
-.cs-now-playing.slam-ao { border-left-color:#2b7de9; }
-.cs-now-playing.slam-rg { border-left-color:#e07a3f; }
-.cs-now-playing.slam-wim { border-left-color:#5a2d82; }
-.cs-now-playing.slam-uso { border-left-color:#1456b0; }
-.cs-now-playing.oly { border-left-color:#d8b500; }
+.cs-now-playing.slam-ao  { background:linear-gradient(150deg,#1a5fb8,#2b7de9); }
+.cs-now-playing.slam-rg  { background:linear-gradient(150deg,#b84a1a,#e07a3f); }
+.cs-now-playing.slam-wim { background:linear-gradient(150deg,#3d1a6b,#5a2d82); }
+.cs-now-playing.slam-uso { background:linear-gradient(150deg,#0a2e63,#1456b0); }
+.cs-now-playing.oly { background:linear-gradient(150deg,#9c7e00,#d8b500); }
 .cs-live-banner { display:flex; align-items:center; gap:10px; font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:18px; letter-spacing:.04em; text-transform:uppercase; color:var(--chalk); margin-bottom:16px; padding:12px 16px; border:2px solid var(--ball); border-radius:6px; background:rgba(216,240,0,.08); }
 .cs-live-dot { width:10px; height:10px; border-radius:50%; background:var(--ball); animation:cs-blink 1s ease-in-out infinite; }
 @keyframes cs-blink { 0%,100%{opacity:1} 50%{opacity:.25} }
@@ -3813,17 +3915,17 @@ body { background: #1f6b3f; margin: 0; }
 .cs-share-btn { background:var(--hard); color:#fff; }
 .cs-share-btn:hover { background:#46b0e8; color:#fff; }
 
-.cs-leg-sim { display:flex; flex-direction:column; gap:5px; margin-top:6px; }
-.cs-sim-champ { color:var(--ball-soft); font-weight:800; font-size:15px; letter-spacing:.01em; }
-.cs-sim-out { color:#ff8a6b; font-weight:800; font-size:14.5px; letter-spacing:.01em; }
-.cs-sim-detail { font-size:13.5px; color:rgba(246,251,239,.82); line-height:1.5; }
-.cs-path-list { list-style:none; margin:10px 0 0; padding:0; display:flex; flex-direction:column; gap:1px; }
-.cs-path-list li { display:grid; grid-template-columns:96px 1fr auto; gap:10px; align-items:baseline; font-size:13px; padding:5px 0; border-bottom:1px solid var(--line-soft); }
-.cs-path-round { font-weight:700; font-size:10.5px; letter-spacing:.07em; text-transform:uppercase; color:rgba(246,251,239,.55); }
-.cs-path-opp { color:rgba(246,251,239,.92); }
-.cs-path-list li.won .cs-path-opp { color:rgba(246,251,239,.92); }
-.cs-path-list li.lost .cs-path-opp { color:#ff8a6b; font-weight:700; }
-.cs-path-score { font-variant-numeric:tabular-nums; font-weight:700; color:rgba(246,251,239,.7); }
+.cs-leg-sim { display:flex; flex-direction:column; gap:6px; margin-top:8px; }
+.cs-sim-champ { font-family:"Barlow",ui-sans-serif,system-ui,sans-serif; color:var(--ball-soft); font-weight:700; font-size:16px; letter-spacing:0; }
+.cs-sim-out { font-family:"Barlow",ui-sans-serif,system-ui,sans-serif; color:#ff9b80; font-weight:700; font-size:15px; letter-spacing:0; }
+.cs-sim-detail { font-family:"Barlow",ui-sans-serif,system-ui,sans-serif; font-size:14px; color:rgba(246,251,239,.86); line-height:1.55; letter-spacing:0; }
+.cs-path-list { list-style:none; margin:14px 0 0; padding:0; display:flex; flex-direction:column; gap:0; }
+.cs-path-list li { display:grid; grid-template-columns:104px 1fr auto; gap:12px; align-items:baseline; padding:9px 0; border-bottom:1px solid var(--line-soft); font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+.cs-path-round { font-weight:600; font-size:11px; letter-spacing:.04em; text-transform:uppercase; color:rgba(246,251,239,.5); align-self:center; }
+.cs-path-opp { font-size:15px; font-weight:500; color:rgba(246,251,239,.95); letter-spacing:0; }
+.cs-path-list li.won .cs-path-opp { color:rgba(246,251,239,.95); }
+.cs-path-list li.lost .cs-path-opp { color:#ff9b80; font-weight:600; }
+.cs-path-score { font-size:14.5px; font-variant-numeric:tabular-nums; font-feature-settings:"tnum"; letter-spacing:.02em; font-weight:600; color:rgba(246,251,239,.78); white-space:nowrap; }
 .cs-path { margin-top:8px; }
 .cs-path summary { cursor:pointer; font-size:11px; letter-spacing:.1em; text-transform:uppercase; font-weight:700; color:var(--dim); }
 .cs-path-playing .cs-path-opp { color:var(--ball-soft) !important; }
@@ -3929,8 +4031,8 @@ body { background: #1f6b3f; margin: 0; }
 .cs-upgrade-sub { font-size:13px; color:var(--dim); margin:0 0 14px; }
 .cs-upgrade-grid { display:flex; flex-direction:column; gap:10px; }
 .cs-upgrade-btn { display:flex; flex-direction:column; gap:6px; padding:16px 18px; border:2px solid var(--line-soft); border-radius:8px; background:rgba(246,251,239,.05); cursor:pointer; text-align:left; transition:.18s; position:relative; }
-.cs-upgrade-btn.coach-pick { border-color:var(--ball); background:rgba(216,240,0,.07); }
-.cs-coach-pick-badge { font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--ink); background:var(--ball); border-radius:10px; padding:2px 8px; align-self:flex-start; margin-bottom:2px; }
+.cs-upgrade-btn.coach-pick { border-color:rgba(255,155,128,.5); background:rgba(255,155,128,.06); }
+.cs-coach-pick-badge { font-size:10px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#ff9b80; background:rgba(255,155,128,.14); border:1px solid rgba(255,155,128,.4); border-radius:10px; padding:2px 8px; align-self:flex-start; margin-bottom:2px; }
 .cs-upgrade-btn:hover { border-color:var(--ball); background:rgba(216,240,0,.08); transform:translateX(4px); }
 .cs-upgrade-btn.recovery { border-color:rgba(111,191,115,.4); background:rgba(111,191,115,.07); }
 .cs-upgrade-label { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:18px; text-transform:uppercase; color:var(--chalk); }
