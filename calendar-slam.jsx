@@ -23,7 +23,7 @@ const ATTRS = [
 // --- The four majors, in calendar order, with surface ------------------------
 const SLAMS = [
   { key: "ao", name: "Australian Open", surface: "Hard", short: "AO",
-    tip: "Melbourne's hard courts play at a medium pace in fierce summer heat. It rewards a balanced all-court game — but stamina and mental strength are what carry you through gruelling five-setters in the sun." },
+    tip: "Melbourne's hard courts play at a medium pace in fierce summer heat. It rewards a balanced all-court game — but stamina and mental strength are what carry you through gruelling baseline battles in the sun." },
   { key: "rg", name: "Roland Garros", surface: "Clay", short: "RG",
     tip: "The Parisian clay is slow with a high bounce, dragging out long rallies. Defence and court coverage are a must to outlast opponents, and stamina decides who's still standing in hour four." },
   { key: "wim", name: "Wimbledon", surface: "Grass", short: "W",
@@ -476,8 +476,8 @@ const WIN_NOTES_ROUTINE = [
   "made it look routine — a level above the field from the first ball",
   "controlled it start to finish and never gave them a sniff",
 ];
-function winNote(surface, finalScoreStr, beatRival, rand) {
-  const close = matchClosenessFromScore(finalScoreStr);
+function winNote(surface, finalScoreStr, beatRival, rand, bestOf = 5) {
+  const close = matchClosenessFromScore(finalScoreStr, bestOf);
   if (beatRival && rand() < 0.7) return WIN_NOTES_RIVAL[Math.floor(rand() * WIN_NOTES_RIVAL.length)];
   if (close.wentLong || close.word === "an epic" || close.word === "a tight")
     return WIN_NOTES_TIGHT[Math.floor(rand() * WIN_NOTES_TIGHT.length)];
@@ -487,12 +487,15 @@ function winNote(surface, finalScoreStr, beatRival, rand) {
   return pool[Math.floor(rand() * pool.length)];
 }
 
-// Generate a realistic best-of-5 set score given your set-win probability.
-// Returns { sets:[[you,opp],...], mySets, oppSets } with 6-4 / 7-6 / 7-5 style games.
-function playMatch(pSet, rand) {
+// Generate a realistic set score given your set-win probability. `bestOf` is 5
+// for the men's tour and 3 for the women's tour (best-of-3 in every event,
+// slams included). Returns { sets:[[you,opp],...], mySets, oppSets } with
+// 6-4 / 7-6 / 7-5 style games.
+function playMatch(pSet, rand, bestOf = 5) {
   const sets = [];
   let mySets = 0, oppSets = 0;
-  while (mySets < 3 && oppSets < 3) {
+  const need = bestOf === 3 ? 2 : 3; // sets required to win the match
+  while (mySets < need && oppSets < need) {
     const iWin = rand() < pSet;
     // game score for the set
     let a, b;
@@ -513,11 +516,11 @@ const fmtScore = (sets) => sets.map(([a, b]) => `${a}-${b}`).join(" ");
 // Describe how close a match actually was, from the real set scores, so the
 // written summary always tallies with the scoreboard. Counts tight sets
 // (tie-breaks and 7-5s) and whether it went the distance.
-function matchCloseness(sets) {
+function matchCloseness(sets, bestOf = 5) {
   const tight = sets.filter(([a, b]) => Math.max(a, b) === 7).length; // 7-6 or 7-5
   const tiebreaks = sets.filter(([a, b]) => Math.min(a, b) === 6 && Math.max(a, b) === 7).length;
   const total = sets.length;
-  const distance = total >= 5; // best-of-5 went to a decider
+  const distance = bestOf === 3 ? total >= 3 : total >= 5; // went to a decider
   if (tiebreaks >= 2 || (tight >= 3)) return { word: "an epic", adj: "razor-thin", wentLong: true };
   if (tight >= 2 || (tight >= 1 && distance)) return { word: "a tight", adj: "hard-fought", wentLong: distance };
   if (distance) return { word: "a grinding", adj: "gruelling", wentLong: true };
@@ -530,14 +533,14 @@ function matchCloseness(sets) {
 function parseScore(scoreStr) {
   return (scoreStr || "").split(" ").filter(Boolean).map(s => s.split("-").map(Number));
 }
-function matchClosenessFromScore(scoreStr) {
-  return matchCloseness(parseScore(scoreStr));
+function matchClosenessFromScore(scoreStr, bestOf = 5) {
+  return matchCloseness(parseScore(scoreStr), bestOf);
 }
 
 // Simulate one major: seven rounds against the real draw, each best-of-5 with
 // per-set noise. Records the full path with real set scores. `usedReasons` is a
 // Set shared across majors so loss explanations never repeat.
-function simulateMajor(build, slam, rand, usedReasons, field, drawPool, rival, formBonus = 3) {
+function simulateMajor(build, slam, rand, usedReasons, field, drawPool, rival, formBonus = 3, bestOf = 5) {
   const draw = buildDraw(slam, rand, field, drawPool, rival);
   // A small "championship form" premium so a complete build is a clear favourite
   // rather than a coin-flip dragged down by seven best-of-five matches. The
@@ -554,9 +557,9 @@ function simulateMajor(build, slam, rand, usedReasons, field, drawPool, rival, f
     // upsets) so genuine quality wins out more often — the "earned" feel.
     const noise = (rand() - 0.5) * 8;
     const pSet = 1 / (1 + Math.exp(-((myForm + noise - opp.level) / 7)));
-    const m = playMatch(pSet, rand);
-    const won = m.mySets === 3;
-    const close = matchCloseness(m.sets);
+    const m = playMatch(pSet, rand, bestOf);
+    const won = m.mySets === (bestOf === 3 ? 2 : 3);
+    const close = matchCloseness(m.sets, bestOf);
     path.push({
       round: ROUNDS[r],
       name: opp.name,
@@ -603,7 +606,7 @@ function simulateMajor(build, slam, rand, usedReasons, field, drawPool, rival, f
   }
   // Win note should reflect the surface, how the final actually went, and
   // whether it came against your rival — kept specific so it never feels generic.
-  const note = winNote(slam.surface, path[6] ? path[6].score : "", !!draw[6].isRival, rand);
+  const note = winNote(slam.surface, path[6] ? path[6].score : "", !!draw[6].isRival, rand, bestOf);
   return {
     wonTitle: true,
     finalOpp: draw[6].name,
@@ -1173,6 +1176,29 @@ function RivalModal({ rival, playerName, playerFlag, onClose }) {
   );
 }
 
+// NEWS CLIPPING MODAL — between-season newspaper that spins onto the screen.
+// Reuses the .cs-newspaper styling (so it gets the classic spin-in animation).
+function NewsModal({ clipping, onClose }) {
+  if (!clipping) return null;
+  return (
+    <div className="cs-modal cs-rival-modal" onClick={onClose}>
+      <div className="cs-newspaper" onClick={e => e.stopPropagation()}>
+        <div className="cs-newspaper-header">
+          <div className="cs-newspaper-name">THE TENNIS TRIBUNE</div>
+          <div className="cs-newspaper-date">{clipping.kicker || "LATEST"}</div>
+        </div>
+        <div className="cs-newspaper-rule" />
+        <h2 className="cs-newspaper-headline">{clipping.headline}</h2>
+        <div className="cs-newspaper-rule cs-newspaper-rule-thin" />
+        <p className="cs-newspaper-body">{clipping.body}</p>
+        <button className="cs-newspaper-close cs-cta" onClick={onClose}>
+          Close →
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function NetGraphic() {
   return (
     <svg className="cs-net" viewBox="0 0 400 70" aria-hidden="true" preserveAspectRatio="none">
@@ -1282,27 +1308,31 @@ function generatePlayer(rng) {
 }
 
 // --- Off-season upgrades -----------------------------------------------------
+// Every upgrade now carries a trade-off: focusing hard on one part of your game
+// in the off-season means something else gets less attention. Costs are modest
+// and thematically logical (e.g. a power serve adds strain that costs a little
+// stamina) so each pick is a genuine sculpting decision rather than free points.
 const UPGRADE_POOL = [
-  { id: "serve_coach",   label: "Hire a Serve Coach",           desc: "Refine your toss and kick serve with a specialist.",      effects: { serve: 4 } },
-  { id: "fitness",       label: "Intensive Fitness Programme",  desc: "Pushing your body hard. It will pay off.",               effects: { stamina: 3, movement: 2 } },
-  { id: "nutritionist",  label: "Elite Nutritionist",           desc: "Precision fuelling to stay sharp deep into the year.",   effects: { stamina: 2 } },
-  { id: "mental_coach",  label: "Sports Psychologist",          desc: "Learn to thrive under pressure on the big points.",      effects: { mental: 4 } },
-  { id: "fh_coach",      label: "Forehand Specialist",          desc: "Rebuild your forehand from the ground up.",              effects: { forehand: 4 } },
-  { id: "bh_coach",      label: "Backhand Specialist",          desc: "Work on disguise, slice, and two-handed drive.",         effects: { backhand: 4 } },
-  { id: "net_coach",     label: "Net Game Coach",               desc: "Volley clinic and approach shot drills.",                effects: { net: 4 } },
-  { id: "return_coach",  label: "Return of Serve Coach",        desc: "Early ball, aggressive positioning.",                    effects: { return: 3, movement: 1 } },
-  { id: "movement",      label: "Movement & Footwork Trainer",  desc: "Court coverage, split step timing, lateral speed.",      effects: { movement: 3, defence: 2 } },
-  { id: "defence",       label: "Defensive Grinding Specialist",desc: "Learn to reset points and outlast opponents.",           effects: { defence: 3, stamina: 2 } },
+  { id: "serve_coach",   label: "Hire a Serve Coach",           desc: "Refine your toss and kick serve — but the extra serving load tires the legs.",      effects: { serve: 4, stamina: -1 }, tradeoff: true },
+  { id: "fitness",       label: "Intensive Fitness Programme",  desc: "Push your body hard. It pays off in the legs, but heavy gym work blunts your touch.", effects: { stamina: 3, movement: 2, slice: -1 }, tradeoff: true },
+  { id: "nutritionist",  label: "Elite Nutritionist",           desc: "Precision fuelling to stay sharp deep into the year — a leaner frame costs a little serve power.",   effects: { stamina: 3, serve: -1 }, tradeoff: true },
+  { id: "mental_coach",  label: "Sports Psychologist",          desc: "Learn to thrive under pressure — but over-thinking can stiffen the racket arm.",      effects: { mental: 4, forehand: -1 }, tradeoff: true },
+  { id: "fh_coach",      label: "Forehand Specialist",          desc: "Rebuild your forehand from the ground up, at the expense of the other wing.",              effects: { forehand: 5, backhand: -1 }, tradeoff: true },
+  { id: "bh_coach",      label: "Backhand Specialist",          desc: "Work on disguise, slice, and two-handed drive — the forehand takes a back seat.",         effects: { backhand: 5, forehand: -1 }, tradeoff: true },
+  { id: "net_coach",     label: "Net Game Coach",               desc: "Volley clinic and approach drills — time at the net means less baseline grinding.",                effects: { net: 5, defence: -1 }, tradeoff: true },
+  { id: "return_coach",  label: "Return of Serve Coach",        desc: "Early ball, aggressive positioning — but standing in robs your own serve of rhythm.",                    effects: { return: 4, serve: -1 }, tradeoff: true },
+  { id: "movement",      label: "Movement & Footwork Trainer",  desc: "Court coverage, split-step timing, lateral speed — leaner legs cost a touch of power.",      effects: { movement: 4, defence: 2, forehand: -1 }, tradeoff: true },
+  { id: "defence",       label: "Defensive Grinding Specialist",desc: "Learn to reset points and outlast opponents — a passive mindset dulls your net instinct.",           effects: { defence: 4, stamina: 2, net: -2 }, tradeoff: true },
   { id: "rest",          label: "Rest & Recovery Season",       desc: "Skip stat gains this winter to recover — sharply lowers your injury risk next season.",         effects: {}, recovery: true },
-  { id: "slice_clinic",  label: "Slice Clinic",                 desc: "Master the low skidder on grass and clay.",             effects: { slice: 5 } },
-  // --- High-impact specialist upgrades: a big gain in one area, a small cost
+  { id: "slice_clinic",  label: "Slice Clinic",                 desc: "Master the low skidder — but soft hands cost a little raw forehand power.",             effects: { slice: 5, forehand: -1 }, tradeoff: true },
+  // --- High-impact specialist upgrades: a big gain in one area, a steeper cost
   // elsewhere. These make the off-season a real choice — you sculpt a build with
   // genuine strengths and weaknesses rather than maxing every stat to 99.
-  { id: "big_serve",     label: "Rebuild the Serve (all-in)",   desc: "Add huge power and a kick second serve — but the extra effort costs movement.", effects: { serve: 7, movement: -2 }, tradeoff: true },
-  { id: "aggression",    label: "First-Strike Tennis",          desc: "Take every ball early and dictate — thrilling, but riskier defensively.", effects: { forehand: 5, net: 3, defence: -3 }, tradeoff: true },
-  { id: "counterpunch",  label: "Become a Counterpuncher",      desc: "Turn defence into a weapon and grind opponents down — at the expense of net play.", effects: { defence: 5, movement: 3, net: -3 }, tradeoff: true },
-  { id: "power_baseline",label: "Heavy Baseline Game",          desc: "Brutal groundstrokes from both wings, but the bulk slows you down.", effects: { forehand: 4, backhand: 4, stamina: -2, movement: -1 }, tradeoff: true },
-  { id: "iron_mind",     label: "Ruthless Match Mentality",     desc: "Ice in the veins on the big points — single-minded focus dulls the touch.", effects: { mental: 6, slice: -2 }, tradeoff: true },
+  { id: "big_serve",     label: "Rebuild the Serve (all-in)",   desc: "Add huge power and a kick second serve — but the extra effort costs movement.", effects: { serve: 7, movement: -3 }, tradeoff: true },
+  { id: "aggression",    label: "First-Strike Tennis",          desc: "Take every ball early and dictate — thrilling, but riskier defensively.", effects: { forehand: 5, net: 3, defence: -4 }, tradeoff: true },
+  { id: "counterpunch",  label: "Become a Counterpuncher",      desc: "Turn defence into a weapon and grind opponents down — at the expense of net play.", effects: { defence: 5, movement: 3, net: -4 }, tradeoff: true },
+  { id: "power_baseline",label: "Heavy Baseline Game",          desc: "Brutal groundstrokes from both wings, but the bulk slows you down.", effects: { forehand: 4, backhand: 4, stamina: -2, movement: -2 }, tradeoff: true },
+  { id: "iron_mind",     label: "Ruthless Match Mentality",     desc: "Ice in the veins on the big points — single-minded focus dulls the touch.", effects: { mental: 6, slice: -3 }, tradeoff: true },
 ];
 
 // --- Injury pool (logical body mapping) --------------------------------------
@@ -1501,24 +1531,37 @@ function applyDecay(build, decay) {
   return applyEffects(build, decay);
 }
 
-// Simulate the rival's own slam haul for a season. They're a surface specialist
-// who seriously contends mainly on their home surface. `playerWonOnRival` is how
-// many slams the player won by beating the rival in the final this season — those
-// can't also be rival titles. Net ~0.4–0.6 slams/season at peak.
-function rivalSeason(rival, year, rng, playerBeatRivalCount = 0) {
+// Simulate the rival's own slam haul for a season. The rival is the chief
+// beneficiary whenever YOU don't win a major: any slam you didn't take is one
+// they can. `playerSlamsThisYear` is how many of the four you won; the other
+// (4 - that) are "open", and the rival contends strongly for them — especially
+// on their home surface. `playerBeatRivalCount` is finals where you beat them
+// head-to-head (those can't be rival titles). This keeps the two tallies close:
+// if you're not sweeping all four, your rival is mopping up a good share.
+function rivalSeason(rival, year, rng, playerBeatRivalCount = 0, playerSlamsThisYear = 0) {
   if (!rival) return 0;
+  const openSlams = Math.max(0, 4 - playerSlamsThisYear); // majors you left on the table
+  if (openSlams === 0) return 0; // you took all four — nothing for them
+  // Rival peaks around years 4-9 of your career (same generation, later bloom),
+  // so they don't dominate from day one or linger at the very end.
+  const peak = Math.max(0.35, 1 - Math.abs(year - 6) * 0.07);
   let wins = 0;
+  // Walk each open major. The rival's chance is high — they're the second-best
+  // player of the era — and higher still on their home surface.
+  let opensLeft = openSlams;
   for (const slam of SLAMS) {
+    if (opensLeft <= 0) break;
     const isHomeSlam = slam.surface === rival.weakSurf;
-    const baseChance = isHomeSlam ? 0.30 : 0.06;
-    // Rival peaks around years 4-9 of your career (same generation, slightly
-    // later bloom), so they don't dominate early or linger forever.
-    const peak = Math.max(0, 1 - Math.abs(year - 6) * 0.09);
-    if (rng() < baseChance * (0.5 + peak * 0.8)) wins++;
+    const baseChance = isHomeSlam ? 0.62 : 0.34;
+    if (rng() < baseChance * peak) wins++;
+    opensLeft--;
   }
-  // Don't double-count: if the player beat the rival in a final, the rival
-  // didn't win that one.
-  return Math.max(0, wins - playerBeatRivalCount);
+  // The rival is a strong contender, not an inevitability: cap their haul at
+  // most of the open majors so even a struggling player is never lapped into
+  // total hopelessness, while a dominant player still clearly outpaces them.
+  wins = Math.min(wins, Math.ceil(openSlams * 0.75));
+  // Don't double-count: a final you won off the rival isn't a rival title.
+  return Math.max(0, Math.min(openSlams, wins) - playerBeatRivalCount);
 }
 
 // ============================================================================
@@ -1570,6 +1613,7 @@ export default function CalendarSlam() {
   const [restedLastSeason, setRestedLastSeason] = useState(false);
   const [olympicResult, setOlympicResult] = useState(null);
   const [showRivalModal, setShowRivalModal] = useState(false);
+  const [newsClipping, setNewsClipping] = useState(null); // between-season newspaper clipping
   const [seasonSummary, setSeasonSummary] = useState(null); // {report, quotes} for current season
   const [chosenQuote, setChosenQuote] = useState(null);
   const [pressPhase, setPressPhase] = useState(false); // true = showing press quote picker
@@ -1686,6 +1730,7 @@ export default function CalendarSlam() {
     setSeasonSummary(null);
     setChosenQuote(null);
     setShowRivalModal(false);
+    setNewsClipping(null);
     // Go straight to draft — no intro screen for career mode.
     setPhase("draft");
     spinNext([], false);
@@ -1745,7 +1790,84 @@ export default function CalendarSlam() {
     return { headline, body };
   }
 
-  // Press quotes — four bespoke options drawn directly from this season's results.
+  // A short, punchy newspaper clipping for BETWEEN seasons — extra colour about
+  // the rivalry or the player's standing, spun onto the screen in the classic
+  // movie style. Returns { headline, kicker, body } or null when nothing
+  // interesting happened. Distinct from the full season report, and fired only
+  // some seasons so it stays a treat rather than noise.
+  function generateNewsClipping(season, age, slamResults, slamWon, totalSlams, rival, rivalWins, careerTotalSlams, rivalTotalSlams) {
+    const slams = (slamResults || []).filter(r => !r.isOlympics);
+    const rivalLoss = slams.find(r => !r.wonTitle && r.opponent === rival?.name);
+    const rivalBeaten = slams.find(r => r.wonTitle && r.beatRival);
+    const pick = (arr) => arr[Math.floor(Math.abs((season * 2654435761) ^ (age * 40503)) % arr.length)];
+
+    // Build a pool of candidate clippings; choose the most newsworthy.
+    const candidates = [];
+
+    if (rival && rivalBeaten) {
+      candidates.push({
+        priority: 5,
+        headline: pick([`${playerName.toUpperCase()} GETS THE BETTER OF ${rival.name.toUpperCase()}`, `RIVALRY SWINGS: ${playerName.toUpperCase()} STRIKES`]),
+        kicker: "Rivalry Report",
+        body: `${playerName} answered the biggest question of the season, downing ${rival.flag} ${rival.name} in the ${rivalBeaten.name} final. The win shifts the balance of a rivalry the locker room can't stop talking about — and ${rival.name} will be desperate to respond.`,
+      });
+    }
+    if (rival && rivalLoss) {
+      candidates.push({
+        priority: 5,
+        headline: pick([`${rival.name.toUpperCase()} STRIKES AGAIN`, `NEMESIS: ${rival.name.toUpperCase()} HAS ${playerName.toUpperCase()}'S NUMBER`]),
+        kicker: "Rivalry Report",
+        body: `Another chapter, another sting. ${rival.flag} ${rival.name} got past ${playerName} at ${rivalLoss.name}, tightening a rivalry that is fast becoming the headline act of the era. "That's the one that keeps me up at night," ${playerName} admitted.`,
+      });
+    }
+    if (rival && typeof careerTotalSlams === "number" && typeof rivalTotalSlams === "number") {
+      const gap = careerTotalSlams - rivalTotalSlams;
+      if (Math.abs(gap) <= 1) {
+        candidates.push({
+          priority: 4,
+          headline: pick([`NECK AND NECK: A RIVALRY FOR THE AGES`, `TOO CLOSE TO CALL: ${careerTotalSlams}–${rivalTotalSlams}`]),
+          kicker: "The Numbers",
+          body: `The slam ledger reads ${playerName} ${careerTotalSlams}, ${rival.name} ${rivalTotalSlams}. Two players of the same generation, separated by the thinnest of margins, dragging the best out of one another with every major. The sport hasn't seen a duel this tight in years.`,
+        });
+      } else if (gap <= -2) {
+        candidates.push({
+          priority: 4,
+          headline: pick([`${rival.name.toUpperCase()} PULLS AHEAD`, `CHASING ${rival.name.toUpperCase()}: THE GAP GROWS`]),
+          kicker: "The Numbers",
+          body: `${rival.flag} ${rival.name} now leads the slam count ${rivalTotalSlams}–${careerTotalSlams}, and the pressure is mounting on ${playerName} to respond. Careers are defined by these stretches — and the clock, at ${age}, is ticking.`,
+        });
+      }
+    }
+    if (rivalWins >= 2) {
+      candidates.push({
+        priority: 3,
+        headline: pick([`${rival?.name?.toUpperCase() || "THE RIVAL"} CLEANS UP`, `A VINTAGE YEAR FOR ${rival?.name?.toUpperCase() || "THE RIVAL"}`]),
+        kicker: "Around the Tour",
+        body: `While ${playerName} ${slamWon ? `claimed ${slamWon} of the four majors` : "came up empty at the slams"}, ${rival?.flag} ${rival?.name} feasted on the rest, banking ${rivalWins} titles of their own. The tour's other contenders are running out of answers for both of them.`,
+      });
+    }
+    if (slamWon === 0 && age >= 30) {
+      candidates.push({
+        priority: 2,
+        headline: pick([`QUESTIONS MOUNT FOR ${playerName.toUpperCase()}`, `THE WINDOW NARROWS`]),
+        kicker: "Comment",
+        body: `Another major season passes without silverware for ${playerName}, and at ${age} the whispers are growing louder. Greatness is rarely linear — but the run-in to a career is unforgiving, and the next campaign suddenly looks pivotal.`,
+      });
+    }
+    if (totalSlams >= 10 && slamWon >= 1) {
+      candidates.push({
+        priority: 2,
+        headline: pick([`${playerName.toUpperCase()} JOINS THE IMMORTALS`, `${totalSlams} AND COUNTING`]),
+        kicker: "Milestone",
+        body: `With ${totalSlams} Grand Slam titles to their name, ${playerName} has moved into rarefied company. Few players in the sport's history have reached such heights — and at ${age}, the story is far from over.`,
+      });
+    }
+
+    if (!candidates.length) return null;
+    candidates.sort((a, b) => b.priority - a.priority);
+    return candidates[0];
+  }
+
   function generatePressQuotes(slamWon, rival, age, slamResults, olympicRes, totalSlams) {
     const slams = (slamResults || []).filter(r => !r.isOlympics);
     const wonNames = slams.filter(r => r.wonTitle).map(r => r.name);
@@ -1845,6 +1967,16 @@ export default function CalendarSlam() {
     if (!activeRival && gameMode === "career" && careerSeason >= 2) {
       const rivalRng = mulberry32(((Date.now() & 0xffffffff) ^ (careerSeason * 2654435761)) >>> 0);
       activeRival = generateRival(build, tour, rivalRng);
+      // Seed the rival with the slams they were already collecting before they
+      // became YOUR named rival: roughly a share of the majors you didn't win in
+      // your first couple of seasons. This means they emerge as an established
+      // force whose tally is already in the same neighbourhood as yours, so the
+      // rivalry standings stay tight from the off rather than starting 8–0.
+      const priorPlayerSlams = careerSlamCount; // your slams across seasons 1–2
+      const priorOpen = Math.max(0, careerSeason * 4 - priorPlayerSlams);
+      let seed = 0;
+      for (let i = 0; i < priorOpen; i++) if (rivalRng() < 0.4) seed++;
+      activeRival.slamCount = seed;
       setCareerRival(activeRival);
       setShowRivalModal(true); // trigger newspaper intro
     }
@@ -1857,7 +1989,7 @@ export default function CalendarSlam() {
 
     // Track rival's own slam haul (excluding any the player took off them).
     const rivalRng2 = mulberry32(((Date.now() & 0xffffffff) ^ (careerSeason * 40503 + 99)) >>> 0);
-    const rivalWins = rivalSeason(activeRival, careerSeason, rivalRng2, playerBeatRival);
+    const rivalWins = rivalSeason(activeRival, careerSeason, rivalRng2, playerBeatRival, wonThisSeason);
     const updatedRival = activeRival ? {
       ...activeRival,
       slamCount: activeRival.slamCount + rivalWins,
@@ -1920,6 +2052,29 @@ export default function CalendarSlam() {
     const bakedQuote = quotes[0];
     const report = generateSeasonReport(careerSeason, careerAge, slamResults, wonThisSeason, newTotal, updatedRival || activeRival, bakedQuote, oRes);
     setSeasonSummary({ ...report });
+
+    // Between-season newspaper clipping — extra rivalry/player colour, spun onto
+    // the screen. Fires more often than the rival reveal but not every season:
+    // we surface it when there's a genuinely newsworthy clipping AND either it's
+    // a noteworthy season or roughly every other year (so it's a treat, not
+    // noise). Never on the same season the rival-reveal newspaper fires.
+    const rivalEmergedThisSeason = !careerRival && activeRival; // reveal modal will show
+    let clip = null;
+    if (!rivalEmergedThisSeason) {
+      clip = generateNewsClipping(
+        careerSeason, careerAge, slamResults, wonThisSeason, newTotal,
+        updatedRival || activeRival, rivalWins, newTotal,
+        updatedRival ? updatedRival.slamCount : (activeRival ? activeRival.slamCount : 0)
+      );
+      // Gate frequency: always show high-priority rivalry clippings; otherwise
+      // show on alternating-ish seasons so the spin stays special.
+      if (clip) {
+        const big = clip.priority >= 4;
+        const everyOther = (careerSeason % 2 === 0);
+        if (!big && !everyOther) clip = null;
+      }
+    }
+    setNewsClipping(clip);
 
     // Spawn fictional next-gen players. Seed 3 from season 1, then add 1–2 every
     // season so the tour visibly turns over and gen players reach the draw fast.
@@ -2405,7 +2560,9 @@ export default function CalendarSlam() {
         };
       }
       const formBonus = gameMode === "career" ? 1 : 3;
-      const r = simulateMajor(build, s, rand, usedReasons, activeField, activeDraw, rivalForDraw, formBonus);
+      // Women's tour plays best-of-3 in every event, including the slams.
+      const bestOf = tour === "wta" ? 3 : 5;
+      const r = simulateMajor(build, s, rand, usedReasons, activeField, activeDraw, rivalForDraw, formBonus, bestOf);
       if (r.wonTitle) won++;
       return { ...s, ...r };
     });
@@ -3375,18 +3532,20 @@ export default function CalendarSlam() {
                 <p className="cs-upgrade-sub">Tap once to preview, tap again to confirm.</p>
                 <div className="cs-upgrade-grid">
                   {(() => {
-                    // The coach recommends a genuinely BOLD play — a trade-off
-                    // upgrade with a real downside, the upgrade with the biggest
-                    // single-stat upside among those that cost something elsewhere.
-                    // It must actually have a trade-off to earn the "bold but
-                    // risky" badge — never flag a safe, pure-upside pick as bold.
+                    // The coach recommends a genuinely BOLD play — the upgrade
+                    // that swings hardest: biggest single-stat upside paired with
+                    // a real, sizeable downside. Every upgrade now carries some
+                    // trade-off, so we weight by the steepness of the cost to make
+                    // sure the badge lands on an actually risky reshape, not a
+                    // safe pick with a token -1 somewhere.
                     let coachIdx = -1, bestSwing = -1;
                     offseasonUpgrades.forEach((u, i) => {
                       if (u.recovery) return;
-                      const hasCost = Object.values(u.effects).some(v => v < 0);
-                      if (!hasCost) return; // only genuine trade-offs qualify
+                      const maxCost = Math.abs(Math.min(0, ...Object.values(u.effects).filter(v => v < 0)));
+                      if (maxCost < 2) return; // needs a real downside to be "bold"
                       const maxGain = Math.max(0, ...Object.values(u.effects).filter(v => v > 0));
-                      if (maxGain > bestSwing) { bestSwing = maxGain; coachIdx = i; }
+                      const swing = maxGain + maxCost; // reward big gain AND big cost
+                      if (swing > bestSwing) { bestSwing = swing; coachIdx = i; }
                     });
                     return offseasonUpgrades.map((u, ui) => {
                     const armed = upgradeArmed === u.id;
@@ -3588,6 +3747,13 @@ export default function CalendarSlam() {
           playerName={playerName}
           playerFlag={playerFlag}
           onClose={() => setShowRivalModal(false)}
+        />
+      )}
+
+      {newsClipping && !showRivalModal && (
+        <NewsModal
+          clipping={newsClipping}
+          onClose={() => setNewsClipping(null)}
         />
       )}
 
@@ -4095,7 +4261,18 @@ body { background: #1f6b3f; margin: 0; }
 
 /* Newspaper rivalry modal */
 .cs-rival-modal { align-items:flex-start; padding-top:40px; }
-.cs-newspaper { background:#f5f0e4; color:#1a1205; max-width:460px; width:100%; border-radius:4px; padding:0 0 24px; box-shadow:0 8px 40px rgba(0,0,0,.5); }
+/* Classic movie "spinning headline" entrance: the paper whirls in from far
+   away, shrinking its spin as it settles flat and readable. */
+@keyframes cs-newspaper-spin {
+  0%   { transform: scale(0.04) rotate(-720deg); opacity:0; }
+  60%  { opacity:1; }
+  80%  { transform: scale(1.06) rotate(8deg); }
+  100% { transform: scale(1) rotate(0deg); opacity:1; }
+}
+.cs-newspaper { background:#f5f0e4; color:#1a1205; max-width:460px; width:100%; border-radius:4px; padding:0 0 24px; box-shadow:0 8px 40px rgba(0,0,0,.5); transform-origin:center center; animation: cs-newspaper-spin 0.9s cubic-bezier(.18,.7,.34,1) both; will-change: transform; }
+@media (prefers-reduced-motion: reduce) {
+  .cs-newspaper { animation: none; }
+}
 .cs-newspaper-header { display:flex; justify-content:space-between; align-items:baseline; padding:14px 20px 10px; border-bottom:3px solid #1a1205; }
 .cs-newspaper-name { font-family:"Barlow Condensed",serif; font-weight:900; font-size:22px; letter-spacing:.08em; text-transform:uppercase; color:#1a1205; }
 .cs-newspaper-date { font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:#555; font-weight:700; }
