@@ -1556,10 +1556,6 @@ function rivalSeason(rival, year, rng, playerBeatRivalCount = 0, playerSlamsThis
     if (rng() < baseChance * peak) wins++;
     opensLeft--;
   }
-  // The rival is a strong contender, not an inevitability: cap their haul at
-  // most of the open majors so even a struggling player is never lapped into
-  // total hopelessness, while a dominant player still clearly outpaces them.
-  wins = Math.min(wins, Math.ceil(openSlams * 0.75));
   // Don't double-count: a final you won off the rival isn't a rival title.
   return Math.max(0, Math.min(openSlams, wins) - playerBeatRivalCount);
 }
@@ -1987,22 +1983,15 @@ export default function CalendarSlam() {
       setShowGoatScreen(true);
     }
     // The rival emerges a couple of seasons in (end of season 2 → active from
-    // season 3), so they're an established same-generation force, not there from
-    // day one. Name is freshly random each career.
+    // season 3) as a same-generation talent who starts from scratch, just like
+    // you — think Alcaraz and Sinner racking up majors in parallel rather than
+    // one arriving with a back-catalogue. They begin on zero and accumulate
+    // organically from their reveal season onward (the rivalSeason roll below
+    // already runs this season), so the standings stay realistic and even.
     let activeRival = careerRival;
     if (!activeRival && gameMode === "career" && careerSeason >= 2) {
       const rivalRng = mulberry32(((Date.now() & 0xffffffff) ^ (careerSeason * 2654435761)) >>> 0);
       activeRival = generateRival(build, tour, rivalRng);
-      // Seed the rival with the slams they were already collecting before they
-      // became YOUR named rival: roughly a share of the majors you didn't win in
-      // your first couple of seasons. This means they emerge as an established
-      // force whose tally is already in the same neighbourhood as yours, so the
-      // rivalry standings stay tight from the off rather than starting 8–0.
-      const priorPlayerSlams = careerSlamCount; // your slams across seasons 1–2
-      const priorOpen = Math.max(0, careerSeason * 4 - priorPlayerSlams);
-      let seed = 0;
-      for (let i = 0; i < priorOpen; i++) if (rivalRng() < 0.4) seed++;
-      activeRival.slamCount = seed;
       setCareerRival(activeRival);
       setShowRivalModal(true); // trigger newspaper intro
     }
