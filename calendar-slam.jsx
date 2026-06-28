@@ -1790,76 +1790,102 @@ export default function CalendarSlam() {
     return { headline, body };
   }
 
-  // A short, punchy newspaper clipping for BETWEEN seasons — extra colour about
-  // the rivalry or the player's standing, spun onto the screen in the classic
-  // movie style. Returns { headline, kicker, body } or null when nothing
-  // interesting happened. Distinct from the full season report, and fired only
-  // some seasons so it stays a treat rather than noise.
+  // A short newspaper clipping for BETWEEN seasons — spun onto the screen in the
+  // classic movie style. Leads with the season's slam-count story, naming the
+  // majors won and the running tally vs the rival. Returns { headline, kicker,
+  // body } or null. Fired sparingly (see caller) so it stays a treat, and seeded
+  // off the season so the chosen variant differs year to year.
   function generateNewsClipping(season, age, slamResults, slamWon, totalSlams, rival, rivalWins, careerTotalSlams, rivalTotalSlams) {
     const slams = (slamResults || []).filter(r => !r.isOlympics);
-    const rivalLoss = slams.find(r => !r.wonTitle && r.opponent === rival?.name);
+    const wonNames = slams.filter(r => r.wonTitle).map(r => r.name);
     const rivalBeaten = slams.find(r => r.wonTitle && r.beatRival);
-    const pick = (arr) => arr[Math.floor(Math.abs((season * 2654435761) ^ (age * 40503)) % arr.length)];
+    const rivalLoss = slams.find(r => !r.wonTitle && r.opponent === rival?.name);
+    // Deterministic per-season picker so the same season never reshuffles, but
+    // different seasons get different variants.
+    const seedBase = Math.abs((season * 2654435761) ^ (age * 40503) ^ (totalSlams * 2246822519)) >>> 0;
+    const pick = (arr) => arr[seedBase % arr.length];
 
-    // Build a pool of candidate clippings; choose the most newsworthy.
+    // Natural-language list of the majors won this year ("Roland Garros and the US Open").
+    const slamShort = { "Australian Open": "the Australian Open", "Roland Garros": "Roland Garros", "Wimbledon": "Wimbledon", "US Open": "the US Open" };
+    const named = wonNames.map(n => slamShort[n] || n);
+    const namedList = named.length === 0 ? ""
+      : named.length === 1 ? named[0]
+      : named.length === 2 ? `${named[0]} and ${named[1]}`
+      : `${named.slice(0, -1).join(", ")} and ${named[named.length - 1]}`;
+
     const candidates = [];
 
-    if (rival && rivalBeaten) {
-      candidates.push({
-        priority: 5,
-        headline: pick([`${playerName.toUpperCase()} GETS THE BETTER OF ${rival.name.toUpperCase()}`, `RIVALRY SWINGS: ${playerName.toUpperCase()} STRIKES`]),
-        kicker: "Rivalry Report",
-        body: `${playerName} answered the biggest question of the season, downing ${rival.flag} ${rival.name} in the ${rivalBeaten.name} final. The win shifts the balance of a rivalry the locker room can't stop talking about — and ${rival.name} will be desperate to respond.`,
-      });
-    }
-    if (rival && rivalLoss) {
-      candidates.push({
-        priority: 5,
-        headline: pick([`${rival.name.toUpperCase()} STRIKES AGAIN`, `NEMESIS: ${rival.name.toUpperCase()} HAS ${playerName.toUpperCase()}'S NUMBER`]),
-        kicker: "Rivalry Report",
-        body: `Another chapter, another sting. ${rival.flag} ${rival.name} got past ${playerName} at ${rivalLoss.name}, tightening a rivalry that is fast becoming the headline act of the era. "That's the one that keeps me up at night," ${playerName} admitted.`,
-      });
-    }
+    // --- The headline act: the slam-count ledger, only once a rival exists. ---
     if (rival && typeof careerTotalSlams === "number" && typeof rivalTotalSlams === "number") {
       const gap = careerTotalSlams - rivalTotalSlams;
-      if (Math.abs(gap) <= 1) {
+      const ahead = gap > 0, level = gap === 0;
+      const tally = `${careerTotalSlams} to ${rivalTotalSlams}`;
+
+      if (ahead && wonNames.length > 0) {
+        // Player extended/held a lead AND won majors this year — the case you asked for.
         candidates.push({
-          priority: 4,
-          headline: pick([`NECK AND NECK: A RIVALRY FOR THE AGES`, `TOO CLOSE TO CALL: ${careerTotalSlams}–${rivalTotalSlams}`]),
-          kicker: "The Numbers",
-          body: `The slam ledger reads ${playerName} ${careerTotalSlams}, ${rival.name} ${rivalTotalSlams}. Two players of the same generation, separated by the thinnest of margins, dragging the best out of one another with every major. The sport hasn't seen a duel this tight in years.`,
+          priority: 6,
+          kicker: "The Slam Race",
+          headline: pick([
+            `${playerName.toUpperCase()} EDGES CLEAR IN THE SLAM RACE`,
+            `${tally.toUpperCase()}: ${playerName.toUpperCase()} STRETCHES THE LEAD`,
+            `${playerName.toUpperCase()} PULLS AWAY FROM ${rival.name.toUpperCase()}`,
+          ]),
+          body: pick([
+            `${playerName} edged away in the slam count this year, ${named.length > 1 ? "winning" : "taking"} ${namedList}${rivalBeaten ? ` — including a win over ${rival.flag} ${rival.name} in the ${rivalBeaten.name} final` : ""}, to extend the gap to ${careerTotalSlams} slams to ${rival.name}'s ${rivalTotalSlams}.`,
+            `It was ${playerName}'s year. Titles at ${namedList} pushed the head-to-head ledger to ${careerTotalSlams}–${rivalTotalSlams}, and ${rival.flag} ${rival.name} now has ground to make up in a rivalry that defines the era.`,
+            `With ${namedList} added to the cabinet, ${playerName} moved to ${careerTotalSlams} majors against ${rival.name}'s ${rivalTotalSlams}. The gap is real now — and the pressure shifts squarely onto the ${rival.flag} star.`,
+          ]),
         });
-      } else if (gap <= -2) {
+      } else if (level) {
         candidates.push({
-          priority: 4,
-          headline: pick([`${rival.name.toUpperCase()} PULLS AHEAD`, `CHASING ${rival.name.toUpperCase()}: THE GAP GROWS`]),
-          kicker: "The Numbers",
-          body: `${rival.flag} ${rival.name} now leads the slam count ${rivalTotalSlams}–${careerTotalSlams}, and the pressure is mounting on ${playerName} to respond. Careers are defined by these stretches — and the clock, at ${age}, is ticking.`,
+          priority: 6,
+          kicker: "The Slam Race",
+          headline: pick([
+            `LEVEL PEGGING: ${careerTotalSlams}–${rivalTotalSlams}`,
+            `NOTHING BETWEEN THEM AT ${careerTotalSlams} APIECE`,
+            `${playerName.toUpperCase()} AND ${rival.name.toUpperCase()} DEADLOCKED`,
+          ]),
+          body: pick([
+            `The slam ledger is all square: ${playerName} ${careerTotalSlams}, ${rival.name} ${rivalTotalSlams}. ${wonNames.length ? `${playerName}'s win at ${namedList} drew them level` : `${rival.flag} ${rival.name} clawed back to parity`}, and neither will want to be the one who blinks first.`,
+            `Dead level at ${careerTotalSlams} majors each. Two players of the same generation, trading blows slam for slam — the sport hasn't had a duel this tight in years.`,
+          ]),
+        });
+      } else if (gap < 0) {
+        // Rival ahead.
+        candidates.push({
+          priority: 6,
+          kicker: "The Slam Race",
+          headline: pick([
+            `${rival.name.toUpperCase()} LEADS THE RACE, ${rivalTotalSlams}–${careerTotalSlams}`,
+            `CHASING ${rival.name.toUpperCase()}: ${playerName.toUpperCase()} TRAILS BY ${Math.abs(gap)}`,
+            `${rival.name.toUpperCase()} OUT IN FRONT`,
+          ]),
+          body: pick([
+            wonNames.length > 0
+              ? `${playerName} hit back with ${namedList} this year, but ${rival.flag} ${rival.name} still leads the slam count ${rivalTotalSlams} to ${careerTotalSlams}. The chase is on.`
+              : `A blank year on the slam front leaves ${playerName} trailing ${rival.flag} ${rival.name} ${rivalTotalSlams} to ${careerTotalSlams}. At ${age}, the clock is becoming a factor.`,
+            `${rival.flag} ${rival.name} ${rivalWins >= 2 ? `feasted, banking ${rivalWins} majors` : "kept the upper hand"} this season and now leads ${rivalTotalSlams}–${careerTotalSlams}. ${playerName} needs a response, and soon.`,
+          ]),
         });
       }
     }
-    if (rivalWins >= 2) {
+
+    // --- Secondary stories, used only when there's no rival yet or as fallback. ---
+    if (!rival && wonNames.length > 0) {
       candidates.push({
         priority: 3,
-        headline: pick([`${rival?.name?.toUpperCase() || "THE RIVAL"} CLEANS UP`, `A VINTAGE YEAR FOR ${rival?.name?.toUpperCase() || "THE RIVAL"}`]),
-        kicker: "Around the Tour",
-        body: `While ${playerName} ${slamWon ? `claimed ${slamWon} of the four majors` : "came up empty at the slams"}, ${rival?.flag} ${rival?.name} feasted on the rest, banking ${rivalWins} titles of their own. The tour's other contenders are running out of answers for both of them.`,
-      });
-    }
-    if (slamWon === 0 && age >= 30) {
-      candidates.push({
-        priority: 2,
-        headline: pick([`QUESTIONS MOUNT FOR ${playerName.toUpperCase()}`, `THE WINDOW NARROWS`]),
-        kicker: "Comment",
-        body: `Another major season passes without silverware for ${playerName}, and at ${age} the whispers are growing louder. Greatness is rarely linear — but the run-in to a career is unforgiving, and the next campaign suddenly looks pivotal.`,
+        kicker: "Season Review",
+        headline: pick([`${playerName.toUpperCase()} BANKS ${namedList.toUpperCase()}`, `A FRUITFUL YEAR FOR ${playerName.toUpperCase()}`]),
+        body: `${playerName} took ${namedList} this season, moving to ${totalSlams} career major${totalSlams === 1 ? "" : "s"}. The tour is taking notice.`,
       });
     }
     if (totalSlams >= 10 && slamWon >= 1) {
       candidates.push({
         priority: 2,
-        headline: pick([`${playerName.toUpperCase()} JOINS THE IMMORTALS`, `${totalSlams} AND COUNTING`]),
         kicker: "Milestone",
-        body: `With ${totalSlams} Grand Slam titles to their name, ${playerName} has moved into rarefied company. Few players in the sport's history have reached such heights — and at ${age}, the story is far from over.`,
+        headline: pick([`${playerName.toUpperCase()} JOINS THE IMMORTALS`, `${totalSlams} AND COUNTING`]),
+        body: `With ${totalSlams} Grand Slam titles, ${playerName} has entered rarefied company. At ${age}, the story is far from over.`,
       });
     }
 
@@ -2066,12 +2092,13 @@ export default function CalendarSlam() {
         updatedRival || activeRival, rivalWins, newTotal,
         updatedRival ? updatedRival.slamCount : (activeRival ? activeRival.slamCount : 0)
       );
-      // Gate frequency: always show high-priority rivalry clippings; otherwise
-      // show on alternating-ish seasons so the spin stays special.
+      // Fire sparingly so the spinning headline stays special: the first season
+      // the rivalry is properly live (season 3), then roughly every third season
+      // after that. Otherwise stay quiet — the season report still tells the story.
       if (clip) {
-        const big = clip.priority >= 4;
-        const everyOther = (careerSeason % 2 === 0);
-        if (!big && !everyOther) clip = null;
+        const firstRaceSeason = !!(updatedRival || activeRival) && careerSeason === 3;
+        const periodic = careerSeason >= 5 && (careerSeason % 3 === 0);
+        if (!firstRaceSeason && !periodic) clip = null;
       }
     }
     setNewsClipping(clip);
@@ -3264,7 +3291,7 @@ export default function CalendarSlam() {
                         <div className={`cs-now-score ${reveal.scoreShown ? "shown" : "pending"} ${reveal.scoreShown ? (p.won ? "won" : "lost") : ""}`}>
                           {reveal.scoreShown
                             ? <>{p.won ? "WON" : "LOST"} <span className="cs-now-score-line">{p.score}</span></>
-                            : <span className="cs-now-serving">{isFinal ? "Championship point…" : "Playing…"}</span>}
+                            : <span className="cs-now-serving">{p.round === "Final" ? "Championship point…" : "Match point…"}</span>}
                         </div>
                         {reveal.scoreShown && (isFinal || !p.won) && (
                           <div className={`cs-now-outcome ${p.won && isFinal ? "champ" : "out"}`}>
