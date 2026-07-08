@@ -660,6 +660,15 @@ function simulateMajor(build, slam, rand, usedReasons, field, drawPool, rival, f
   };
 }
 
+// A player is "legendary" if they're top-5 by average rating in the full tour
+// pool — independent of difficulty mode's elite/journeyman split, which is a
+// separate once-per-draft restriction, not a rating judgement.
+function isLegendary(player, fullPool) {
+  const avg = (p) => Object.values(p.stats).reduce((s, v) => s + v, 0) / ATTRS.length;
+  const sorted = [...fullPool].sort((a, b) => avg(b) - avg(a));
+  return sorted.slice(0, 5).some((p) => p.name === player.name);
+}
+
 // ============================================================================
 // PLAYER ARCHETYPE — a one-line identity derived purely from the build's ten
 // ratings. Checked in priority order (most distinctive pattern first); the
@@ -1855,6 +1864,8 @@ export default function CalendarSlam() {
   const [build, setBuild] = useState({});
   const [current, setCurrent] = useState(null);
   const [spinning, setSpinning] = useState(false);
+  const [legendaryFlash, setLegendaryFlash] = useState(null); // player name currently flashing gold, or null
+  const legendaryTimeout = React.useRef(null);
   const [reduce, setReduce] = useState(false);
   const [hovered, setHovered] = useState(null);
   const [ranSim, setRanSim] = useState(false);
@@ -2764,6 +2775,10 @@ export default function CalendarSlam() {
     setSpinning(true);
     setPreviewKey(null);
     setHovered(null);
+    // Clear any flash from the previous spin immediately — a quick re-spin
+    // (e.g. skipping a player) shouldn't leave a stale gold flash running.
+    clearTimeout(legendaryTimeout.current);
+    setLegendaryFlash(null);
     let pool = explicitPool;
     if (!pool) {
       if (difficulty === "challenge") {
@@ -2772,6 +2787,10 @@ export default function CalendarSlam() {
         pool = POOL;
       }
     }
+    // "Legendary" is checked against the FULL tour pool, not whichever
+    // sub-pool challenge mode is currently drawing from — a journeyman isn't
+    // suddenly legendary just because the elite five have been excluded.
+    const basePool = explicitPool || POOL;
     // Players already locked into the build must never reappear — exclude them
     // from BOTH the final pick and every animation frame, so a drafted player
     // can't flash up or be locked twice.
@@ -2782,9 +2801,16 @@ export default function CalendarSlam() {
     const final = rngPick(pool, exMerged);
     if (!final) { setSpinning(false); return; } // pool exhausted (shouldn't happen)
     lockedPlayer.current = final; // always authoritative
+    const flashIfLegendary = () => {
+      if (isLegendary(final, basePool)) {
+        setLegendaryFlash(final.name);
+        legendaryTimeout.current = setTimeout(() => setLegendaryFlash(null), 2200);
+      }
+    };
     if (reduce) {
       setCurrent(final);
       setSpinning(false);
+      flashIfLegendary();
       return;
     }
     let ticks = 0;
@@ -2795,6 +2821,7 @@ export default function CalendarSlam() {
         clearInterval(iv);
         setCurrent(final);
         setSpinning(false);
+        flashIfLegendary();
       }
     }, 55);
   }
@@ -3521,8 +3548,11 @@ export default function CalendarSlam() {
           <div className="cs-sticky">
             <div className="cs-stage">
               <div className={`cs-card ${spinning ? "spin" : ""}`}>
+                {legendaryFlash && current.name === legendaryFlash && (
+                  <div className="cs-legendary-toast">⭐ Legendary player</div>
+                )}
                 <div className="cs-card-eyebrow">Now drafting from</div>
-                <div className="cs-card-name">
+                <div className={`cs-card-name ${legendaryFlash && current.name === legendaryFlash ? "legendary" : ""}`}>
                   <span className="cs-card-flag">{current.flag}</span>
                   {current.name}
                 </div>
@@ -3621,7 +3651,9 @@ export default function CalendarSlam() {
 
       {phase === "result" && results && (
         <section className={`cs-result${ranSim && simResults && !reveal.done
-          ? ` cs-ambient-${(simResults.perSlam[reveal.slam]?.surface || "").toLowerCase()}`
+          ? ` cs-ambient-${simResults.perSlam[reveal.slam]?.isOlympics
+              ? (simResults.perSlam[reveal.slam]?.surface || "").toLowerCase()
+              : (simResults.perSlam[reveal.slam]?.key || "")}`
           : ""}`}>
           {!ranSim && (
             <div className="cs-begin-season">
@@ -3650,16 +3682,36 @@ export default function CalendarSlam() {
                     ? `Age ${careerAge} · ${playerFlag} ${playerName}`
                     : `Send them out against the ${T.label} field. Melbourne, Paris, London, New York.`}
                 </p>
-                {(() => {
-                  const arch = deriveArchetype(build);
-                  return (
-                    <div className="cs-archetype">
-                      <span className="cs-archetype-label">{arch.label}</span>
-                      <span className="cs-archetype-desc">{arch.desc}</span>
-                    </div>
-                  );
-                })()}
               </div>
+              {(() => {
+                const arch = deriveArchetype(build);
+                const overall = Math.round(ATTRS.reduce((s, a) => s + (build[a.key]?.rating ?? 0), 0) / ATTRS.length);
+                return (
+                  <div className="cs-player-card">
+                    <div className="cs-player-card-head">
+                      <div className="cs-player-card-arch">
+                        <span className="cs-player-card-arch-label">{arch.label}</span>
+                        <span className="cs-player-card-arch-desc">{arch.desc}</span>
+                      </div>
+                      <div className="cs-player-card-overall">
+                        <span className="cs-player-card-overall-num">{overall}</span>
+                        <span className="cs-player-card-overall-label">Overall</span>
+                      </div>
+                    </div>
+                    <div className="cs-player-card-grid">
+                      {ATTRS.map((a) => (
+                        <div key={a.key} className="cs-player-card-row">
+                          <span className="cs-player-card-attr">{a.label}</span>
+                          <span className="cs-player-card-player">
+                            {build[a.key] ? `${build[a.key].flag} ${build[a.key].player}` : "— empty —"}
+                          </span>
+                          <span className="cs-player-card-rating">{build[a.key]?.rating ?? ""}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
               {gameMode === "career" && (
                 <div className="cs-approach">
                   <span className="cs-diff-label">Season approach</span>
@@ -3683,21 +3735,6 @@ export default function CalendarSlam() {
               <button className="cs-cta cs-begin-btn" onClick={startSim}>
                 {gameMode === "career" ? `Play Season ${careerSeason} →` : "Begin the season →"}
               </button>
-              <details className="cs-breakdown cs-breakdown-pre">
-                <summary>Review your build first ▾</summary>
-                <div className="cs-build-list">
-                  {ATTRS.map((a) => (
-                    <div key={a.key} className="cs-build-row">
-                      <span>{a.label}</span>
-                      <span className="cs-build-val">
-                        {build[a.key]
-                          ? `${build[a.key].flag} ${build[a.key].player} · ${build[a.key].rating}`
-                          : "— empty —"}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </details>
               {gameMode === "single" && (
                 <button
                   className="cs-redraft-link"
@@ -4645,13 +4682,34 @@ body { background: #1f6b3f; margin: 0; }
 .cs-dot.on { background:var(--ball); border-color:var(--ball); }
 
 .cs-stage { display:flex; gap:18px; align-items:stretch; margin-bottom:22px; }
-.cs-card { flex:1; border:2.5px solid var(--chalk); border-radius:6px; padding:22px 24px; position:relative; overflow:hidden; background:rgba(246,251,239,.06); display:flex; flex-direction:column; justify-content:center; min-height:210px; }
+.cs-card { flex:1; border:2.5px solid var(--chalk); border-radius:6px; padding:22px 24px; position:relative; overflow:hidden; background:linear-gradient(165deg,rgba(246,251,239,.09),rgba(246,251,239,.03)); box-shadow:0 10px 28px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.05); display:flex; flex-direction:column; justify-content:center; min-height:210px; }
 .cs-card-fact { font-size:13px; line-height:1.45; color:var(--dim); margin:0 0 10px; max-width:42ch; min-height:38px; transition:opacity .15s; }
 .cs-fact-hidden { opacity:0; }
 .cs-card.spin { animation:flick .09s linear infinite; }
 @keyframes flick { 0%{opacity:.65} 50%{opacity:1} 100%{opacity:.65} }
 .cs-card-eyebrow { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--dim); font-weight:700; }
 .cs-card-name { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:clamp(28px,5.8vw,42px); line-height:1; letter-spacing:0; margin:6px 0 10px; color:var(--chalk); text-transform:uppercase; }
+.cs-card-name.legendary { animation:cs-legendary-glow 2.2s ease; }
+@keyframes cs-legendary-glow {
+  0%   { color:var(--chalk); text-shadow:none; }
+  14%  { color:#ffd76a; text-shadow:0 0 14px rgba(255,215,106,.85), 0 0 28px rgba(255,215,106,.4); }
+  65%  { color:#ffd76a; text-shadow:0 0 14px rgba(255,215,106,.85), 0 0 28px rgba(255,215,106,.4); }
+  100% { color:var(--chalk); text-shadow:none; }
+}
+.cs-legendary-toast {
+  position:absolute; top:12px; left:50%; transform:translate(-50%,-24px);
+  background:linear-gradient(135deg,#ffd76a,#e0a13f); color:#241705;
+  font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:12px;
+  letter-spacing:.08em; text-transform:uppercase; padding:6px 16px; border-radius:20px;
+  box-shadow:0 8px 20px rgba(224,161,63,.45); white-space:nowrap; z-index:5;
+  animation:cs-toast-drop 2.2s ease forwards;
+}
+@keyframes cs-toast-drop {
+  0%   { opacity:0; transform:translate(-50%,-30px); }
+  12%  { opacity:1; transform:translate(-50%,0); }
+  80%  { opacity:1; transform:translate(-50%,0); }
+  100% { opacity:0; transform:translate(-50%,-12px); }
+}
 .cs-card-hint { font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--ball-soft); font-weight:700; }
 .cs-skip-slot { min-height:42px; display:flex; align-items:center; margin-top:10px; }
 .cs-skip-player-btn { background:transparent; border:2px solid var(--ball); color:var(--ball); font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:13px; letter-spacing:.1em; text-transform:uppercase; padding:7px 18px; border-radius:20px; cursor:pointer; transition:background .15s, color .15s, opacity .15s; }
@@ -4686,7 +4744,7 @@ body { background: #1f6b3f; margin: 0; }
 /* difficulty selector */
 .cs-difficulty { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:22px; }
 .cs-diff-label { font-size:12px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--dim); }
-.cs-diff-btn { background:rgba(246,251,239,.07); border:1.5px solid var(--line-soft); border-radius:20px; color:var(--dim); font-size:13px; font-weight:700; padding:7px 18px; cursor:pointer; transition:background .18s, border-color .18s, color .18s; }
+.cs-diff-btn { background:rgba(246,251,239,.07); border:1.5px solid var(--line-soft); border-radius:20px; color:var(--dim); font-size:13px; font-weight:700; padding:7px 18px; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,.12); transition:background .18s, border-color .18s, color .18s; }
 .cs-diff-btn.active { background:var(--ball); border-color:var(--ball); color:var(--ink); }
 .cs-diff-btn:not(.active):hover { border-color:var(--ball); color:var(--chalk); }
 .cs-diff-hint { font-size:11px; color:var(--ball-soft); font-weight:600; letter-spacing:.04em; }
@@ -4714,8 +4772,8 @@ body { background: #1f6b3f; margin: 0; }
 .cs-share-img:disabled { opacity:.5; cursor:wait; }
 
 .cs-attr-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px; }
-.cs-attr { text-align:left; border:2px solid var(--line-soft); border-radius:5px; background:rgba(246,251,239,.05); padding:11px 13px; cursor:pointer; display:flex; flex-direction:column; gap:4px; transition:border-color .12s, transform .1s, background .15s; }
-.cs-attr:hover:not(:disabled) { border-color:var(--ball); background:rgba(216,240,0,.08); transform:translateY(-2px); }
+.cs-attr { text-align:left; border:2px solid var(--line-soft); border-radius:5px; background:linear-gradient(165deg,rgba(246,251,239,.07),rgba(246,251,239,.02)); box-shadow:0 3px 10px rgba(0,0,0,.18); padding:11px 13px; cursor:pointer; display:flex; flex-direction:column; gap:4px; transition:border-color .12s, transform .1s, background .15s, box-shadow .15s; }
+.cs-attr:hover:not(:disabled) { border-color:var(--ball); background:rgba(216,240,0,.08); transform:translateY(-2px); box-shadow:0 6px 16px rgba(0,0,0,.28); }
 .cs-attr:focus-visible { outline:3px solid var(--ball); outline-offset:2px; }
 .cs-attr.taken { background:rgba(216,240,0,.1); border-color:rgba(216,240,0,.4); cursor:default; opacity:1; }
 .cs-attr.armed { border-color:var(--ball); background:rgba(216,240,0,.12); transform:translateY(-2px); }
@@ -4835,14 +4893,14 @@ body { background: #1f6b3f; margin: 0; }
 .cs-leg.cs-leg-olympics.win { background:rgba(255,215,0,.14); }
 
 .cs-tier-eyebrow { font-size:10px; letter-spacing:.18em; text-transform:uppercase; font-weight:800; color:var(--dim); margin-bottom:4px; }
-.cs-season-recap { border:1.5px solid var(--line-soft); border-radius:14px; padding:16px 14px; margin-bottom:16px; background:rgba(246,251,239,.04); }
+.cs-season-recap { border:1.5px solid var(--line-soft); border-radius:14px; padding:16px 14px; margin-bottom:16px; background:linear-gradient(165deg,rgba(246,251,239,.06),rgba(246,251,239,.02)); box-shadow:0 8px 22px rgba(0,0,0,.2); }
 .cs-recap-title { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:13px; letter-spacing:.14em; text-transform:uppercase; color:var(--dim); text-align:center; margin-bottom:12px; }
 .cs-recap-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:12px; text-align:center; }
 .cs-recap-stat { display:flex; flex-direction:column; gap:2px; }
 .cs-recap-num { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:20px; color:var(--chalk); line-height:1.1; }
 .cs-recap-label { font-size:10px; letter-spacing:.04em; color:var(--dim); line-height:1.3; }
 .cs-achieve-row { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin-top:14px; padding-top:14px; border-top:1px solid var(--line-soft); }
-.cs-achieve-badge { font-size:11px; font-weight:700; padding:5px 11px; border-radius:14px; border:1px solid rgba(216,240,0,.4); color:var(--chalk); background:rgba(216,240,0,.08); cursor:default; }
+.cs-achieve-badge { font-size:11px; font-weight:700; padding:5px 11px; border-radius:14px; border:1px solid rgba(216,240,0,.4); color:var(--chalk); background:rgba(216,240,0,.08); box-shadow:0 2px 6px rgba(0,0,0,.15); cursor:default; }
 .cs-sim-prompt { text-align:center; margin-bottom:22px; display:flex; flex-direction:column; align-items:center; gap:12px; }
 .cs-sim-prompt p { font-size:14px; color:var(--dim); max-width:46ch; margin:0 auto; line-height:1.5; }
 .cs-sim-btn { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:16px; letter-spacing:.06em; text-transform:uppercase; background:rgba(246,251,239,.12); color:var(--chalk); border:none; border-radius:6px; padding:14px 26px; cursor:pointer; transition:transform .12s, filter .18s; box-shadow:0 3px 0 rgba(14,42,26,.4); }
@@ -4915,8 +4973,8 @@ body { background: #1f6b3f; margin: 0; }
 .cs-mode-tour-btn:hover .cs-mode-tour-name,.cs-mode-tour-btn:hover .cs-mode-tour-sub { color:var(--ink); }
 .cs-mode-tour-name { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:26px; color:var(--ball); line-height:1; }
 .cs-mode-tour-sub { font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--dim); font-weight:700; }
-.cs-mode-btn { display:flex; flex-direction:column; align-items:flex-start; gap:8px; padding:22px 20px; border-radius:10px; border:2.5px solid var(--chalk); background:rgba(246,251,239,.05); cursor:pointer; text-align:left; transition:transform .12s, background .2s, border-color .2s; }
-.cs-mode-btn:hover { transform:translateY(-3px); background:rgba(216,240,0,.1); border-color:var(--ball); }
+.cs-mode-btn { display:flex; flex-direction:column; align-items:flex-start; gap:8px; padding:22px 20px; border-radius:10px; border:2.5px solid var(--chalk); background:linear-gradient(165deg,rgba(246,251,239,.08),rgba(246,251,239,.02)); box-shadow:0 8px 22px rgba(0,0,0,.22); cursor:pointer; text-align:left; transition:transform .12s, background .2s, border-color .2s, box-shadow .2s; }
+.cs-mode-btn:hover { transform:translateY(-3px); background:rgba(216,240,0,.1); border-color:var(--ball); box-shadow:0 14px 30px rgba(0,0,0,.3); }
 .cs-mode-btn.career { border-color:var(--chalk); background:rgba(246,251,239,.05); }
 .cs-mode-icon { font-size:30px; }
 .cs-mode-label { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:22px; text-transform:uppercase; color:var(--chalk); line-height:1; }
@@ -4972,7 +5030,7 @@ body { background: #1f6b3f; margin: 0; }
 .cs-upgrade-title { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:20px; text-transform:uppercase; color:var(--chalk); margin:0 0 4px; }
 .cs-upgrade-sub { font-size:13px; color:var(--dim); margin:0 0 14px; }
 .cs-upgrade-grid { display:flex; flex-direction:column; gap:10px; }
-.cs-upgrade-btn { display:flex; flex-direction:column; gap:6px; padding:16px 18px; border:2px solid var(--line-soft); border-radius:8px; background:rgba(246,251,239,.05); cursor:pointer; text-align:left; transition:.18s; position:relative; }
+.cs-upgrade-btn { display:flex; flex-direction:column; gap:6px; padding:16px 18px; border:2px solid var(--line-soft); border-radius:8px; background:linear-gradient(165deg,rgba(246,251,239,.08),rgba(246,251,239,.02)); box-shadow:0 6px 16px rgba(0,0,0,.2); cursor:pointer; text-align:left; transition:.18s; position:relative; }
 .cs-upgrade-btn.coach-pick { border-color:rgba(255,155,128,.5); background:rgba(255,155,128,.06); }
 .cs-coach-pick-badge { font-size:10px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#ff9b80; background:rgba(255,155,128,.14); border:1px solid rgba(255,155,128,.4); border-radius:10px; padding:2px 8px; align-self:flex-start; margin-bottom:2px; }
 .cs-upgrade-btn:hover { border-color:var(--ball); background:rgba(216,240,0,.08); transform:translateX(4px); }
@@ -5127,16 +5185,37 @@ button.cs-trophy:focus-visible { outline:3px solid var(--ball); outline-offset:2
 .cs-begin-copy { display:flex; flex-direction:column; gap:8px; }
 .cs-begin-title { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:42px; line-height:1; text-transform:uppercase; color:var(--chalk); margin:0; }
 .cs-begin-sub { font-size:16px; color:var(--dim); max-width:40ch; margin:0; line-height:1.5; }
-.cs-archetype { display:flex; flex-direction:column; align-items:center; gap:2px; margin-top:6px; padding:8px 16px; border-radius:12px; border:1.5px solid var(--line-soft); background:rgba(216,240,0,.06); }
-.cs-archetype-label { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:16px; letter-spacing:.03em; color:var(--ball); text-transform:uppercase; }
-.cs-archetype-desc { font-size:12px; color:var(--dim); max-width:34ch; line-height:1.4; }
+.cs-player-card {
+  width:100%; max-width:520px; margin:4px 0 4px; border-radius:14px;
+  border:1.5px solid var(--line-soft); background:linear-gradient(165deg,rgba(216,240,0,.07),rgba(246,251,239,.03));
+  box-shadow:0 14px 34px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.04);
+  overflow:hidden; text-align:left;
+}
+.cs-player-card-head {
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:16px 18px; border-bottom:1.5px solid var(--line-soft); background:rgba(0,0,0,.12);
+}
+.cs-player-card-arch { display:flex; flex-direction:column; gap:2px; }
+.cs-player-card-arch-label { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:19px; letter-spacing:.02em; color:var(--ball); text-transform:uppercase; }
+.cs-player-card-arch-desc { font-size:12px; color:var(--dim); max-width:32ch; line-height:1.4; }
+.cs-player-card-overall { display:flex; flex-direction:column; align-items:center; flex-shrink:0; }
+.cs-player-card-overall-num { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:30px; line-height:1; color:var(--chalk); }
+.cs-player-card-overall-label { font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:var(--dim); }
+.cs-player-card-grid { display:flex; flex-direction:column; }
+.cs-player-card-row {
+  display:grid; grid-template-columns:1fr 1.6fr auto; align-items:center; gap:10px;
+  padding:9px 18px; border-bottom:1px solid rgba(246,251,239,.06); font-size:13px;
+}
+.cs-player-card-row:last-child { border-bottom:none; }
+.cs-player-card-attr { font-weight:700; color:var(--dim); }
+.cs-player-card-player { color:var(--chalk); }
+.cs-player-card-rating { font-family:"Barlow Condensed",sans-serif; font-weight:800; color:var(--ball); text-align:right; }
 .cs-begin-btn { font-size:22px; padding:18px 40px; }
 .cs-redraft-link { margin-top:4px; background:none; border:none; cursor:pointer; font-family:inherit; font-size:13.5px; color:var(--dim); padding:8px 10px; transition:color .15s; }
 .cs-redraft-link:hover { color:var(--chalk); }
 .cs-redraft-strong { color:var(--ball-soft); font-weight:700; text-decoration:underline; text-underline-offset:2px; }
 .cs-goal-line { font-size:14.5px; line-height:1.5; color:rgba(246,251,239,.92); background:rgba(216,240,0,.08); border:1.5px solid rgba(216,240,0,.35); border-radius:8px; padding:12px 16px; margin:0 0 22px; max-width:52ch; }
 .cs-goal-line strong { color:var(--ball-soft); }
-.cs-breakdown-pre { width:100%; max-width:580px; margin-top:8px; }
 
 /* share slam buttons — solid fills, stacked */
 .cs-share-trail { display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
@@ -5165,7 +5244,7 @@ button.cs-trophy:focus-visible { outline:3px solid var(--ball); outline-offset:2
 .cs-confetti { position:fixed; inset:0; pointer-events:none; z-index:9999; overflow:hidden; }
 .cs-confetti-piece { position:absolute; top:-16px; left:var(--x); width:10px; height:10px; border-radius:2px; background:hsl(var(--hue),90%,60%); animation:cs-fall var(--dur,1s) var(--delay,0s) ease-in 1 forwards; transform-origin:center; }
 @keyframes cs-fall { 0%{transform:translateY(0) rotate(0deg) scale(1);opacity:1} 80%{opacity:1} 100%{transform:translateY(105vh) rotate(720deg) scale(0.7);opacity:0} }
-.cs-tier { border:2.5px solid var(--chalk); border-radius:6px; padding:26px; text-align:center; margin-bottom:22px; background:rgba(246,251,239,.04); }
+.cs-tier { border:2.5px solid var(--chalk); border-radius:6px; padding:26px; text-align:center; margin-bottom:22px; background:linear-gradient(165deg,rgba(246,251,239,.07),rgba(246,251,239,.02)); box-shadow:0 10px 26px rgba(0,0,0,.24); }
 .cs-tier.glow { border-color:var(--ball); background:rgba(216,240,0,.1); box-shadow:0 0 0 4px rgba(216,240,0,.14); }
 .cs-tier-eyebrow { font-size:10px; letter-spacing:.18em; text-transform:uppercase; font-weight:800; color:var(--dim); margin-bottom:4px; }
 .cs-tier-count { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:58px; line-height:1; color:var(--chalk); }
@@ -5221,11 +5300,37 @@ button.cs-trophy:focus-visible { outline:3px solid var(--ball); outline-offset:2
 .cs-approach { display:flex; flex-direction:column; align-items:center; gap:8px; margin:4px 0 16px; }
 .cs-approach-btns { display:flex; gap:8px; }
 
-/* --- Ambient surface tint during the live reveal ----------------------------- */
+/* --- Ambient atmosphere during the live reveal ------------------------------
+   Each major gets its own subtle texture, not just a colour tint — Melbourne
+   heat, raked clay, mown grass, US Open floodlights — built entirely from
+   layered CSS gradients so nothing here needs an image asset. Generic
+   surface fallbacks (used by the Olympics, which moves host city each time)
+   are kept underneath. */
 .cs-result { transition:background .7s ease; border-radius:18px; }
 .cs-result.cs-ambient-hard { background:radial-gradient(120% 80% at 50% 0%, rgba(43,125,233,.14), transparent 68%); }
 .cs-result.cs-ambient-clay { background:radial-gradient(120% 80% at 50% 0%, rgba(224,122,63,.15), transparent 68%); }
 .cs-result.cs-ambient-grass { background:radial-gradient(120% 80% at 50% 0%, rgba(80,170,100,.14), transparent 68%); }
+.cs-result.cs-ambient-ao {
+  background:
+    radial-gradient(120% 70% at 50% -10%, rgba(255,190,90,.15), transparent 60%),
+    radial-gradient(90% 60% at 50% 0%, rgba(43,125,233,.11), transparent 70%);
+}
+.cs-result.cs-ambient-rg {
+  background:
+    repeating-linear-gradient(115deg, rgba(224,122,63,.06) 0 3px, transparent 3px 9px),
+    radial-gradient(120% 80% at 50% 0%, rgba(224,122,63,.16), transparent 68%);
+}
+.cs-result.cs-ambient-wim {
+  background:
+    repeating-linear-gradient(0deg, rgba(255,255,255,.028) 0 14px, transparent 14px 28px),
+    radial-gradient(120% 80% at 50% 0%, rgba(80,170,100,.15), transparent 68%);
+}
+.cs-result.cs-ambient-uso {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.06) 0%, transparent 7%),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 2px, transparent 2px 60px),
+    radial-gradient(90% 60% at 50% -5%, rgba(10,46,99,.3), transparent 70%);
+}
 
 /* --- Newspaper: paper grain + folio + resting tilt --------------------------- */
 .cs-newspaper {
@@ -5236,7 +5341,7 @@ button.cs-trophy:focus-visible { outline:3px solid var(--ball); outline-offset:2
 .cs-newspaper-folio { font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:#7a6f5a; text-align:center; padding:4px 20px 6px; border-bottom:1px solid rgba(26,18,5,.25); margin:0 0 2px; }
 
 /* --- Retirement legacy block -------------------------------------------------- */
-.cs-legacy-block { background:rgba(246,251,239,.05); border:1.5px solid var(--line-soft); border-radius:14px; padding:20px 18px; margin:0 0 22px; text-align:center; }
+.cs-legacy-block { background:linear-gradient(165deg,rgba(246,251,239,.08),rgba(246,251,239,.02)); box-shadow:0 10px 26px rgba(0,0,0,.22); border:1.5px solid var(--line-soft); border-radius:14px; padding:20px 18px; margin:0 0 22px; text-align:center; }
 .cs-legacy-title { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:15px; letter-spacing:.14em; text-transform:uppercase; color:var(--dim); margin-bottom:14px; }
 .cs-legacy-slams { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:12px; }
 .cs-legacy-slam { border-radius:10px; padding:10px 4px; display:flex; flex-direction:column; gap:4px; background:rgba(246,251,239,.06); }
@@ -5261,7 +5366,7 @@ button.cs-trophy:focus-visible { outline:3px solid var(--ball); outline-offset:2
 
 /* --- The final, set by set ---------------------------------------------------- */
 .cs-final-sets { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin:14px auto 4px; min-height:52px; }
-.cs-final-set { display:flex; flex-direction:column; align-items:center; gap:1px; min-width:56px; padding:7px 10px 8px; border-radius:10px; border:1.5px solid var(--line-soft); background:rgba(246,251,239,.05); animation:cs-set-land .4s cubic-bezier(.2,.9,.3,1.2); }
+.cs-final-set { display:flex; flex-direction:column; align-items:center; gap:1px; min-width:56px; padding:7px 10px 8px; border-radius:10px; border:1.5px solid var(--line-soft); background:rgba(246,251,239,.05); box-shadow:0 4px 10px rgba(0,0,0,.2); animation:cs-set-land .4s cubic-bezier(.2,.9,.3,1.2); }
 .cs-final-set.you { border-color:rgba(216,240,0,.65); background:rgba(216,240,0,.10); }
 .cs-final-set.them { border-color:rgba(255,143,112,.5); background:rgba(255,143,112,.08); }
 .cs-final-set-label { font-size:9px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--dim); }
