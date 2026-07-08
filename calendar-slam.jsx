@@ -607,7 +607,8 @@ function simulateMajor(build, slam, rand, usedReasons, field, drawPool, rival, f
       won,
       isRival: !!opp.isRival,
       score: fmtScore(m.sets),
-      sets: m.sets, // raw per-set [mine, theirs] scores — used by the final-match momentum viewer
+      sets: m.sets, // raw per-set [mine, theirs] scores — used by the final-match set-by-set reveal
+      level: opp.level, // opponent strength — used by the season recap's "biggest win"
     });
 
     if (!won) {
@@ -656,6 +657,148 @@ function simulateMajor(build, slam, rand, usedReasons, field, drawPool, rival, f
     beatRival: !!draw[6].isRival,
     note,
     path,
+  };
+}
+
+// ============================================================================
+// PLAYER ARCHETYPE — a one-line identity derived purely from the build's ten
+// ratings. Checked in priority order (most distinctive pattern first); the
+// last entry is a catch-all so every build gets a label.
+// ============================================================================
+function deriveArchetype(build) {
+  const r = (k) => build[k]?.rating ?? 50;
+  const power = (r("serve") + r("forehand") + r("backhand")) / 3;
+  const touch = (r("net") + r("slice")) / 2;
+  const move = (r("movement") + r("defence") + r("stamina")) / 3;
+  const mental = r("mental");
+  const all = ["serve", "return", "forehand", "backhand", "net", "movement", "defence", "stamina", "mental", "slice"].map(r);
+  const overall = all.reduce((a, b) => a + b, 0) / all.length;
+  const spread = Math.max(...all) - Math.min(...all);
+
+  if (mental >= 92 && mental - overall >= 8)
+    return { label: "Ice in the Veins", desc: "Clutch beyond reason — the bigger the point, the calmer they get." };
+  if (r("serve") >= 93 && r("return") <= 75)
+    return { label: "Servebot", desc: "One shot wins the match. The other nine are just there to survive." };
+  if (power >= 92 && move <= 78)
+    return { label: "The Cannon", desc: "Blink and it's a winner. Just don't ask them to chase one down." };
+  if (touch >= 90 && power <= 80)
+    return { label: "The Craftsman", desc: "Wins points you didn't know were possible. All feel, no fear." };
+  if (move >= 90 && power <= 82)
+    return { label: "The Wall", desc: "Nothing gets past them. Outlasting you is the whole game plan." };
+  if (r("net") >= 90)
+    return { label: "Net Rusher", desc: "Forward is the only direction they know." };
+  if (spread >= 30)
+    return { label: "Boom or Bust", desc: "Capable of brilliance and disaster in the very same match." };
+  if (spread <= 12 && overall >= 85)
+    return { label: "The Complete Player", desc: "No holes, no excuses. Beats you everywhere." };
+  return { label: "The Grinder", desc: "Not the flashiest game on tour, but good luck putting it away." };
+}
+
+// ============================================================================
+// ACHIEVEMENTS — badges unlocked from this season's real results. Every check
+// reads straight off simulateMajor's own output (path, sets, opponent level),
+// so nothing here needs its own simulation logic.
+// ============================================================================
+const ACHIEVEMENTS = [
+  {
+    id: "clay-god", label: "Clay God", icon: "🟧",
+    desc: "Won Roland Garros without dropping a set.",
+    test: (perSlam) => {
+      const rg = perSlam.find((s) => s.key === "rg");
+      return !!rg && rg.wonTitle && rg.path.every((p) => p.sets.every(([m, t]) => m > t));
+    },
+  },
+  {
+    id: "grass-wizard", label: "Grass Wizard", icon: "🟩",
+    desc: "Won Wimbledon with serve and net both rated 95+.",
+    test: (perSlam, build) => {
+      const wim = perSlam.find((s) => s.key === "wim");
+      return !!wim && wim.wonTitle && (build.serve?.rating ?? 0) >= 95 && (build.net?.rating ?? 0) >= 95;
+    },
+  },
+  {
+    id: "fortress", label: "Fortress", icon: "🟦",
+    desc: "Won the Australian Open without dropping a set.",
+    test: (perSlam) => {
+      const ao = perSlam.find((s) => s.key === "ao");
+      return !!ao && ao.wonTitle && ao.path.every((p) => p.sets.every(([m, t]) => m > t));
+    },
+  },
+  {
+    id: "comeback-kid", label: "Comeback Kid", icon: "🔁",
+    desc: "Won a Grand Slam final after dropping the first set.",
+    test: (perSlam) => perSlam.some((s) => {
+      if (s.isOlympics || !s.wonTitle) return false;
+      const final = s.path[s.path.length - 1];
+      const first = final?.sets?.[0];
+      return first && first[0] < first[1];
+    }),
+  },
+  {
+    id: "iron-man", label: "Iron Man", icon: "💪",
+    desc: "Went the distance in three or more matches this season.",
+    test: (perSlam, build, tour) => {
+      const need = tour === "wta" ? 3 : 5;
+      let count = 0;
+      for (const s of perSlam) {
+        if (s.isOlympics) continue;
+        for (const p of s.path) if (p.sets.length >= need) count++;
+      }
+      return count >= 3;
+    },
+  },
+  {
+    id: "giant-killer", label: "Giant Killer", icon: "⚔",
+    desc: "Beat your rival in a Grand Slam final.",
+    test: (perSlam) => perSlam.some((s) => !s.isOlympics && s.wonTitle && s.beatRival),
+  },
+  {
+    id: "bagel-merchant", label: "Bagel Merchant", icon: "🥯",
+    desc: "Won a set 6-0 in a Grand Slam final this season.",
+    test: (perSlam) => perSlam.some((s) => {
+      if (s.isOlympics) return false;
+      const final = s.path[s.path.length - 1];
+      return final?.won && final.sets.some(([m, t]) => m === 6 && t === 0);
+    }),
+  },
+];
+function computeAchievements(perSlam, build, tour) {
+  return ACHIEVEMENTS.filter((a) => a.test(perSlam, build, tour));
+}
+
+// ============================================================================
+// SEASON RECAP — the stat block the ChatGPT brief was reaching for: a real
+// record, the longest and closest matches of the year, and the biggest scalp,
+// all pulled from the same path data the live reveal already renders.
+// ============================================================================
+function buildSeasonRecap(perSlam, rivalH2H) {
+  const majors = perSlam.filter((s) => !s.isOlympics);
+  const allMatches = majors.flatMap((s) => s.path.map((p) => ({ ...p, event: s.name, surface: s.surface })));
+  const wins = allMatches.filter((m) => m.won).length;
+  const losses = allMatches.filter((m) => !m.won).length;
+
+  const tension = (m) => {
+    const tiebreaks = m.sets.filter(([a, b]) => Math.min(a, b) === 6 && Math.max(a, b) === 7).length;
+    const tight = m.sets.filter(([a, b]) => Math.max(a, b) === 7).length;
+    return tiebreaks * 3 + tight;
+  };
+  const closest = allMatches.length
+    ? allMatches.reduce((best, m) => (tension(m) > tension(best) ? m : best))
+    : null;
+  const longest = allMatches.length
+    ? allMatches.reduce((best, m) => (m.sets.length > best.sets.length ? m : best))
+    : null;
+  const wonMatches = allMatches.filter((m) => m.won && m.level != null);
+  const biggestWin = wonMatches.length
+    ? wonMatches.reduce((best, m) => (m.level > best.level ? m : best))
+    : null;
+
+  return {
+    record: `${wins}-${losses}`,
+    closest: closest && tension(closest) > 0 ? closest : null,
+    longest: longest && longest.sets.length >= 3 ? longest : null,
+    biggestWin,
+    rivalH2H: rivalH2H && (rivalH2H.wins || rivalH2H.losses) ? rivalH2H : null,
   };
 }
 
@@ -805,6 +948,23 @@ function attrSurfaceHint(attrKey) {
   return ZONE_OF[attrKey]?.surfaceHint || "Hard";
 }
 
+// Per-attribute ball motion for the hover preview — each shot gets a path
+// that actually looks like that stroke, using the same coordinate system as
+// the court zones above (viewBox 0 0 160 292; net at y≈139, singles lines at
+// x 36.5/123.5, service lines at y 72/207).
+const ATTR_BALL_PATH = {
+  serve:    { cx: "62;98;62",             cy: "24;96;24",             r: "3.6;5.4;3.6", dur: "1.05s" },  // toss deep, crack it into the box
+  return:   { cx: "96;58;96",             cy: "252;66;252",           r: "3.6;5.4;3.6", dur: "1.3s"  },  // deep return down the other end
+  forehand: { cx: "46;118;46",            cy: "246;168;246",          r: "3.6;5.4;3.6", dur: "1.25s" },  // cross-court forehand
+  backhand: { cx: "112;44;112",           cy: "246;168;246",          r: "3.6;5.4;3.6", dur: "1.25s" },  // cross-court backhand
+  net:      { cx: "68;92;68",             cy: "128;150;128",          r: "3.2;4.8;3.2", dur: "0.7s"  },  // tight exchange right at the net
+  movement: { cx: "34;126;34;126;34",     cy: "225;225;225;225;225",  r: "4;4;4;4;4",    dur: "1.7s"  },  // sprinting corner to corner
+  defence:  { cx: "40;120;40",            cy: "258;190;258",          r: "3.6;5.2;3.6", dur: "1.6s"  },  // scrambling to retrieve deep and wide
+  stamina:  { cx: "50;110;50;110;50",     cy: "40;238;40;238;40",     r: "4;5;4;5;4",    dur: "1.9s"  },  // full-length grinding rally
+  mental:   { cx: "80;80;80",             cy: "139;139;139",          r: "3.2;6;3.2",    dur: "1.1s"  },  // holding on the big point
+  slice:    { cx: "50;110;50",            cy: "126;150;126",          r: "3;4.4;3",      dur: "0.85s" },  // low, skidding slice near the net
+};
+
 function CourtDiagram({ build, hovered }) {
   const filledZones = {};
   for (const a of ATTRS) {
@@ -884,12 +1044,14 @@ function CourtDiagram({ build, hovered }) {
       <circle cx="17.5"  cy="138.5" r="3.2" fill="rgba(246,251,239,.95)" />
       <circle cx="142.5" cy="138.5" r="3.2" fill="rgba(246,251,239,.95)" />
 
-      {/* a little rally when previewing a shot — the ball crosses the net */}
-      {hovered && (
+      {/* a little preview rally when hovering a shot — the ball actually
+          traces that stroke (serve into the box, cross-court forehand,
+          scrambling defence, etc.) rather than one generic diagonal */}
+      {hovered && ATTR_BALL_PATH[hovered] && (
         <circle r="4.5" fill="var(--ball)" opacity="0.95">
-          <animate attributeName="cx" values="52;104;52" dur="1.7s" repeatCount="indefinite" />
-          <animate attributeName="cy" values="52;226;52" dur="1.7s" repeatCount="indefinite" />
-          <animate attributeName="r" values="4;5.2;4" dur="0.85s" repeatCount="indefinite" />
+          <animate attributeName="cx" values={ATTR_BALL_PATH[hovered].cx} dur={ATTR_BALL_PATH[hovered].dur} repeatCount="indefinite" />
+          <animate attributeName="cy" values={ATTR_BALL_PATH[hovered].cy} dur={ATTR_BALL_PATH[hovered].dur} repeatCount="indefinite" />
+          <animate attributeName="r" values={ATTR_BALL_PATH[hovered].r} dur={{"mental":"0.7s"}[hovered] || "0.85s"} repeatCount="indefinite" />
         </circle>
       )}
     </svg>
@@ -1064,6 +1226,7 @@ function ShareCard({ active, ranSim, build, tourLabel, onClose }) {
         <button className="cs-modal-x" onClick={onClose} aria-label="Close">×</button>
         <div className="cs-share-brand">CALENDAR SLAM</div>
         <div className={`cs-share-headline ${active.won === 4 ? "slam" : ""}`}>{headline}</div>
+        <div className="cs-share-archetype">{deriveArchetype(build).label}</div>
 
         <div className="cs-share-trail">
           {SLAMS.map((s) => {
@@ -2928,6 +3091,12 @@ export default function CalendarSlam() {
     const isFinalRound = r === lastRound;
     const isSemi = r === lastRound - 1;
     const isQF = r === lastRound - 2;
+    // The TRUE tournament Final — not just "the last round we happened to
+    // reach". A loss in the QF/SF is the last round in a truncated path, but
+    // it is not the Final: without this check the set-by-set reveal (and its
+    // "the final is under way" framing) fired on any elimination round, which
+    // spoiled the result before the score even landed.
+    const isTrueFinal = slam.path[r]?.round === "Final";
     const justLost = slam.path[r] && !slam.path[r].won; // an upset loss is a moment too
     // A late-round meeting with YOUR rival is the emotional peak of a season —
     // slow the reveal right down so the showdown gets room to breathe.
@@ -2958,12 +3127,12 @@ export default function CalendarSlam() {
     // The FINAL plays out set by set: opponent appears, each set score lands on
     // its own beat, then the verdict (won/lost the title). Every other round
     // keeps the two-beat rhythm (opponent, then result) so the year still moves.
-    const finalSets = isFinalRound && Array.isArray(slam.path[r]?.sets) ? slam.path[r].sets : null;
+    const finalSets = isTrueFinal && Array.isArray(slam.path[r]?.sets) ? slam.path[r].sets : null;
 
     if (!reveal.scoreShown) {
       const setsShown = reveal.setsShown || 0;
       if (finalSets && !reduce) {
-        if (setsShown === 0 && (isFinalRound || rivalShowdown)) Sound.heartbeat();
+        if (setsShown === 0 && (isTrueFinal || rivalShowdown)) Sound.heartbeat();
         if (setsShown < finalSets.length) {
           // Land the next set. First one waits the full nameBeat (let the
           // matchup breathe); the rest arrive on a steady rally-like pulse.
@@ -3481,6 +3650,15 @@ export default function CalendarSlam() {
                     ? `Age ${careerAge} · ${playerFlag} ${playerName}`
                     : `Send them out against the ${T.label} field. Melbourne, Paris, London, New York.`}
                 </p>
+                {(() => {
+                  const arch = deriveArchetype(build);
+                  return (
+                    <div className="cs-archetype">
+                      <span className="cs-archetype-label">{arch.label}</span>
+                      <span className="cs-archetype-desc">{arch.desc}</span>
+                    </div>
+                  );
+                })()}
               </div>
               {gameMode === "career" && (
                 <div className="cs-approach">
@@ -3665,7 +3843,10 @@ export default function CalendarSlam() {
                     if (!s) return null;
                     const p = s.path[reveal.round];
                     if (!p) return null;
-                    const isFinal = reveal.round === s.path.length - 1;
+                    // The true Final, by round name — not "last round of a
+                    // possibly-truncated path". A QF/SF loss must never show
+                    // the set-by-set final treatment or "champion" styling.
+                    const isFinal = p.round === "Final";
                     const roundName = p.round;
                     return (
                       <div className={`cs-now-playing ${s.isOlympics ? "oly" : `slam-${s.key}`} ${isFinal ? "is-final" : ""}`}>
@@ -3794,6 +3975,61 @@ export default function CalendarSlam() {
                   );
                 })}
               </div>
+
+              {reveal.done && (() => {
+                const rivalH2H = (gameMode === "career" && careerRival)
+                  ? {
+                      wins: simResults.perSlam.filter((s) => !s.isOlympics && s.wonTitle && s.beatRival).length,
+                      losses: simResults.perSlam.filter((s) => !s.isOlympics && !s.wonTitle && s.lostToRival).length,
+                    }
+                  : null;
+                const recap = buildSeasonRecap(simResults.perSlam, rivalH2H);
+                const earned = computeAchievements(simResults.perSlam, build, tour);
+                return (
+                  <div className="cs-season-recap">
+                    <div className="cs-recap-title">Your season</div>
+                    <div className="cs-recap-stats">
+                      <div className="cs-recap-stat">
+                        <span className="cs-recap-num">{recap.record}</span>
+                        <span className="cs-recap-label">Match record</span>
+                      </div>
+                      {recap.rivalH2H && (
+                        <div className="cs-recap-stat">
+                          <span className="cs-recap-num">{recap.rivalH2H.wins}–{recap.rivalH2H.losses}</span>
+                          <span className="cs-recap-label">Vs {careerRival.flag} {careerRival.name.split(" ").pop()}</span>
+                        </div>
+                      )}
+                      {recap.biggestWin && (
+                        <div className="cs-recap-stat">
+                          <span className="cs-recap-num">{recap.biggestWin.name.split(" ").pop()}</span>
+                          <span className="cs-recap-label">Biggest win · {recap.biggestWin.event}</span>
+                        </div>
+                      )}
+                      {recap.closest && (
+                        <div className="cs-recap-stat">
+                          <span className="cs-recap-num">{fmtScore(recap.closest.sets)}</span>
+                          <span className="cs-recap-label">Closest match · {recap.closest.event}</span>
+                        </div>
+                      )}
+                      {recap.longest && (
+                        <div className="cs-recap-stat">
+                          <span className="cs-recap-num">{recap.longest.sets.length} sets</span>
+                          <span className="cs-recap-label">Longest match · {recap.longest.event}</span>
+                        </div>
+                      )}
+                    </div>
+                    {earned.length > 0 && (
+                      <div className="cs-achieve-row">
+                        {earned.map((a) => (
+                          <span key={a.id} className="cs-achieve-badge" title={a.desc}>
+                            {a.icon} {a.label}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {reveal.done && (
                 <div className="cs-sim-prompt">
@@ -4599,6 +4835,14 @@ body { background: #1f6b3f; margin: 0; }
 .cs-leg.cs-leg-olympics.win { background:rgba(255,215,0,.14); }
 
 .cs-tier-eyebrow { font-size:10px; letter-spacing:.18em; text-transform:uppercase; font-weight:800; color:var(--dim); margin-bottom:4px; }
+.cs-season-recap { border:1.5px solid var(--line-soft); border-radius:14px; padding:16px 14px; margin-bottom:16px; background:rgba(246,251,239,.04); }
+.cs-recap-title { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:13px; letter-spacing:.14em; text-transform:uppercase; color:var(--dim); text-align:center; margin-bottom:12px; }
+.cs-recap-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:12px; text-align:center; }
+.cs-recap-stat { display:flex; flex-direction:column; gap:2px; }
+.cs-recap-num { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:20px; color:var(--chalk); line-height:1.1; }
+.cs-recap-label { font-size:10px; letter-spacing:.04em; color:var(--dim); line-height:1.3; }
+.cs-achieve-row { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin-top:14px; padding-top:14px; border-top:1px solid var(--line-soft); }
+.cs-achieve-badge { font-size:11px; font-weight:700; padding:5px 11px; border-radius:14px; border:1px solid rgba(216,240,0,.4); color:var(--chalk); background:rgba(216,240,0,.08); cursor:default; }
 .cs-sim-prompt { text-align:center; margin-bottom:22px; display:flex; flex-direction:column; align-items:center; gap:12px; }
 .cs-sim-prompt p { font-size:14px; color:var(--dim); max-width:46ch; margin:0 auto; line-height:1.5; }
 .cs-sim-btn { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:16px; letter-spacing:.06em; text-transform:uppercase; background:rgba(246,251,239,.12); color:var(--chalk); border:none; border-radius:6px; padding:14px 26px; cursor:pointer; transition:transform .12s, filter .18s; box-shadow:0 3px 0 rgba(14,42,26,.4); }
@@ -4650,6 +4894,7 @@ body { background: #1f6b3f; margin: 0; }
 .cs-retire-actions-row { display:flex; flex-direction:column; gap:10px; max-width:340px; margin:0 auto; }
 .cs-share-brand { font-family:"Barlow Condensed",sans-serif; font-weight:800; letter-spacing:.16em; font-size:13px; color:var(--ball); text-transform:uppercase; }
 .cs-share-headline { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:34px; line-height:1.05; letter-spacing:0; margin:6px 0 18px; text-transform:uppercase; color:var(--chalk); }
+.cs-share-archetype { font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--dim); margin:-12px 0 16px; }
 .cs-share-headline.slam { color:var(--ball); }
 /* begin the season screen */
 /* ---- CAREER MODE CSS ---- */
@@ -4882,6 +5127,9 @@ button.cs-trophy:focus-visible { outline:3px solid var(--ball); outline-offset:2
 .cs-begin-copy { display:flex; flex-direction:column; gap:8px; }
 .cs-begin-title { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:42px; line-height:1; text-transform:uppercase; color:var(--chalk); margin:0; }
 .cs-begin-sub { font-size:16px; color:var(--dim); max-width:40ch; margin:0; line-height:1.5; }
+.cs-archetype { display:flex; flex-direction:column; align-items:center; gap:2px; margin-top:6px; padding:8px 16px; border-radius:12px; border:1.5px solid var(--line-soft); background:rgba(216,240,0,.06); }
+.cs-archetype-label { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:16px; letter-spacing:.03em; color:var(--ball); text-transform:uppercase; }
+.cs-archetype-desc { font-size:12px; color:var(--dim); max-width:34ch; line-height:1.4; }
 .cs-begin-btn { font-size:22px; padding:18px 40px; }
 .cs-redraft-link { margin-top:4px; background:none; border:none; cursor:pointer; font-family:inherit; font-size:13.5px; color:var(--dim); padding:8px 10px; transition:color .15s; }
 .cs-redraft-link:hover { color:var(--chalk); }
