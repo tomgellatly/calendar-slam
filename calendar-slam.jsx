@@ -428,56 +428,6 @@ function mulberry32(seed) {
   };
 }
 
-// --- Daily Slam ---------------------------------------------------------------
-// Everyone in the world gets the SAME draft and the SAME draws each day: the
-// seed is derived purely from the local calendar date. One attempt per day.
-const DAILY_EPOCH = Date.UTC(2026, 6, 5); // Daily #1 = 5 July 2026
-function dailyInfo() {
-  const now = new Date();
-  const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-  const dayUTC = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
-  const number = Math.max(1, Math.round((dayUTC - DAILY_EPOCH) / 86400000) + 1);
-  const seed = ((now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate()) * 2654435761) >>> 0;
-  const tourKey = number % 2 === 1 ? "atp" : "wta"; // alternates daily
-  return { dateStr, number, seed, tourKey };
-}
-function dailyShareText(d) {
-  const streakLine = d.streak > 1 ? `\n🔥 ${d.streak} day streak` : "";
-  return `Calendar Slam Daily #${d.number} · ${d.tour}\n${d.emoji} ${d.won}/4${streakLine}\ncalendarslam.com`;
-}
-
-// --- Daily stats (streaks + distribution) --------------------------------------
-// Lives entirely in localStorage, keyed off the calendar-day math above. A
-// "yesterday" check on load tells us whether today continues a streak or
-// resets it — the streak itself only increments on the day you actually play.
-function loadDailyStats() {
-  const blank = { played: 0, currentStreak: 0, bestStreak: 0, lastPlayedDate: null, dist: [0, 0, 0, 0, 0] }; // dist[i] = count of i/4 results
-  try {
-    const raw = window.localStorage?.getItem("cs_daily_stats");
-    if (!raw) return blank;
-    return { ...blank, ...JSON.parse(raw) };
-  } catch (e) { return blank; }
-}
-function recordDailyStat(won) {
-  const info = dailyInfo();
-  const stats = loadDailyStats();
-  const prevDay = stats.lastPlayedDate
-    ? Math.round((Date.parse(stats.lastPlayedDate + "T00:00:00Z") - DAILY_EPOCH) / 86400000) + 1
-    : null;
-  const continuesStreak = prevDay === info.number - 1;
-  const next = {
-    played: stats.played + 1,
-    currentStreak: continuesStreak ? stats.currentStreak + 1 : 1,
-    lastPlayedDate: info.dateStr,
-    dist: stats.dist.map((c, i) => (i === won ? c + 1 : c)),
-  };
-  next.bestStreak = Math.max(stats.bestStreak, next.currentStreak);
-  try { window.localStorage?.setItem("cs_daily_stats", JSON.stringify(next)); } catch (e) { /* storage unavailable */ }
-  return next;
-}
-// When set (Daily mode), player spins draw from this seeded stream so the
-// draft sequence is identical for every player worldwide. Null otherwise.
-let SPIN_RNG = null;
 
 // What an opponent's style attacks in you. Phrasing adapts to how good your
 // matching shot is. Each entry has variants so reasons don't repeat across majors.
@@ -777,10 +727,8 @@ function rngPickWith(rand, arr, exclude = []) {
   if (!src.length) return null;
   return src[Math.floor(rand() * src.length)];
 }
-// Draws from the Daily seeded stream when one is active, so the daily draft is
-// identical for everyone; otherwise plain Math.random.
 function rngPick(arr, exclude = []) {
-  return rngPickWith(SPIN_RNG || Math.random, arr, exclude);
+  return rngPickWith(Math.random, arr, exclude);
 }
 
 // Score one surface. Two parts: (1) the weighted average of your shots, and
@@ -867,61 +815,81 @@ function CourtDiagram({ build, hovered }) {
   const hotZones = hovered ? (ZONE_OF[hovered]?.zones || []) : [];
 
   const zoneStyle = (z) => {
-    if (hotZones.includes(z)) return { fill: ZONE_COLOUR[z], opacity: 0.78, transition: "fill .22s, opacity .22s" };
-    if (filledZones[z]) return { fill: ZONE_COLOUR[z], opacity: 0.32, transition: "fill .22s, opacity .22s" };
+    if (hotZones.includes(z)) return { fill: ZONE_COLOUR[z], opacity: 0.85, filter: "url(#cs-zone-glow)", transition: "fill .22s, opacity .22s" };
+    if (filledZones[z]) return { fill: ZONE_COLOUR[z], opacity: 0.30, transition: "fill .22s, opacity .22s" };
     return { fill: "transparent", transition: "fill .22s, opacity .22s" };
   };
 
-  const line = { stroke: "rgba(246,251,239,.55)", strokeWidth: 1.5 };
-  const outerLine = { stroke: "rgba(246,251,239,.85)", strokeWidth: 2 };
+  // Real-court proportions: a doubles court is 36ft × 78ft. Court spans
+  // x 22–138 (116 wide) and y 14–265 (251 long) → ratio ≈ 2.17, true to life.
+  // Singles lines sit 14.5 in from each doubles sideline; service lines sit
+  // 67.5 either side of the net (y 139.5), matching 21ft of 78ft.
+  const line = { stroke: "rgba(246,251,239,.55)", strokeWidth: 1.4 };
+  const outerLine = { stroke: "rgba(246,251,239,.9)", strokeWidth: 2 };
 
   return (
-    <svg className="cs-court" viewBox="0 0 160 260" aria-hidden="true">
-      {/* court surface */}
-      <rect x="8" y="6" width="144" height="248" rx="2" fill="rgba(14,42,26,.55)" />
+    <svg className="cs-court" viewBox="0 0 160 292" aria-hidden="true">
+      <defs>
+        <linearGradient id="cs-court-surface" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="rgba(21,66,40,.85)" />
+          <stop offset="50%" stopColor="rgba(14,48,29,.9)" />
+          <stop offset="100%" stopColor="rgba(21,66,40,.85)" />
+        </linearGradient>
+        <filter id="cs-zone-glow" x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="2.2" result="b" />
+          <feMerge>
+            <feMergeNode in="b" /><feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
 
-      {/* zone fills (drawn before lines) */}
-      <rect x="8"   y="6"   width="144" height="46" style={zoneStyle("deepBase")} />
-      <rect x="8"   y="208" width="144" height="46" style={zoneStyle("deepBase")} />
-      <rect x="8"   y="52"  width="72"  height="50" style={zoneStyle("baseL")} />
-      <rect x="80"  y="52"  width="72"  height="50" style={zoneStyle("baseR")} />
-      <rect x="34"  y="102" width="92"  height="28" style={zoneStyle("serveBox")} />
-      <rect x="34"  y="130" width="92"  height="28" style={zoneStyle("serveBox")} />
-      <rect x="8"   y="116" width="144" height="28" style={zoneStyle("netZone")} />
-      <rect x="8"   y="102" width="144" height="56" style={zoneStyle("midCourt")} />
-      <rect x="8"   y="6"   width="12"  height="248" style={zoneStyle("wings")} />
-      <rect x="140" y="6"   width="12"  height="248" style={zoneStyle("wings")} />
+      {/* run-off surround, then court surface with mow stripes */}
+      <rect x="4" y="2" width="152" height="288" rx="7" fill="rgba(8,28,17,.75)" />
+      <rect x="22" y="14" width="116" height="251" fill="url(#cs-court-surface)" />
+      {[0, 1, 2, 3].map((i) => (
+        <rect key={i} x="22" y={14 + i * 62.75} width="116" height="31.4"
+          fill={i % 2 === 0 ? "rgba(255,255,255,.025)" : "transparent"} />
+      ))}
+
+      {/* zone fills (drawn before the lines so chalk stays crisp) */}
+      <rect x="22"    y="14"    width="116"  height="46"    style={zoneStyle("deepBase")} />
+      <rect x="22"    y="219"   width="116"  height="46"    style={zoneStyle("deepBase")} />
+      <rect x="22"    y="60"    width="58"   height="52"    style={zoneStyle("baseL")} />
+      <rect x="80"    y="60"    width="58"   height="52"    style={zoneStyle("baseR")} />
+      <rect x="22"    y="167"   width="58"   height="52"    style={zoneStyle("baseR")} />
+      <rect x="80"    y="167"   width="58"   height="52"    style={zoneStyle("baseL")} />
+      <rect x="36.5"  y="72"    width="87"   height="67.5"  style={zoneStyle("serveBox")} />
+      <rect x="36.5"  y="139.5" width="87"   height="67.5"  style={zoneStyle("serveBox")} />
+      <rect x="22"    y="123"   width="116"  height="33"    style={zoneStyle("netZone")} />
+      <rect x="22"    y="112"   width="116"  height="55"    style={zoneStyle("midCourt")} />
+      <rect x="22"    y="14"    width="14.5" height="251"   style={zoneStyle("wings")} />
+      <rect x="123.5" y="14"    width="14.5" height="251"   style={zoneStyle("wings")} />
       {/* whole court glow (mental) */}
-      <rect x="8" y="6" width="144" height="248" rx="2" style={zoneStyle("whole")} />
+      <rect x="22" y="14" width="116" height="251" style={zoneStyle("whole")} />
 
-      {/* court outer border */}
-      <rect x="8" y="6" width="144" height="248" rx="2" fill="none" {...outerLine} />
+      {/* chalk: doubles boundary, singles tramlines, service geometry */}
+      <rect x="22" y="14" width="116" height="251" fill="none" {...outerLine} />
+      <line x1="36.5"  y1="14"    x2="36.5"  y2="265"   {...line} />
+      <line x1="123.5" y1="14"    x2="123.5" y2="265"   {...line} />
+      <line x1="36.5"  y1="72"    x2="123.5" y2="72"    {...line} />
+      <line x1="36.5"  y1="207"   x2="123.5" y2="207"   {...line} />
+      <line x1="80"    y1="72"    x2="80"    y2="207"   {...line} />
+      {/* centre marks on each baseline */}
+      <line x1="80" y1="14"  x2="80" y2="21"  {...line} />
+      <line x1="80" y1="258" x2="80" y2="265" {...line} />
 
-      {/* baseline / service lines */}
-      <line x1="8"  y1="52"  x2="152" y2="52"  {...line} />
-      <line x1="8"  y1="208" x2="152" y2="208" {...line} />
-      <line x1="34" y1="52"  x2="34"  y2="208" {...line} />
-      <line x1="126"y1="52"  x2="126" y2="208" {...line} />
-      <line x1="34" y1="102" x2="126" y2="102" {...line} />
-      <line x1="34" y1="158" x2="126" y2="158" {...line} />
-      <line x1="80" y1="52"  x2="80"  y2="102" {...line} />
-      <line x1="80" y1="158" x2="80"  y2="208" {...line} />
-      <line x1="8"  y1="52"  x2="8"   y2="52"  {...line} />
+      {/* NET — band with posts and a soft shadow beneath */}
+      <rect x="18" y="141.5" width="124" height="3.5" fill="rgba(0,0,0,.3)" />
+      <rect x="16" y="135.5" width="128" height="6.5" rx="1.5" fill="rgba(246,251,239,.92)" />
+      <circle cx="17.5"  cy="138.5" r="3.2" fill="rgba(246,251,239,.95)" />
+      <circle cx="142.5" cy="138.5" r="3.2" fill="rgba(246,251,239,.95)" />
 
-      {/* NET — thick white line with posts */}
-      <rect x="4" y="126" width="152" height="8" rx="1"
-        fill="rgba(246,251,239,.9)" />
-      <rect x="4"   y="120" width="5" height="20" rx="1" fill="rgba(246,251,239,.9)" />
-      <rect x="151" y="120" width="5" height="20" rx="1" fill="rgba(246,251,239,.9)" />
-
-      {/* centre service mark */}
-      <line x1="80" y1="126" x2="80" y2="134" stroke="rgba(246,251,239,.55)" strokeWidth="1.5" />
-
-      {/* ball in play indicator when hovering (subtle tennis ball) */}
+      {/* a little rally when previewing a shot — the ball crosses the net */}
       {hovered && (
-        <circle cx="80" cy="130" r="5"
-          fill="var(--ball)" opacity="0.9">
-          <animate attributeName="r" values="4;6;4" dur="1.2s" repeatCount="indefinite" />
+        <circle r="4.5" fill="var(--ball)" opacity="0.95">
+          <animate attributeName="cx" values="52;104;52" dur="1.7s" repeatCount="indefinite" />
+          <animate attributeName="cy" values="52;226;52" dur="1.7s" repeatCount="indefinite" />
+          <animate attributeName="r" values="4;5.2;4" dur="0.85s" repeatCount="indefinite" />
         </circle>
       )}
     </svg>
@@ -1349,43 +1317,6 @@ function NewsModal({ clipping, onClose }) {
   );
 }
 
-// DAILY STATS MODAL — Wordle-style streak + result distribution.
-function DailyStatsModal({ stats, todayResult, onClose }) {
-  const maxCount = Math.max(1, ...stats.dist);
-  const labels = ["0/4", "1/4", "2/4", "3/4", "4/4"];
-  return (
-    <div className="cs-modal cs-daily-stats-modal" onClick={onClose}>
-      <div className="cs-daily-stats-card" onClick={e => e.stopPropagation()}>
-        <div className="cs-daily-stats-title">Daily Slam stats</div>
-        <div className="cs-daily-stats-row">
-          <div className="cs-daily-stat"><span className="cs-daily-stat-num">{stats.played}</span><span className="cs-daily-stat-label">Played</span></div>
-          <div className="cs-daily-stat"><span className="cs-daily-stat-num">{stats.currentStreak}🔥</span><span className="cs-daily-stat-label">Streak</span></div>
-          <div className="cs-daily-stat"><span className="cs-daily-stat-num">{stats.bestStreak}</span><span className="cs-daily-stat-label">Best streak</span></div>
-        </div>
-        <div className="cs-daily-dist-title">Result distribution</div>
-        <div className="cs-daily-dist">
-          {labels.map((l, i) => {
-            const count = stats.dist[i] || 0;
-            const pct = Math.max(6, Math.round((count / maxCount) * 100));
-            const isToday = todayResult != null && todayResult === i;
-            return (
-              <div key={l} className="cs-daily-dist-row">
-                <span className="cs-daily-dist-label">{l}</span>
-                <div className="cs-daily-dist-track">
-                  <div className={`cs-daily-dist-bar ${isToday ? "today" : ""}`} style={{ width: `${pct}%` }}>
-                    <span className="cs-daily-dist-count">{count}</span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-        <button className="cs-newspaper-close cs-cta" onClick={onClose}>Close →</button>
-      </div>
-    </div>
-  );
-}
-
 function NetGraphic() {
   return (
     <svg className="cs-net" viewBox="0 0 400 70" aria-hidden="true" preserveAspectRatio="none">
@@ -1769,7 +1700,7 @@ export default function CalendarSlam() {
   const [showCareerCard, setShowCareerCard] = useState(false);
   const [isTouch, setIsTouch] = useState(false);
   const [previewKey, setPreviewKey] = useState(null);
-  const [reveal, setReveal] = useState({ slam: 0, round: 0, done: false, scoreShown: true });
+  const [reveal, setReveal] = useState({ slam: 0, round: 0, done: false, scoreShown: true, setsShown: 0 });
   const [difficulty, setDifficulty] = useState("normal");
   const [eliteUsed, setEliteUsed] = useState(false);
   const [playerSkipUsed, setPlayerSkipUsed] = useState(false);
@@ -1814,10 +1745,6 @@ export default function CalendarSlam() {
   const [rivalRank, setRivalRank] = useState(null);
   const [seasonApproach, setSeasonApproach] = useState("steady"); // career: conserve | steady | push
   const [careerLegend, setCareerLegend] = useState(false); // career difficulty: field strengthens yearly
-  const [dailyDone, setDailyDone] = useState(null); // today's Daily Slam result, if played
-  const [dailyCopied, setDailyCopied] = useState(false);
-  const [dailyStats, setDailyStats] = useState(() => loadDailyStats());
-  const [showDailyStats, setShowDailyStats] = useState(false);
   const [resumeAvailable, setResumeAvailable] = useState(null); // saved career snapshot
 
   // Persistent player record (saved across sessions via the artifact storage API).
@@ -1849,15 +1776,8 @@ export default function CalendarSlam() {
     setPlayerStats(s => ({ ...s, loaded: true }));
   }, []);
 
-  // Load today's Daily result (if played) and any saved career on mount.
+  // Load any saved career on mount.
   useEffect(() => {
-    try {
-      const rawDaily = window.localStorage?.getItem("cs_daily");
-      if (rawDaily) {
-        const d = JSON.parse(rawDaily);
-        if (d.date === dailyInfo().dateStr) setDailyDone(d);
-      }
-    } catch (e) { /* storage unavailable */ }
     try {
       const rawCareer = window.localStorage?.getItem("cs_career_save");
       if (rawCareer) setResumeAvailable(JSON.parse(rawCareer));
@@ -1889,7 +1809,6 @@ export default function CalendarSlam() {
     const s = resumeAvailable;
     if (!s) return;
     ACTIVE_WEIGHTS = SURFACE_WEIGHTS;
-    SPIN_RNG = null;
     setGameMode("career");
     setTour(s.tour || "atp");
     setPlayerName(s.playerName || "");
@@ -1917,45 +1836,9 @@ export default function CalendarSlam() {
     setSeasonApproach("steady");
     setRetirementPrompt(false);
     setRanSim(false);
-    setReveal({ slam: 0, round: 0, done: false, scoreShown: false });
+    setReveal({ slam: 0, round: 0, done: false, scoreShown: false, setsShown: 0 });
     setRound(TOTAL_ROUNDS);
     setPhase("result");
-  }
-
-  // --- Daily Slam ---------------------------------------------------------------
-  function startDaily() {
-    const info = dailyInfo();
-    // Belt-and-braces: one attempt per day.
-    try {
-      const raw = window.localStorage?.getItem("cs_daily");
-      if (raw) {
-        const d = JSON.parse(raw);
-        if (d.date === info.dateStr) { setDailyDone(d); return; }
-      }
-    } catch (e) { /* storage unavailable */ }
-    ACTIVE_WEIGHTS = SURFACE_WEIGHTS;
-    SPIN_RNG = mulberry32(info.seed); // identical draft for everyone today
-    setGameMode("daily");
-    setDifficulty("normal");
-    setTour(info.tourKey);
-    setSeed(info.seed);
-    setBuild({});
-    setRound(0);
-    setRanSim(false);
-    setReveal({ slam: 0, round: 0, done: false, scoreShown: false });
-    setShowCard(false);
-    setEliteUsed(false);
-    setPlayerSkipUsed(false);
-    setPhase("draft");
-    spinNext([], false, TOURS[info.tourKey].pool);
-  }
-  function copyDailyShare() {
-    if (!dailyDone) return;
-    try {
-      navigator.clipboard.writeText(dailyShareText(dailyDone));
-      setDailyCopied(true);
-      setTimeout(() => setDailyCopied(false), 1600);
-    } catch (e) { /* clipboard unavailable */ }
   }
 
   // Persist stats whenever they change (after initial load).
@@ -2356,6 +2239,11 @@ export default function CalendarSlam() {
       };
     }
 
+    // Pull the Olympic result out of the sim BEFORE the ranking maths below
+    // needs it (it was previously declared after first use, which threw a
+    // ReferenceError and broke the "End season" button).
+    const olympicsEvent = slamResults.find(r => r.isOlympics);
+
     // --- World rankings: this season's points, rank, and (if a rival exists)
     // their rank too, so the offseason and retirement screens can tell the
     // ranking race as its own story, not just the slam tally.
@@ -2379,8 +2267,6 @@ export default function CalendarSlam() {
 
     // Add season to history
     const careerYear = 2025 + careerSeason;
-    // Pull Olympic result from the sim results (already computed there in real-time)
-    const olympicsEvent = slamResults.find(r => r.isOlympics);
     const olympicsThisSeason = olympicsEvent ? {
       medal: olympicsEvent.medal,
       wonGold: olympicsEvent.wonTitle,
@@ -2521,7 +2407,7 @@ export default function CalendarSlam() {
       return;
     }
     setRanSim(false);
-    setReveal({ slam: 0, round: 0, done: false, scoreShown: false });
+    setReveal({ slam: 0, round: 0, done: false, scoreShown: false, setsShown: 0 });
     setEliteUsed(false);
     setRound(0);
     // Go straight to result screen (which shows "Begin season X") —
@@ -2670,11 +2556,10 @@ export default function CalendarSlam() {
 
   function startDraft() {
     ACTIVE_WEIGHTS = SURFACE_WEIGHTS; // career + intro drafts always use base weights
-    SPIN_RNG = null;
     setBuild({});
     setRound(0);
     setRanSim(false);
-    setReveal({ slam: 0, round: 0, done: false, scoreShown: false });
+    setReveal({ slam: 0, round: 0, done: false, scoreShown: false, setsShown: 0 });
     setShowCard(false);
     setEliteUsed(false);
     setPlayerSkipUsed(false);
@@ -2686,13 +2571,12 @@ export default function CalendarSlam() {
   // Sets tour, resets draft state, and spins immediately — no intro screen.
   function startSingleDraft(tourKey) {
     ACTIVE_WEIGHTS = difficulty === "specialist" ? SPECIALIST_WEIGHTS : SURFACE_WEIGHTS;
-    SPIN_RNG = null;
     const pool = TOURS[tourKey].pool;
     setTour(tourKey);
     setBuild({});
     setRound(0);
     setRanSim(false);
-    setReveal({ slam: 0, round: 0, done: false, scoreShown: false });
+    setReveal({ slam: 0, round: 0, done: false, scoreShown: false, setsShown: 0 });
     setShowCard(false);
     setEliteUsed(false);
     setPlayerSkipUsed(false);
@@ -2742,8 +2626,6 @@ export default function CalendarSlam() {
     }
     let ticks = 0;
     const iv = setInterval(() => {
-      // Cosmetic animation frames always use Math.random — the seeded Daily
-      // stream must only be consumed by the real (deterministic) draws.
       setCurrent(rngPickWith(Math.random, pool, exMerged) || final);
       ticks++;
       if (ticks > 12) {
@@ -2979,7 +2861,12 @@ export default function CalendarSlam() {
       const approachAdj = gameMode === "career"
         ? (seasonApproach === "push" ? 1 : seasonApproach === "conserve" ? -1 : 0)
         : 0;
-      const formBonus = (gameMode === "career" ? 1 : 3) + approachAdj;
+      // The WTA pool's drafted ratings run ~2pts hotter than the ATP's, which
+      // made the women's tour a noticeably easier route to the Calendar Slam
+      // (Monte Carlo: 2.3% vs 1.25% CS for like-for-like greedy builds). A 1pt
+      // smaller form bonus brings the tours into line (~1.1% vs 1.25%).
+      const tourAdj = tour === "wta" ? -1 : 0;
+      const formBonus = (gameMode === "career" ? 1 : 3) + tourAdj + approachAdj;
       // Women's tour plays best-of-3 in every event, including the slams.
       const bestOf = tour === "wta" ? 3 : 5;
       const r = simulateMajor(build, s, rand, usedReasons, activeField, activeDraw, rivalForDraw, formBonus, bestOf);
@@ -2994,10 +2881,8 @@ export default function CalendarSlam() {
 
   // Kick off a fresh live simulation: reset reveal, new seed, run sim.
   function startSim() {
-    setReveal({ slam: 0, round: 0, done: false, scoreShown: false });
-    // Daily: the draw seed is fixed by the date, so everyone's season is the
-    // same fair test. Otherwise: a fresh random draw every run.
-    setSeed(gameMode === "daily" ? dailyInfo().seed : Math.floor(Math.random() * 1e9));
+    setReveal({ slam: 0, round: 0, done: false, scoreShown: false, setsShown: 0 });
+    setSeed(Math.floor(Math.random() * 1e9));
     statsRecorded.current = false;
     setRanSim(true);
   }
@@ -3022,24 +2907,11 @@ export default function CalendarSlam() {
       currentStreak: newStreak,
       bestStreak: Math.max(playerStats.bestStreak, newStreak),
     });
-    // Daily Slam: lock in today's one attempt with a shareable emoji line.
-    if (gameMode === "daily") {
-      const info = dailyInfo();
-      const emoji = simResults.perSlam
-        .filter(s => !s.isOlympics)
-        .map(s => (s.wonTitle ? "\ud83c\udfc6" : s.lostRound === "Final" ? "\ud83e\udd48" : "\u274c"))
-        .join("");
-      const nextStats = recordDailyStat(won); // updates streak + distribution in localStorage
-      setDailyStats(nextStats);
-      const rec = { date: info.dateStr, number: info.number, emoji, won, tier: simResults.tier?.name, tour: T.label, streak: nextStats.currentStreak };
-      setDailyDone(rec);
-      try { window.localStorage?.setItem("cs_daily", JSON.stringify(rec)); } catch (e) { /* storage unavailable */ }
-    }
   }, [reveal.done, simResults, playerStats.loaded, gameMode, T.label]);
 
   function skipSim() {
     const total = simResults ? simResults.perSlam.length : SLAMS.length;
-    setReveal({ slam: total, round: 0, done: true, scoreShown: true });
+    setReveal({ slam: total, round: 0, done: true, scoreShown: true, setsShown: 99 });
   }
 
   // Drive the live reveal. Each round reveals in two beats: the opponent appears
@@ -3061,28 +2933,54 @@ export default function CalendarSlam() {
     // slow the reveal right down so the showdown gets room to breathe.
     const rivalShowdown = !!slam.path[r]?.isRival && (isFinalRound || isSemi);
 
-    // Beat durations. Early rounds (R1-R4) are quick; QF/SF build; the final is
-    // an event. A loss at any stage gets extra dwell because it ends your run.
+    // Beat durations. Early rounds (R1-R4) move briskly (but with enough air to
+    // read), QF/SF build, and the final is an event whose sets land one by one.
+    // A loss at any stage gets extra dwell because it ends your run.
     let nameBeat, scoreBeat;
     if (reduce) {
       nameBeat = 0; scoreBeat = 0;
     } else if (isFinalRound) {
-      nameBeat = 700; scoreBeat = 1100;       // championship: real suspense
+      nameBeat = 850; scoreBeat = 1250;       // championship: real suspense
     } else if (isSemi) {
-      nameBeat = 480; scoreBeat = 700;
+      nameBeat = 560; scoreBeat = 820;
     } else if (isQF) {
-      nameBeat = 380; scoreBeat = 560;
+      nameBeat = 450; scoreBeat = 650;
     } else {
-      nameBeat = 230; scoreBeat = 360;        // routine early rounds — brisk
+      nameBeat = 300; scoreBeat = 460;        // routine early rounds — brisk
     }
     // If you just lost (run over), linger so it sinks in before moving on.
-    if (justLost && reveal.scoreShown && !reduce) scoreBeat = Math.max(scoreBeat, 1000);
+    if (justLost && reveal.scoreShown && !reduce) scoreBeat = Math.max(scoreBeat, 1100);
     if (rivalShowdown && !reduce) {
       nameBeat = Math.round(nameBeat * 1.6);
       scoreBeat = Math.round(scoreBeat * 1.5);
     }
 
+    // The FINAL plays out set by set: opponent appears, each set score lands on
+    // its own beat, then the verdict (won/lost the title). Every other round
+    // keeps the two-beat rhythm (opponent, then result) so the year still moves.
+    const finalSets = isFinalRound && Array.isArray(slam.path[r]?.sets) ? slam.path[r].sets : null;
+
     if (!reveal.scoreShown) {
+      const setsShown = reveal.setsShown || 0;
+      if (finalSets && !reduce) {
+        if (setsShown === 0 && (isFinalRound || rivalShowdown)) Sound.heartbeat();
+        if (setsShown < finalSets.length) {
+          // Land the next set. First one waits the full nameBeat (let the
+          // matchup breathe); the rest arrive on a steady rally-like pulse.
+          const beat = setsShown === 0 ? nameBeat : (rivalShowdown ? 950 : 800);
+          const t = setTimeout(() => {
+            Sound.tap();
+            setReveal((rr) => ({ ...rr, setsShown: (rr.setsShown || 0) + 1 }));
+          }, beat);
+          return () => clearTimeout(t);
+        }
+        // All sets down — short beat, then the verdict lands.
+        const t = setTimeout(() => {
+          Sound.tap();
+          setReveal((rr) => ({ ...rr, scoreShown: true }));
+        }, 650);
+        return () => clearTimeout(t);
+      }
       if ((isFinalRound || rivalShowdown) && !reduce) Sound.heartbeat();
       const t = setTimeout(() => {
         // Only sound the meaningful rounds (QF onward) to avoid constant clicking
@@ -3099,13 +2997,13 @@ export default function CalendarSlam() {
     // major begins, so each slam reads as its own chapter.
     const isSlamResolved = r >= lastRound || justLost;
     const moreSlams = reveal.slam + 1 < simResults.perSlam.length;
-    const interSlamHold = (isSlamResolved && moreSlams && !reduce) ? 900 : 0;
+    const interSlamHold = (isSlamResolved && moreSlams && !reduce) ? 1100 : 0;
 
     const t = setTimeout(() => {
       setReveal((rr) => {
-        if (rr.round < lastRound) return { ...rr, round: rr.round + 1, scoreShown: false };
+        if (rr.round < lastRound) return { ...rr, round: rr.round + 1, scoreShown: false, setsShown: 0 };
         if (rr.slam + 1 >= simResults.perSlam.length) return { ...rr, done: true };
-        return { slam: rr.slam + 1, round: 0, done: false, scoreShown: false };
+        return { slam: rr.slam + 1, round: 0, done: false, scoreShown: false, setsShown: 0 };
       });
     }, scoreBeat + interSlamHold);
     return () => clearTimeout(t);
@@ -3124,7 +3022,7 @@ export default function CalendarSlam() {
           if (window.confirm(msg)) {
             setPhase("mode");
             setRanSim(false);
-            setReveal({ slam: 0, round: 0, done: false, scoreShown: false });
+            setReveal({ slam: 0, round: 0, done: false, scoreShown: false, setsShown: 0 });
           }
         }} title="Return to home">
           <span className="cs-wordmark-calendar">Calendar</span>
@@ -3193,36 +3091,6 @@ export default function CalendarSlam() {
                 </span>
               </button>
             )}
-            {(() => {
-              const info = dailyInfo();
-              const played = dailyDone && dailyDone.date === info.dateStr;
-              return (
-                <button type="button" className={`cs-mode-btn daily ${played ? "played" : ""}`}
-                  onClick={() => (played ? copyDailyShare() : startDaily())}>
-                  <span className="cs-mode-icon">📅</span>
-                  <span className="cs-mode-label">Daily Slam #{info.number}</span>
-                  {played ? (
-                    <>
-                      <span className="cs-daily-emoji">
-                        {dailyDone.emoji} {dailyDone.won}/4
-                        {dailyStats.currentStreak > 1 && <span className="cs-daily-streak-badge">🔥 {dailyStats.currentStreak}</span>}
-                      </span>
-                      <span className="cs-mode-desc">{dailyCopied ? "✓ Copied to clipboard!" : "Played today — tap to copy your result. New draft tomorrow."}</span>
-                    </>
-                  ) : (
-                    <span className="cs-mode-desc">
-                      Everyone in the world drafts the same {info.tourKey === "atp" ? "ATP" : "WTA"} players today. One attempt — make it count, then share your line.
-                      {dailyStats.currentStreak > 0 && ` You're on a 🔥 ${dailyStats.currentStreak} day streak.`}
-                    </span>
-                  )}
-                </button>
-              );
-            })()}
-            {dailyStats.played > 0 && (
-              <button type="button" className="cs-text-btn cs-daily-stats-link" onClick={() => setShowDailyStats(true)}>
-                📊 View Daily Slam stats
-              </button>
-            )}
             <button type="button" className="cs-mode-btn"
               onClick={() => { setGameMode("single"); setPhase("tour"); }}>
               <span className="cs-mode-icon">🎾</span>
@@ -3233,7 +3101,7 @@ export default function CalendarSlam() {
               onClick={() => { setGameMode("career"); setPhase("tour"); }}>
               <span className="cs-mode-icon">🏆</span>
               <span className="cs-mode-label">Career Mode</span>
-              <span className="cs-mode-desc">Try and become the undisputed GOAT by reaching 25 slams, with a player you guide from age 20 to retirement. Hire coaches, survive injuries, trade blows with your rival — before time catches up with you.</span>
+              <span className="cs-mode-desc">Guide a named player from age 20 to retirement — coaches, injuries, a rival, and a shot at 25 slams before time catches up with you.</span>
             </button>
           </div>
         </section>
@@ -3467,11 +3335,6 @@ export default function CalendarSlam() {
               {careerLegend ? " · ⚡ Legend" : ""}
             </div>
           )}
-          {gameMode === "daily" && (
-            <div className="cs-draft-career-banner cs-daily-draft-banner">
-              📅 <strong>Daily Slam #{dailyInfo().number}</strong> · {T.label} · same draft for everyone · one attempt
-            </div>
-          )}
           <div className="cs-progress-row">
             <span className="cs-round">Round {round + 1} / {TOTAL_ROUNDS}</span>
             <div className="cs-dots">
@@ -3607,11 +3470,6 @@ export default function CalendarSlam() {
                   </div>
                 ) : null;
               })()}
-              {gameMode === "daily" && (
-                <div className="cs-daily-banner">
-                  📅 Daily Slam #{dailyInfo().number} · {T.label} · One attempt — the draw is the same for everyone today.
-                </div>
-              )}
               <div className="cs-begin-copy">
                 <h2 className="cs-begin-title">
                   {gameMode === "career"
@@ -3822,33 +3680,30 @@ export default function CalendarSlam() {
                             {p.name}{p.isRival ? " ⚔" : ""}
                           </span>
                         </div>
-                        <div className={`cs-now-score ${reveal.scoreShown ? "shown" : "pending"} ${reveal.scoreShown ? (p.won ? "won" : "lost") : ""}`}>
-                          {reveal.scoreShown
-                            ? <>{p.won ? "WON" : "LOST"} <span className="cs-now-score-line">{p.score}</span></>
-                            : <span className="cs-now-serving">{p.round === "Final" ? "Championship point…" : "Match point…"}</span>}
-                        </div>
-                        {/* FINAL-MATCH MOMENTUM VIEWER: the championship match gets its
-                            sets laid down one at a time with a tilting momentum bar,
-                            instead of just landing as a flat scoreline. */}
-                        {reveal.scoreShown && isFinal && Array.isArray(p.sets) && p.sets.length > 0 && (
-                          <div className="cs-momentum" aria-hidden={reduce}>
-                            {(() => {
-                              let myRunning = 0, oppRunning = 0;
-                              return p.sets.map(([mine, theirs], i) => {
-                                const setWon = mine > theirs;
-                                if (setWon) myRunning++; else oppRunning++;
-                                const tilt = 50 + (myRunning - oppRunning) * 18; // % toward "you"
-                                return (
-                                  <div key={i} className={`cs-momentum-set ${reduce ? "" : "cs-momentum-in"}`} style={{ '--i': i }}>
-                                    <span className="cs-momentum-label">Set {i + 1}</span>
-                                    <div className="cs-momentum-bar-track">
-                                      <div className={`cs-momentum-bar-fill ${setWon ? "you" : "them"}`} style={{ width: `${Math.max(8, Math.min(92, tilt))}%` }} />
-                                    </div>
-                                    <span className="cs-momentum-score">{mine}-{theirs}</span>
-                                  </div>
-                                );
-                              });
-                            })()}
+                        {/* THE FINAL, SET BY SET: the championship match's sets land
+                            one at a time (your score first), then the verdict. Every
+                            other round just shows the result line. */}
+                        {isFinal && Array.isArray(p.sets) && p.sets.length > 0 && !reduce ? (
+                          <>
+                            <div className="cs-final-sets">
+                              {p.sets.slice(0, reveal.scoreShown ? p.sets.length : (reveal.setsShown || 0)).map(([mine, theirs], i) => (
+                                <span key={i} className={`cs-final-set ${mine > theirs ? "you" : "them"}`}>
+                                  <span className="cs-final-set-label">Set {i + 1}</span>
+                                  <span className="cs-final-set-score">{mine}–{theirs}</span>
+                                </span>
+                              ))}
+                            </div>
+                            <div className={`cs-now-score ${reveal.scoreShown ? "shown" : "pending"} ${reveal.scoreShown ? (p.won ? "won" : "lost") : ""}`}>
+                              {reveal.scoreShown
+                                ? <>{p.won ? "WON" : "LOST"} <span className="cs-now-score-line">{p.score}</span></>
+                                : <span className="cs-now-serving">{(reveal.setsShown || 0) === 0 ? "The final is under way…" : "Championship in the balance…"}</span>}
+                            </div>
+                          </>
+                        ) : (
+                          <div className={`cs-now-score ${reveal.scoreShown ? "shown" : "pending"} ${reveal.scoreShown ? (p.won ? "won" : "lost") : ""}`}>
+                            {reveal.scoreShown
+                              ? <>{p.won ? "WON" : "LOST"} <span className="cs-now-score-line">{p.score}</span></>
+                              : <span className="cs-now-serving">{p.round === "Final" ? "Championship point…" : "Match point…"}</span>}
                           </div>
                         )}
                         {reveal.scoreShown && (isFinal || !p.won) && (
@@ -3957,10 +3812,6 @@ export default function CalendarSlam() {
                         </div>
                       )}
                     </>
-                  ) : gameMode === "daily" ? (
-                    <button className="cs-sim-btn cs-daily-copy" onClick={copyDailyShare}>
-                      {dailyCopied ? "✓ Copied!" : `⧉ Copy result ${dailyDone ? dailyDone.emoji : ""}`}
-                    </button>
                   ) : (
                     <button className="cs-sim-btn" onClick={startSim}>
                       ↻ Run the year again (new draw)
@@ -3991,7 +3842,7 @@ export default function CalendarSlam() {
           )}
           {gameMode !== "career" ? (
             <button className="cs-cta" onClick={() => { setPhase("mode"); }}>
-              {gameMode === "daily" ? "Back to home →" : "Play again →"}
+              Play again →
             </button>
           ) : null}
         </section>
@@ -4434,14 +4285,6 @@ export default function CalendarSlam() {
         <NewsModal
           clipping={newsClipping}
           onClose={() => setNewsClipping(null)}
-        />
-      )}
-
-      {showDailyStats && (
-        <DailyStatsModal
-          stats={dailyStats}
-          todayResult={dailyDone && dailyDone.date === dailyInfo().dateStr ? dailyDone.won : null}
-          onClose={() => setShowDailyStats(false)}
         />
       )}
 
@@ -5124,14 +4967,7 @@ button.cs-trophy:focus-visible { outline:3px solid var(--ball); outline-offset:2
   .cs-sticky { padding-top:6px; }
 }
 
-/* --- Daily Slam ------------------------------------------------------------ */
-.cs-mode-btn.daily { border-color:var(--ball); background:rgba(216,240,0,.08); }
-.cs-mode-btn.daily.played { border-style:dashed; background:rgba(246,251,239,.05); }
 .cs-mode-btn.resume { border-color:#e0a13f; background:rgba(224,161,63,.09); }
-.cs-daily-emoji { font-size:20px; letter-spacing:2px; }
-.cs-daily-banner { background:rgba(216,240,0,.1); border:1.5px dashed var(--ball); border-radius:10px; padding:10px 14px; font-size:13px; font-weight:700; color:var(--chalk); margin-bottom:14px; }
-.cs-daily-draft-banner { border:1.5px dashed var(--ball); }
-.cs-daily-copy { border-color:var(--ball); }
 
 /* --- Season approach (career) ----------------------------------------------- */
 .cs-approach { display:flex; flex-direction:column; align-items:center; gap:8px; margin:4px 0 16px; }
@@ -5175,35 +5011,15 @@ button.cs-trophy:focus-visible { outline:3px solid var(--ball); outline-offset:2
 /* --- Rival / misc ------------------------------------------------------------ */
 .cs-rival-past { opacity:.7; font-size:11px; margin-top:4px; }
 
-/* --- Final-match momentum viewer -------------------------------------------- */
-.cs-momentum { display:flex; flex-direction:column; gap:6px; margin:14px auto 0; max-width:320px; }
-.cs-momentum-set { display:grid; grid-template-columns:44px 1fr 40px; align-items:center; gap:8px; opacity:0; }
-.cs-momentum-in { animation:cs-momentum-land .45s ease forwards; animation-delay:calc(var(--i) * .55s); }
-@keyframes cs-momentum-land { from { opacity:0; transform:translateX(-8px); } to { opacity:1; transform:translateX(0); } }
-.cs-momentum-label { font-size:11px; font-weight:700; color:var(--dim); text-align:left; }
-.cs-momentum-bar-track { height:8px; border-radius:5px; background:rgba(255,255,255,.12); overflow:hidden; }
-.cs-momentum-bar-fill { height:100%; border-radius:5px; transition:width .35s ease; }
-.cs-momentum-bar-fill.you { background:var(--ball); margin-left:auto; }
-.cs-momentum-bar-fill.them { background:#ff8f70; margin-left:auto; }
-.cs-momentum-score { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:14px; color:var(--chalk); text-align:right; }
-
-/* --- Daily stats modal + streak badge --------------------------------------- */
-.cs-daily-streak-badge { display:inline-block; margin-left:8px; font-size:14px; color:var(--ball); }
-.cs-text-btn { background:none; border:none; color:var(--ball); font-weight:700; font-size:13px; padding:8px 4px; cursor:pointer; text-decoration:underline; text-underline-offset:3px; }
-.cs-daily-stats-card { background:var(--panel,#132a1c); border:1.5px solid var(--line-soft); border-radius:16px; padding:24px 20px; max-width:360px; width:90vw; margin:auto; text-align:center; }
-.cs-daily-stats-title { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:20px; text-transform:uppercase; letter-spacing:.06em; color:var(--chalk); margin-bottom:18px; }
-.cs-daily-stats-row { display:flex; justify-content:space-around; margin-bottom:20px; }
-.cs-daily-stat { display:flex; flex-direction:column; gap:2px; }
-.cs-daily-stat-num { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:26px; color:var(--ball); }
-.cs-daily-stat-label { font-size:10px; text-transform:uppercase; letter-spacing:.08em; color:var(--dim); }
-.cs-daily-dist-title { font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--dim); font-weight:700; margin-bottom:10px; text-align:left; }
-.cs-daily-dist { display:flex; flex-direction:column; gap:6px; margin-bottom:20px; }
-.cs-daily-dist-row { display:grid; grid-template-columns:32px 1fr; align-items:center; gap:8px; }
-.cs-daily-dist-label { font-size:11px; font-weight:700; color:var(--dim); text-align:left; }
-.cs-daily-dist-track { height:20px; background:rgba(255,255,255,.08); border-radius:4px; overflow:hidden; }
-.cs-daily-dist-bar { height:100%; background:rgba(255,255,255,.28); display:flex; align-items:center; justify-content:flex-end; padding-right:6px; border-radius:4px; transition:width .5s ease; }
-.cs-daily-dist-bar.today { background:var(--ball); }
-.cs-daily-dist-count { font-size:11px; font-weight:800; color:var(--ink,#112e1c); }
+/* --- The final, set by set ---------------------------------------------------- */
+.cs-final-sets { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin:14px auto 4px; min-height:52px; }
+.cs-final-set { display:flex; flex-direction:column; align-items:center; gap:1px; min-width:56px; padding:7px 10px 8px; border-radius:10px; border:1.5px solid var(--line-soft); background:rgba(246,251,239,.05); animation:cs-set-land .4s cubic-bezier(.2,.9,.3,1.2); }
+.cs-final-set.you { border-color:rgba(216,240,0,.65); background:rgba(216,240,0,.10); }
+.cs-final-set.them { border-color:rgba(255,143,112,.5); background:rgba(255,143,112,.08); }
+.cs-final-set-label { font-size:9px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--dim); }
+.cs-final-set-score { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:20px; line-height:1.1; color:var(--chalk); }
+.cs-final-set.you .cs-final-set-score { color:var(--ball); }
+@keyframes cs-set-land { from { opacity:0; transform:translateY(8px) scale(.85); } to { opacity:1; transform:translateY(0) scale(1); } }
 
 /* --- World rankings ---------------------------------------------------------- */
 .cs-rank-badge { display:inline-block; margin-top:8px; font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:15px; letter-spacing:.04em; color:var(--chalk); background:rgba(216,240,0,.1); border:1px solid rgba(216,240,0,.35); border-radius:20px; padding:5px 14px; }
