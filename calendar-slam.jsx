@@ -442,7 +442,38 @@ function dailyInfo() {
   return { dateStr, number, seed, tourKey };
 }
 function dailyShareText(d) {
-  return `Calendar Slam Daily #${d.number} · ${d.tour}\n${d.emoji} ${d.won}/4\ncalendarslam.com`;
+  const streakLine = d.streak > 1 ? `\n🔥 ${d.streak} day streak` : "";
+  return `Calendar Slam Daily #${d.number} · ${d.tour}\n${d.emoji} ${d.won}/4${streakLine}\ncalendarslam.com`;
+}
+
+// --- Daily stats (streaks + distribution) --------------------------------------
+// Lives entirely in localStorage, keyed off the calendar-day math above. A
+// "yesterday" check on load tells us whether today continues a streak or
+// resets it — the streak itself only increments on the day you actually play.
+function loadDailyStats() {
+  const blank = { played: 0, currentStreak: 0, bestStreak: 0, lastPlayedDate: null, dist: [0, 0, 0, 0, 0] }; // dist[i] = count of i/4 results
+  try {
+    const raw = window.localStorage?.getItem("cs_daily_stats");
+    if (!raw) return blank;
+    return { ...blank, ...JSON.parse(raw) };
+  } catch (e) { return blank; }
+}
+function recordDailyStat(won) {
+  const info = dailyInfo();
+  const stats = loadDailyStats();
+  const prevDay = stats.lastPlayedDate
+    ? Math.round((Date.parse(stats.lastPlayedDate + "T00:00:00Z") - DAILY_EPOCH) / 86400000) + 1
+    : null;
+  const continuesStreak = prevDay === info.number - 1;
+  const next = {
+    played: stats.played + 1,
+    currentStreak: continuesStreak ? stats.currentStreak + 1 : 1,
+    lastPlayedDate: info.dateStr,
+    dist: stats.dist.map((c, i) => (i === won ? c + 1 : c)),
+  };
+  next.bestStreak = Math.max(stats.bestStreak, next.currentStreak);
+  try { window.localStorage?.setItem("cs_daily_stats", JSON.stringify(next)); } catch (e) { /* storage unavailable */ }
+  return next;
 }
 // When set (Daily mode), player spins draw from this seeded stream so the
 // draft sequence is identical for every player worldwide. Null otherwise.
@@ -626,6 +657,7 @@ function simulateMajor(build, slam, rand, usedReasons, field, drawPool, rival, f
       won,
       isRival: !!opp.isRival,
       score: fmtScore(m.sets),
+      sets: m.sets, // raw per-set [mine, theirs] scores — used by the final-match momentum viewer
     });
 
     if (!won) {
@@ -675,6 +707,57 @@ function simulateMajor(build, slam, rand, usedReasons, field, drawPool, rival, f
     note,
     path,
   };
+}
+
+// --- World rankings (career mode) ----------------------------------------------
+// A lightweight points-and-rank model so career mode has a season-long race,
+// not just four isolated results. Not a real ATP/WTA points table — tuned so
+// a great slam season lands you near the top and a quiet one drops you out
+// of it, which is all the narrative needs.
+const RANK_TABLE = [
+  [1, 11000], [2, 9200], [3, 7800], [5, 6000], [8, 4600], [10, 4000],
+  [15, 3000], [20, 2400], [30, 1700], [40, 1250], [50, 950],
+  [75, 550], [100, 350], [150, 150], [200, 50],
+];
+function pointsToRank(points) {
+  if (points >= RANK_TABLE[0][1]) return 1;
+  for (let i = 0; i < RANK_TABLE.length - 1; i++) {
+    const [r1, p1] = RANK_TABLE[i], [r2, p2] = RANK_TABLE[i + 1];
+    if (points <= p1 && points >= p2) {
+      const t = (p1 - points) / (p1 - p2);
+      return Math.max(1, Math.round(r1 + t * (r2 - r1)));
+    }
+  }
+  const [rl, pl] = RANK_TABLE[RANK_TABLE.length - 1];
+  return Math.round(rl + Math.max(0, (pl - points) / 3));
+}
+const SLAM_ROUND_POINTS = {
+  "Round 1": 10, "Round 2": 45, "Round 3": 90, "Round 4": 180,
+  "Quarter-final": 360, "Semi-final": 720, "Final": 1200,
+};
+function slamPointsFor(result) {
+  if (result.wonTitle) return 2000;
+  return SLAM_ROUND_POINTS[result.lostRound] || 0;
+}
+function olympicPointsFor(medal) {
+  if (!medal) return 0;
+  if (medal.includes("Gold")) return 750;
+  if (medal.includes("Silver")) return 450;
+  if (medal.includes("Bronze")) return 250;
+  if (medal.includes("4th")) return 150;
+  return 50;
+}
+// Points earned outside the majors across a season — smaller tournaments the
+// game doesn't simulate individually. Scales with build quality and dips
+// outside a player's peak years (22-29), so late-career slam wins still show
+// up as a ranking dip elsewhere on the calendar, just like the real tour.
+function backgroundTourPoints(build, age, rand) {
+  const avg = ATTRS.reduce((s, a) => s + (build[a.key]?.rating ?? 55), 0) / ATTRS.length;
+  const peakFactor = (age >= 22 && age <= 29) ? 1 : 0.72;
+  return Math.max(0, Math.round((avg - 55) * 13 * peakFactor + rand() * 260));
+}
+function rivalRankPoints(rivalLevel, rand) {
+  return Math.max(0, Math.round((rivalLevel - 60) * 105 + rand() * 480));
 }
 
 // Court zone each attribute maps to, for the live diagram.
@@ -1266,6 +1349,43 @@ function NewsModal({ clipping, onClose }) {
   );
 }
 
+// DAILY STATS MODAL — Wordle-style streak + result distribution.
+function DailyStatsModal({ stats, todayResult, onClose }) {
+  const maxCount = Math.max(1, ...stats.dist);
+  const labels = ["0/4", "1/4", "2/4", "3/4", "4/4"];
+  return (
+    <div className="cs-modal cs-daily-stats-modal" onClick={onClose}>
+      <div className="cs-daily-stats-card" onClick={e => e.stopPropagation()}>
+        <div className="cs-daily-stats-title">Daily Slam stats</div>
+        <div className="cs-daily-stats-row">
+          <div className="cs-daily-stat"><span className="cs-daily-stat-num">{stats.played}</span><span className="cs-daily-stat-label">Played</span></div>
+          <div className="cs-daily-stat"><span className="cs-daily-stat-num">{stats.currentStreak}🔥</span><span className="cs-daily-stat-label">Streak</span></div>
+          <div className="cs-daily-stat"><span className="cs-daily-stat-num">{stats.bestStreak}</span><span className="cs-daily-stat-label">Best streak</span></div>
+        </div>
+        <div className="cs-daily-dist-title">Result distribution</div>
+        <div className="cs-daily-dist">
+          {labels.map((l, i) => {
+            const count = stats.dist[i] || 0;
+            const pct = Math.max(6, Math.round((count / maxCount) * 100));
+            const isToday = todayResult != null && todayResult === i;
+            return (
+              <div key={l} className="cs-daily-dist-row">
+                <span className="cs-daily-dist-label">{l}</span>
+                <div className="cs-daily-dist-track">
+                  <div className={`cs-daily-dist-bar ${isToday ? "today" : ""}`} style={{ width: `${pct}%` }}>
+                    <span className="cs-daily-dist-count">{count}</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <button className="cs-newspaper-close cs-cta" onClick={onClose}>Close →</button>
+      </div>
+    </div>
+  );
+}
+
 function NetGraphic() {
   return (
     <svg className="cs-net" viewBox="0 0 400 70" aria-hidden="true" preserveAspectRatio="none">
@@ -1687,10 +1807,17 @@ export default function CalendarSlam() {
   const [upgradeArmed, setUpgradeArmed] = useState(null); // id of upgrade armed for double-tap
   const [generationalPlayers, setGenerationalPlayers] = useState([]); // fictional players added over career
   const [pastRival, setPastRival] = useState(null); // gen-1 rival after the changing of the guard
+  const [careerRankPoints, setCareerRankPoints] = useState(0);
+  const [careerRank, setCareerRank] = useState(null);
+  const [bestCareerRank, setBestCareerRank] = useState(null);
+  const [yearsAtNo1, setYearsAtNo1] = useState(0);
+  const [rivalRank, setRivalRank] = useState(null);
   const [seasonApproach, setSeasonApproach] = useState("steady"); // career: conserve | steady | push
   const [careerLegend, setCareerLegend] = useState(false); // career difficulty: field strengthens yearly
   const [dailyDone, setDailyDone] = useState(null); // today's Daily Slam result, if played
   const [dailyCopied, setDailyCopied] = useState(false);
+  const [dailyStats, setDailyStats] = useState(() => loadDailyStats());
+  const [showDailyStats, setShowDailyStats] = useState(false);
   const [resumeAvailable, setResumeAvailable] = useState(null); // saved career snapshot
 
   // Persistent player record (saved across sessions via the artifact storage API).
@@ -1746,7 +1873,8 @@ export default function CalendarSlam() {
       v: 1, tour, playerName, playerFlag, careerSeason, careerAge, careerStartAge,
       careerSlamCount, careerSeasons, careerRival, pastRival, consecutiveLowSeasons,
       heavyTrainingLastSeason, restedLastSeason, generationalPlayers, build,
-      reachedGoat, careerLegend, ...over,
+      reachedGoat, careerLegend, careerRankPoints, careerRank, bestCareerRank,
+      yearsAtNo1, rivalRank, ...over,
     };
   }
   function persistCareer(snap) {
@@ -1781,6 +1909,11 @@ export default function CalendarSlam() {
     setReachedGoat(!!s.reachedGoat);
     setShowGoatScreen(false);
     setCareerLegend(!!s.careerLegend);
+    setCareerRankPoints(s.careerRankPoints || 0);
+    setCareerRank(s.careerRank ?? null);
+    setBestCareerRank(s.bestCareerRank ?? null);
+    setYearsAtNo1(s.yearsAtNo1 || 0);
+    setRivalRank(s.rivalRank ?? null);
     setSeasonApproach("steady");
     setRetirementPrompt(false);
     setRanSim(false);
@@ -1894,6 +2027,11 @@ export default function CalendarSlam() {
     setCareerRival(null);
     setPastRival(null);
     setSeasonApproach("steady");
+    setCareerRankPoints(0);
+    setCareerRank(null);
+    setBestCareerRank(null);
+    setYearsAtNo1(0);
+    setRivalRank(null);
     clearCareerSave();
     setConsecutiveLowSeasons(0);
     setHeavyTrainingLastSeason(false);
@@ -2218,6 +2356,27 @@ export default function CalendarSlam() {
       };
     }
 
+    // --- World rankings: this season's points, rank, and (if a rival exists)
+    // their rank too, so the offseason and retirement screens can tell the
+    // ranking race as its own story, not just the slam tally.
+    const rankRng = mulberry32((careerSeason * 733921 + 3) & 0xffffffff);
+    const slamPts = slamResults.filter(r => !r.isOlympics).reduce((sum, r) => sum + slamPointsFor(r), 0);
+    const olyPtsForRank = olympicsEvent ? olympicPointsFor(olympicsEvent.medal) : 0;
+    const bgPts = backgroundTourPoints(build, careerAge, rankRng);
+    const seasonRankPoints = slamPts + olyPtsForRank + bgPts;
+    const seasonRank = pointsToRank(seasonRankPoints);
+    setCareerRankPoints(seasonRankPoints);
+    setCareerRank(seasonRank);
+    setBestCareerRank(prev => (prev == null ? seasonRank : Math.min(prev, seasonRank)));
+    if (seasonRank === 1) setYearsAtNo1(y => y + 1);
+    let seasonRivalRank = null, seasonRivalRankPoints = null;
+    if (activeRival) {
+      const rivalLevelForRank = 86 + Math.min(6, careerSeason);
+      seasonRivalRankPoints = rivalRankPoints(rivalLevelForRank, rankRng);
+      seasonRivalRank = pointsToRank(seasonRivalRankPoints);
+      setRivalRank(seasonRivalRank);
+    }
+
     // Add season to history
     const careerYear = 2025 + careerSeason;
     // Pull Olympic result from the sim results (already computed there in real-time)
@@ -2236,6 +2395,8 @@ export default function CalendarSlam() {
     const seasonRecord = {
       season: careerSeason, age: careerAge, year: careerYear,
       slams: wonThisSeason, results: slamResults, olympics: olympicsThisSeason,
+      rank: seasonRank, rankPoints: seasonRankPoints,
+      rivalRank: seasonRivalRank, rivalRankPoints: seasonRivalRankPoints,
     };
     setCareerSeasons(prev => [...prev, seasonRecord]);
 
@@ -2868,7 +3029,9 @@ export default function CalendarSlam() {
         .filter(s => !s.isOlympics)
         .map(s => (s.wonTitle ? "\ud83c\udfc6" : s.lostRound === "Final" ? "\ud83e\udd48" : "\u274c"))
         .join("");
-      const rec = { date: info.dateStr, number: info.number, emoji, won, tier: simResults.tier?.name, tour: T.label };
+      const nextStats = recordDailyStat(won); // updates streak + distribution in localStorage
+      setDailyStats(nextStats);
+      const rec = { date: info.dateStr, number: info.number, emoji, won, tier: simResults.tier?.name, tour: T.label, streak: nextStats.currentStreak };
       setDailyDone(rec);
       try { window.localStorage?.setItem("cs_daily", JSON.stringify(rec)); } catch (e) { /* storage unavailable */ }
     }
@@ -3040,15 +3203,26 @@ export default function CalendarSlam() {
                   <span className="cs-mode-label">Daily Slam #{info.number}</span>
                   {played ? (
                     <>
-                      <span className="cs-daily-emoji">{dailyDone.emoji} {dailyDone.won}/4</span>
+                      <span className="cs-daily-emoji">
+                        {dailyDone.emoji} {dailyDone.won}/4
+                        {dailyStats.currentStreak > 1 && <span className="cs-daily-streak-badge">🔥 {dailyStats.currentStreak}</span>}
+                      </span>
                       <span className="cs-mode-desc">{dailyCopied ? "✓ Copied to clipboard!" : "Played today — tap to copy your result. New draft tomorrow."}</span>
                     </>
                   ) : (
-                    <span className="cs-mode-desc">Everyone in the world drafts the same {info.tourKey === "atp" ? "ATP" : "WTA"} players today. One attempt — make it count, then share your line.</span>
+                    <span className="cs-mode-desc">
+                      Everyone in the world drafts the same {info.tourKey === "atp" ? "ATP" : "WTA"} players today. One attempt — make it count, then share your line.
+                      {dailyStats.currentStreak > 0 && ` You're on a 🔥 ${dailyStats.currentStreak} day streak.`}
+                    </span>
                   )}
                 </button>
               );
             })()}
+            {dailyStats.played > 0 && (
+              <button type="button" className="cs-text-btn cs-daily-stats-link" onClick={() => setShowDailyStats(true)}>
+                📊 View Daily Slam stats
+              </button>
+            )}
             <button type="button" className="cs-mode-btn"
               onClick={() => { setGameMode("single"); setPhase("tour"); }}>
               <span className="cs-mode-icon">🎾</span>
@@ -3521,6 +3695,32 @@ export default function CalendarSlam() {
                   <div className="cs-tier-count">{simResults.won} / 4</div>
                   <div className="cs-tier-name">{simResults.tier.name}</div>
                   <div className="cs-tier-note">{simResults.tier.note}</div>
+                  {gameMode === "career" && (() => {
+                    // Computed inline (not from state) — careerRank/rivalRank only
+                    // update once the player clicks Continue into the off-season,
+                    // so reading state here would show last season's number.
+                    // Same deterministic formula endCareerSeason uses, so the two
+                    // never disagree once Continue is pressed.
+                    const rankRng = mulberry32((careerSeason * 733921 + 3) & 0xffffffff);
+                    const slamPts = simResults.perSlam.filter(r => !r.isOlympics).reduce((sum, r) => sum + slamPointsFor(r), 0);
+                    const olyEvt = simResults.perSlam.find(r => r.isOlympics);
+                    const olyPts = olyEvt ? olympicPointsFor(olyEvt.medal) : 0;
+                    const bgPts = backgroundTourPoints(build, careerAge, rankRng);
+                    const previewRank = pointsToRank(slamPts + olyPts + bgPts);
+                    let previewRivalRank = null;
+                    if (careerRival) {
+                      const rivalLevelForRank = 86 + Math.min(6, careerSeason);
+                      previewRivalRank = pointsToRank(rivalRankPoints(rivalLevelForRank, rankRng));
+                    }
+                    return (
+                      <div className="cs-tier-rank">
+                        Season-end ranking: <strong>World No. {previewRank}</strong>
+                        {previewRivalRank != null && careerRival && (
+                          <> · {careerRival.name.split(" ").pop()} No. {previewRivalRank}</>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
                 {gameMode !== "career" && simResults.won < 4 && (() => {
                   const lost = simResults.perSlam.filter(s => !s.isOlympics && !s.wonTitle);
@@ -3627,6 +3827,30 @@ export default function CalendarSlam() {
                             ? <>{p.won ? "WON" : "LOST"} <span className="cs-now-score-line">{p.score}</span></>
                             : <span className="cs-now-serving">{p.round === "Final" ? "Championship point…" : "Match point…"}</span>}
                         </div>
+                        {/* FINAL-MATCH MOMENTUM VIEWER: the championship match gets its
+                            sets laid down one at a time with a tilting momentum bar,
+                            instead of just landing as a flat scoreline. */}
+                        {reveal.scoreShown && isFinal && Array.isArray(p.sets) && p.sets.length > 0 && (
+                          <div className="cs-momentum" aria-hidden={reduce}>
+                            {(() => {
+                              let myRunning = 0, oppRunning = 0;
+                              return p.sets.map(([mine, theirs], i) => {
+                                const setWon = mine > theirs;
+                                if (setWon) myRunning++; else oppRunning++;
+                                const tilt = 50 + (myRunning - oppRunning) * 18; // % toward "you"
+                                return (
+                                  <div key={i} className={`cs-momentum-set ${reduce ? "" : "cs-momentum-in"}`} style={{ '--i': i }}>
+                                    <span className="cs-momentum-label">Set {i + 1}</span>
+                                    <div className="cs-momentum-bar-track">
+                                      <div className={`cs-momentum-bar-fill ${setWon ? "you" : "them"}`} style={{ width: `${Math.max(8, Math.min(92, tilt))}%` }} />
+                                    </div>
+                                    <span className="cs-momentum-score">{mine}-{theirs}</span>
+                                  </div>
+                                );
+                              });
+                            })()}
+                          </div>
+                        )}
                         {reveal.scoreShown && (isFinal || !p.won) && (
                           <div className={`cs-now-outcome ${p.won && isFinal ? "champ" : "out"}`}>
                             {p.won && isFinal
@@ -3831,6 +4055,15 @@ export default function CalendarSlam() {
 
               <div className="cs-offseason-header">
                 <div className="cs-intro-tour">Off-season · Season {careerSeason + 1} ahead · Age {careerAge + 1}</div>
+                {careerRank != null && (
+                  <div className="cs-rank-badge">
+                    World No. {careerRank}
+                    {bestCareerRank != null && bestCareerRank < careerRank && (
+                      <span className="cs-rank-best"> · career-best No. {bestCareerRank}</span>
+                    )}
+                    {careerRank === 1 && <span className="cs-rank-crown"> 👑</span>}
+                  </div>
+                )}
               </div>
 
               {careerRival && (
@@ -3841,6 +4074,16 @@ export default function CalendarSlam() {
                     <span className="cs-rival-h2h">{careerSlamCount} – {careerRival.slamCount} slams</span>
                     <span>{careerRival.flag} {careerRival.name}</span>
                   </div>
+                  {careerRank != null && rivalRank != null && (
+                    <div className="cs-rival-race">
+                      World No. {careerRank} vs World No. {rivalRank}
+                      {careerRank < rivalRank
+                        ? " — you hold the ranking edge."
+                        : careerRank > rivalRank
+                        ? ` — ${careerRival.name.split(" ").pop()} leads the race.`
+                        : " — dead level at the top."}
+                    </div>
+                  )}
                   <div className="cs-rival-note">
                     {careerRival.name} ({careerRival.country}) — your {careerRival.weakSurf} nemesis
                     {(careerRival.generation ?? 1) === 2 ? " · new generation" : ""}
@@ -4066,7 +4309,8 @@ export default function CalendarSlam() {
               ? { w: careerRival.h2hLosses + (pastRival?.h2hLosses ?? 0), l: careerRival.h2hWins + (pastRival?.h2hWins ?? 0) }
               : pastRival ? { w: pastRival.h2hLosses, l: pastRival.h2hWins } : null;
             const legacy = careerSlamCount * 10 + calendarYears * 12 + golds * 6
-              + (careerSlamDone ? 8 : 0) + careerSeason + (careerLegend ? Math.round(careerSlamCount * 2) : 0);
+              + (careerSlamDone ? 8 : 0) + careerSeason + (careerLegend ? Math.round(careerSlamCount * 2) : 0)
+              + yearsAtNo1 * 9 + (bestCareerRank === 1 ? 5 : 0);
             // Where the haul sits on the all-time list (tour-appropriate names).
             const LADDER = tour === "wta"
               ? [["Margaret Court", 24], ["Serena Williams", 23], ["Steffi Graf", 22], ["Martina Navratilova", 18], ["Chris Evert", 18], ["Billie Jean King", 12], ["Monica Seles", 9], ["Venus Williams", 7], ["Justine Henin", 7], ["Maria Sharapova", 5]]
@@ -4096,6 +4340,8 @@ export default function CalendarSlam() {
                   {golds > 0 && <span className="cs-legacy-badge">🥇 Olympic gold ×{golds}</span>}
                   {h2h && <span className="cs-legacy-badge">⚔ Rival H2H finals {h2h.w}–{h2h.l}</span>}
                   {careerLegend && <span className="cs-legacy-badge">⚡ Legend difficulty</span>}
+                  {yearsAtNo1 > 0 && <span className="cs-legacy-badge gold">👑 World No. 1 ×{yearsAtNo1} season{yearsAtNo1 === 1 ? "" : "s"}</span>}
+                  {bestCareerRank != null && bestCareerRank > 1 && <span className="cs-legacy-badge">📈 Career-best World No. {bestCareerRank}</span>}
                 </div>
                 <div className="cs-legacy-score-row">
                   <span className="cs-legacy-score">{legacy}</span>
@@ -4188,6 +4434,14 @@ export default function CalendarSlam() {
         <NewsModal
           clipping={newsClipping}
           onClose={() => setNewsClipping(null)}
+        />
+      )}
+
+      {showDailyStats && (
+        <DailyStatsModal
+          stats={dailyStats}
+          todayResult={dailyDone && dailyDone.date === dailyInfo().dateStr ? dailyDone.won : null}
+          onClose={() => setShowDailyStats(false)}
         />
       )}
 
@@ -4920,6 +5174,44 @@ button.cs-trophy:focus-visible { outline:3px solid var(--ball); outline-offset:2
 
 /* --- Rival / misc ------------------------------------------------------------ */
 .cs-rival-past { opacity:.7; font-size:11px; margin-top:4px; }
+
+/* --- Final-match momentum viewer -------------------------------------------- */
+.cs-momentum { display:flex; flex-direction:column; gap:6px; margin:14px auto 0; max-width:320px; }
+.cs-momentum-set { display:grid; grid-template-columns:44px 1fr 40px; align-items:center; gap:8px; opacity:0; }
+.cs-momentum-in { animation:cs-momentum-land .45s ease forwards; animation-delay:calc(var(--i) * .55s); }
+@keyframes cs-momentum-land { from { opacity:0; transform:translateX(-8px); } to { opacity:1; transform:translateX(0); } }
+.cs-momentum-label { font-size:11px; font-weight:700; color:var(--dim); text-align:left; }
+.cs-momentum-bar-track { height:8px; border-radius:5px; background:rgba(255,255,255,.12); overflow:hidden; }
+.cs-momentum-bar-fill { height:100%; border-radius:5px; transition:width .35s ease; }
+.cs-momentum-bar-fill.you { background:var(--ball); margin-left:auto; }
+.cs-momentum-bar-fill.them { background:#ff8f70; margin-left:auto; }
+.cs-momentum-score { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:14px; color:var(--chalk); text-align:right; }
+
+/* --- Daily stats modal + streak badge --------------------------------------- */
+.cs-daily-streak-badge { display:inline-block; margin-left:8px; font-size:14px; color:var(--ball); }
+.cs-text-btn { background:none; border:none; color:var(--ball); font-weight:700; font-size:13px; padding:8px 4px; cursor:pointer; text-decoration:underline; text-underline-offset:3px; }
+.cs-daily-stats-card { background:var(--panel,#132a1c); border:1.5px solid var(--line-soft); border-radius:16px; padding:24px 20px; max-width:360px; width:90vw; margin:auto; text-align:center; }
+.cs-daily-stats-title { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:20px; text-transform:uppercase; letter-spacing:.06em; color:var(--chalk); margin-bottom:18px; }
+.cs-daily-stats-row { display:flex; justify-content:space-around; margin-bottom:20px; }
+.cs-daily-stat { display:flex; flex-direction:column; gap:2px; }
+.cs-daily-stat-num { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:26px; color:var(--ball); }
+.cs-daily-stat-label { font-size:10px; text-transform:uppercase; letter-spacing:.08em; color:var(--dim); }
+.cs-daily-dist-title { font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--dim); font-weight:700; margin-bottom:10px; text-align:left; }
+.cs-daily-dist { display:flex; flex-direction:column; gap:6px; margin-bottom:20px; }
+.cs-daily-dist-row { display:grid; grid-template-columns:32px 1fr; align-items:center; gap:8px; }
+.cs-daily-dist-label { font-size:11px; font-weight:700; color:var(--dim); text-align:left; }
+.cs-daily-dist-track { height:20px; background:rgba(255,255,255,.08); border-radius:4px; overflow:hidden; }
+.cs-daily-dist-bar { height:100%; background:rgba(255,255,255,.28); display:flex; align-items:center; justify-content:flex-end; padding-right:6px; border-radius:4px; transition:width .5s ease; }
+.cs-daily-dist-bar.today { background:var(--ball); }
+.cs-daily-dist-count { font-size:11px; font-weight:800; color:var(--ink,#112e1c); }
+
+/* --- World rankings ---------------------------------------------------------- */
+.cs-rank-badge { display:inline-block; margin-top:8px; font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:15px; letter-spacing:.04em; color:var(--chalk); background:rgba(216,240,0,.1); border:1px solid rgba(216,240,0,.35); border-radius:20px; padding:5px 14px; }
+.cs-rank-best { color:var(--dim); font-weight:600; font-size:12px; }
+.cs-rank-crown { font-size:14px; }
+.cs-rival-race { font-size:12px; font-weight:600; color:var(--chalk); background:rgba(255,255,255,.05); border-radius:6px; padding:5px 8px; margin:2px 0; }
+.cs-tier-rank { margin-top:10px; font-size:13px; color:var(--dim); }
+.cs-tier-rank strong { color:var(--ball); }
 .cs-career-diff { margin-bottom:18px; }
 
 `;
