@@ -1489,14 +1489,89 @@ function NewsModal({ clipping, onClose }) {
   );
 }
 
+// Small line-art icons — replace emoji in a few high-visibility spots (mode
+// buttons, stats bar) since emoji glyphs render inconsistently across iOS and
+// desktop. All use currentColor so they inherit whatever colour their parent
+// span is styled with.
+function IconPlay({ className }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.6" fill="none" opacity="0.4" />
+      <path d="M9.5 8L16.5 12L9.5 16V8Z" fill="currentColor" />
+    </svg>
+  );
+}
+function IconBall({ className }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="9.5" fill="currentColor" fillOpacity="0.16" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M3.7 8.2C7.2 10.2 7.2 13.8 3.7 15.8" stroke="currentColor" strokeWidth="1.3" fill="none" strokeLinecap="round" />
+      <path d="M20.3 8.2C16.8 10.2 16.8 13.8 20.3 15.8" stroke="currentColor" strokeWidth="1.3" fill="none" strokeLinecap="round" />
+    </svg>
+  );
+}
+function IconTrophy({ className }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} xmlns="http://www.w3.org/2000/svg">
+      <path d="M7 3H17V6.5C17 9.5 14.8 11.5 12 11.5C9.2 11.5 7 9.5 7 6.5V3Z" stroke="currentColor" strokeWidth="1.4" fill="currentColor" fillOpacity="0.16" />
+      <path d="M7 4.2H4.6C4.6 7 6 8.6 7.6 8.9" stroke="currentColor" strokeWidth="1.3" fill="none" strokeLinecap="round" />
+      <path d="M17 4.2H19.4C19.4 7 18 8.6 16.4 8.9" stroke="currentColor" strokeWidth="1.3" fill="none" strokeLinecap="round" />
+      <path d="M12 11.5V15" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M8.7 20.5H15.3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M9.6 15H14.4L14.9 20.5H9.1L9.6 15Z" stroke="currentColor" strokeWidth="1.3" fill="currentColor" fillOpacity="0.12" />
+    </svg>
+  );
+}
+function IconFlame({ className }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 2.3C12.4 6.1 8.5 8 8.1 12.1C7.9 14.1 8.9 15.7 10.3 16.3C9.7 14.5 10.4 12.7 11.2 11.9C11.1 13.7 12.2 14.3 12.9 13.3C13.6 12.2 13 10.7 12.7 9.6C15 11.1 16.3 13.7 16.3 16.1C16.3 19.5 13.9 22.2 10.9 22.2C7.5 22.2 5 19.5 5 16.1C5 11.6 8.3 9.4 8.6 5.7C8.8 3.7 9.9 2.4 12 2.3Z" fill="currentColor" />
+    </svg>
+  );
+}
+function IconCalendarStar({ className }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} xmlns="http://www.w3.org/2000/svg">
+      <rect x="3.5" y="5" width="17" height="16" rx="2" stroke="currentColor" strokeWidth="1.4" fill="currentColor" fillOpacity="0.08" />
+      <path d="M3.5 9.5H20.5" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M8 3V6.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M16 3V6.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M12 12L13 14.2L15.3 14.5L13.6 16.1L14 18.5L12 17.3L10 18.5L10.4 16.1L8.7 14.5L11 14.2L12 12Z" fill="currentColor" />
+    </svg>
+  );
+}
+
+// A big, very faint court silhouette sitting behind the title screen copy —
+// pure decoration, low opacity, no interactivity. Gives the title screen some
+// depth without competing with the actual content in front of it.
+function TitleCourtMotif() {
+  return (
+    <svg className="cs-title-court" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <rect x="60" y="40" width="680" height="420" fill="none" stroke="#fff" strokeWidth="2" />
+      <rect x="180" y="90" width="440" height="320" fill="none" stroke="#fff" strokeWidth="1.5" />
+      <line x1="60" y1="250" x2="740" y2="250" stroke="#fff" strokeWidth="2.5" />
+      <line x1="400" y1="90" x2="400" y2="410" stroke="#fff" strokeWidth="1.5" />
+      <line x1="60" y1="90" x2="740" y2="90" stroke="#fff" strokeWidth="1.5" />
+      <line x1="60" y1="410" x2="740" y2="410" stroke="#fff" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
 function NetGraphic() {
   return (
-    <svg className="cs-net" viewBox="0 0 400 70" aria-hidden="true" preserveAspectRatio="none">
-      {/* net band top */}
-      <rect x="0" y="6" width="400" height="7" fill="var(--chalk)" />
-      {/* posts */}
-      <rect x="2" y="6" width="4" height="60" fill="var(--chalk)" />
-      <rect x="394" y="6" width="4" height="60" fill="var(--chalk)" />
+    <svg className="cs-net" viewBox="0 0 400 78" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="cs-net-band" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#ffffff" />
+          <stop offset="100%" stopColor="#d8ddd2" />
+        </linearGradient>
+        <linearGradient id="cs-net-post" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#e9ede4" />
+          <stop offset="100%" stopColor="#b7bdae" />
+        </linearGradient>
+      </defs>
+      {/* soft ground shadow the net casts */}
+      <ellipse cx="200" cy="70" rx="196" ry="5" fill="rgba(0,0,0,.22)" />
       {/* mesh */}
       <g stroke="var(--line)" strokeWidth="1">
         {Array.from({ length: 33 }).map((_, i) => (
@@ -1506,6 +1581,12 @@ function NetGraphic() {
           <line key={`h${i}`} x1="6" y1={20 + i * 11} x2="394" y2={20 + i * 11} />
         ))}
       </g>
+      {/* net band top, with a gradient for a touch of roundness */}
+      <rect x="0" y="6" width="400" height="7" fill="url(#cs-net-band)" />
+      <rect x="0" y="6" width="400" height="2" fill="rgba(255,255,255,.55)" />
+      {/* posts */}
+      <rect x="2" y="6" width="4" height="60" fill="url(#cs-net-post)" />
+      <rect x="394" y="6" width="4" height="60" fill="url(#cs-net-post)" />
     </svg>
   );
 }
@@ -3249,6 +3330,8 @@ export default function CalendarSlam() {
       {/* MODE SELECT */}
       {phase === "mode" && (
         <section className="cs-mode-pick">
+          <TitleCourtMotif />
+          <div className="cs-mode-content">
           <h1 className="cs-h1">
             Can you build<br /><em>a tennis legend?</em>
           </h1>
@@ -3260,18 +3343,22 @@ export default function CalendarSlam() {
           {playerStats.loaded && playerStats.seasonsPlayed > 0 && (
             <div className="cs-stats-bar">
               <div className="cs-stat">
+                <IconTrophy className="cs-stat-icon" />
                 <span className="cs-stat-num">{playerStats.slamsWon}</span>
                 <span className="cs-stat-label">Slams won</span>
               </div>
               <div className="cs-stat">
-                <span className="cs-stat-num">{playerStats.currentStreak}🔥</span>
+                <IconFlame className="cs-stat-icon" />
+                <span className="cs-stat-num">{playerStats.currentStreak}</span>
                 <span className="cs-stat-label">Streak</span>
               </div>
               <div className="cs-stat">
+                <IconFlame className="cs-stat-icon" />
                 <span className="cs-stat-num">{playerStats.bestStreak}</span>
                 <span className="cs-stat-label">Best streak</span>
               </div>
               <div className="cs-stat">
+                <IconCalendarStar className="cs-stat-icon" />
                 <span className="cs-stat-num">{playerStats.calendarSlams}</span>
                 <span className="cs-stat-label">Calendar Slams</span>
               </div>
@@ -3280,7 +3367,7 @@ export default function CalendarSlam() {
           <div className="cs-mode-btns">
             {resumeAvailable && (
               <button type="button" className="cs-mode-btn resume" onClick={resumeCareer}>
-                <span className="cs-mode-icon">▶</span>
+                <IconPlay className="cs-mode-icon" />
                 <span className="cs-mode-label">Resume career</span>
                 <span className="cs-mode-desc">
                   {resumeAvailable.playerFlag} {resumeAvailable.playerName} · Season {resumeAvailable.careerSeason} · Age {resumeAvailable.careerAge} · {resumeAvailable.careerSlamCount} slam{resumeAvailable.careerSlamCount === 1 ? "" : "s"}{resumeAvailable.careerLegend ? " · Legend" : ""}
@@ -3289,16 +3376,17 @@ export default function CalendarSlam() {
             )}
             <button type="button" className="cs-mode-btn"
               onClick={() => { setGameMode("single"); setPhase("tour"); }}>
-              <span className="cs-mode-icon">🎾</span>
+              <IconBall className="cs-mode-icon" />
               <span className="cs-mode-label">Single Season</span>
               <span className="cs-mode-desc">Build the ultimate player and chase the Calendar Slam — all four majors in one year.</span>
             </button>
             <button type="button" className="cs-mode-btn career"
               onClick={() => { setGameMode("career"); setPhase("tour"); }}>
-              <span className="cs-mode-icon">🏆</span>
+              <IconTrophy className="cs-mode-icon" />
               <span className="cs-mode-label">Career Mode</span>
               <span className="cs-mode-desc">Guide a named player from age 20 to retirement — coaches, injuries, a rival, and a shot at 25 slams before time catches up with you.</span>
             </button>
+          </div>
           </div>
         </section>
       )}
@@ -3699,15 +3787,19 @@ export default function CalendarSlam() {
                       </div>
                     </div>
                     <div className="cs-player-card-grid">
-                      {ATTRS.map((a) => (
-                        <div key={a.key} className="cs-player-card-row">
-                          <span className="cs-player-card-attr">{a.label}</span>
-                          <span className="cs-player-card-player">
-                            {build[a.key] ? `${build[a.key].flag} ${build[a.key].player}` : "— empty —"}
-                          </span>
-                          <span className="cs-player-card-rating">{build[a.key]?.rating ?? ""}</span>
-                        </div>
-                      ))}
+                      {ATTRS.map((a) => {
+                        const zoneKey = ZONE_OF[a.key]?.zones?.[0];
+                        const accent = ZONE_COLOUR[zoneKey] || "var(--line-soft)";
+                        return (
+                          <div key={a.key} className="cs-player-card-row" style={{ borderLeftColor: accent }}>
+                            <span className="cs-player-card-attr">{a.label}</span>
+                            <span className="cs-player-card-player">
+                              {build[a.key] ? `${build[a.key].flag} ${build[a.key].player}` : "— empty —"}
+                            </span>
+                            <span className="cs-player-card-rating">{build[a.key]?.rating ?? ""}</span>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 );
@@ -4023,7 +4115,7 @@ export default function CalendarSlam() {
                 const recap = buildSeasonRecap(simResults.perSlam, rivalH2H);
                 const earned = computeAchievements(simResults.perSlam, build, tour);
                 return (
-                  <div className="cs-season-recap">
+                  <div className={`cs-season-recap cs-recap-t${simResults.won}`}>
                     <div className="cs-recap-title">Your season</div>
                     <div className="cs-recap-stats">
                       <div className="cs-recap-stat">
@@ -4057,8 +4149,8 @@ export default function CalendarSlam() {
                     </div>
                     {earned.length > 0 && (
                       <div className="cs-achieve-row">
-                        {earned.map((a) => (
-                          <span key={a.id} className="cs-achieve-badge" title={a.desc}>
+                        {earned.map((a, i) => (
+                          <span key={a.id} className="cs-achieve-badge cs-achieve-in" style={{ '--i': i }} title={a.desc}>
                             {a.icon} {a.label}
                           </span>
                         ))}
@@ -4448,7 +4540,9 @@ export default function CalendarSlam() {
             else if (above) ladderLine = `Level with ${below[0]} (${below[1]}) on the all-time list — only ${above[0]} (${above[1]}) stands above you.`;
             else ladderLine = `Level with ${below[0]} (${below[1]}) at the very top of the all-time list.`;
             return (
-              <div className="cs-legacy-block">
+              <div className={`cs-legacy-block cs-legacy-t${
+                careerSlamCount >= 25 ? 5 : careerSlamCount >= 10 ? 4 : careerSlamCount >= 5 ? 3 : careerSlamCount >= 2 ? 2 : careerSlamCount === 1 ? 1 : 0
+              }`}>
                 <div className="cs-legacy-title">Legacy</div>
                 <div className="cs-legacy-slams">
                   {SLAMS.map(s => (
@@ -4881,19 +4975,25 @@ body { background: #1f6b3f; margin: 0; }
 .cs-rival-tag { color:var(--clay); font-weight:800; font-size:11px; letter-spacing:.04em; }
 @media (prefers-reduced-motion: reduce) {
   .cs-live-dot, .cs-leg.playing, .cs-path-live li { animation:none; }
+  .cs-achieve-in { animation:none; opacity:1; }
+  .cs-card-name.legendary { animation:none; }
+  .cs-legendary-toast { animation:none; opacity:1; }
 }
 
 /* major colour identities — legs only (chips handled by the new solid rules above) */
-.cs-leg.slam-ao { border-left-color:#2b7de9; }
-.cs-leg.slam-rg { border-left-color:#e07a3f; }
-.cs-leg.slam-wim { border-left-color:#5a2d82; }
-.cs-leg.slam-uso { border-left-color:#1456b0; }
-.cs-leg.cs-leg-olympics { border-left-color:#ffd700; background:rgba(255,215,0,.07); }
-.cs-leg.cs-leg-olympics .cs-leg-name { color:#ffd700; }
-.cs-leg.cs-leg-olympics.win { background:rgba(255,215,0,.14); }
 
 .cs-tier-eyebrow { font-size:10px; letter-spacing:.18em; text-transform:uppercase; font-weight:800; color:var(--dim); margin-bottom:4px; }
-.cs-season-recap { border:1.5px solid var(--line-soft); border-radius:14px; padding:16px 14px; margin-bottom:16px; background:linear-gradient(165deg,rgba(246,251,239,.06),rgba(246,251,239,.02)); box-shadow:0 8px 22px rgba(0,0,0,.2); }
+.cs-season-recap { border:1.5px solid var(--line-soft); border-radius:14px; padding:16px 14px; margin-bottom:16px; box-shadow:0 8px 22px rgba(0,0,0,.2); transition:box-shadow .3s; }
+.cs-recap-t0 { background:linear-gradient(160deg,var(--ink),#081409); border-color:rgba(246,251,239,.12); }
+.cs-recap-t1 { background:linear-gradient(160deg,var(--grass-dark),var(--ink)); }
+.cs-recap-t2 { background:linear-gradient(160deg,var(--grass-mid),var(--grass-dark)); }
+.cs-recap-t3 { background:linear-gradient(160deg,#3f9c5e,var(--grass-dark)); box-shadow:0 8px 22px rgba(0,0,0,.2), 0 0 0 1px rgba(216,240,0,.18); }
+.cs-recap-t4 { background:linear-gradient(160deg,#8a7a00,var(--grass-dark)); border-color:var(--ball); box-shadow:0 0 0 3px rgba(216,240,0,.16), 0 10px 30px rgba(0,0,0,.3); }
+.cs-recap-t0 .cs-recap-title, .cs-recap-t0 .cs-recap-label { color:rgba(246,251,239,.5); }
+.cs-recap-t4 .cs-recap-title { color:var(--ball); }
+.cs-recap-t1 .cs-recap-num, .cs-recap-t2 .cs-recap-num, .cs-recap-t3 .cs-recap-num, .cs-recap-t4 .cs-recap-num { color:#fff; }
+.cs-recap-t1 .cs-recap-label, .cs-recap-t2 .cs-recap-label, .cs-recap-t3 .cs-recap-label, .cs-recap-t4 .cs-recap-label { color:rgba(255,255,255,.72); }
+.cs-recap-t1 .cs-achieve-row, .cs-recap-t2 .cs-achieve-row, .cs-recap-t3 .cs-achieve-row, .cs-recap-t4 .cs-achieve-row { border-top-color:rgba(255,255,255,.16); }
 .cs-recap-title { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:13px; letter-spacing:.14em; text-transform:uppercase; color:var(--dim); text-align:center; margin-bottom:12px; }
 .cs-recap-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:12px; text-align:center; }
 .cs-recap-stat { display:flex; flex-direction:column; gap:2px; }
@@ -4901,6 +5001,8 @@ body { background: #1f6b3f; margin: 0; }
 .cs-recap-label { font-size:10px; letter-spacing:.04em; color:var(--dim); line-height:1.3; }
 .cs-achieve-row { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin-top:14px; padding-top:14px; border-top:1px solid var(--line-soft); }
 .cs-achieve-badge { font-size:11px; font-weight:700; padding:5px 11px; border-radius:14px; border:1px solid rgba(216,240,0,.4); color:var(--chalk); background:rgba(216,240,0,.08); box-shadow:0 2px 6px rgba(0,0,0,.15); cursor:default; }
+.cs-achieve-in { opacity:0; animation:cs-achieve-pop .45s cubic-bezier(.2,.9,.3,1.3) forwards; animation-delay:calc(var(--i) * .18s); }
+@keyframes cs-achieve-pop { 0% { opacity:0; transform:scale(.6) translateY(6px); } 70% { opacity:1; transform:scale(1.08) translateY(0); } 100% { opacity:1; transform:scale(1) translateY(0); } }
 .cs-sim-prompt { text-align:center; margin-bottom:22px; display:flex; flex-direction:column; align-items:center; gap:12px; }
 .cs-sim-prompt p { font-size:14px; color:var(--dim); max-width:46ch; margin:0 auto; line-height:1.5; }
 .cs-sim-btn { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:16px; letter-spacing:.06em; text-transform:uppercase; background:rgba(246,251,239,.12); color:var(--chalk); border:none; border-radius:6px; padding:14px 26px; cursor:pointer; transition:transform .12s, filter .18s; box-shadow:0 3px 0 rgba(14,42,26,.4); }
@@ -4958,10 +5060,13 @@ body { background: #1f6b3f; margin: 0; }
 /* ---- CAREER MODE CSS ---- */
 
 /* Mode pick */
-.cs-mode-pick { padding-top:24px; }
+.cs-mode-pick { padding-top:24px; position:relative; overflow:hidden; }
+.cs-mode-content { position:relative; z-index:1; }
+.cs-title-court { position:absolute; top:-10%; left:50%; transform:translateX(-50%); width:140%; max-width:900px; height:auto; opacity:.05; pointer-events:none; z-index:0; }
 .cs-mode-btns { display:flex; flex-direction:column; gap:14px; max-width:520px; margin-top:4px; }
 .cs-stats-bar { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; max-width:520px; margin:16px 0 8px; }
 .cs-stat { display:flex; flex-direction:column; align-items:center; gap:2px; padding:12px 6px; background:rgba(246,251,239,.05); border-radius:8px; border:1px solid var(--line-soft); }
+.cs-stat-icon { width:18px; height:18px; color:var(--ball); margin-bottom:2px; }
 .cs-stat-num { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:26px; color:var(--ball); line-height:1; }
 .cs-stat-label { font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--dim); font-weight:700; text-align:center; }
 .cs-mode-single-wrap { border:2.5px solid var(--chalk); border-radius:8px; padding:20px 22px; background:rgba(246,251,239,.05); display:flex; flex-direction:column; gap:10px; position:relative; z-index:0; }
@@ -4973,12 +5078,15 @@ body { background: #1f6b3f; margin: 0; }
 .cs-mode-tour-btn:hover .cs-mode-tour-name,.cs-mode-tour-btn:hover .cs-mode-tour-sub { color:var(--ink); }
 .cs-mode-tour-name { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:26px; color:var(--ball); line-height:1; }
 .cs-mode-tour-sub { font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--dim); font-weight:700; }
-.cs-mode-btn { display:flex; flex-direction:column; align-items:flex-start; gap:8px; padding:22px 20px; border-radius:10px; border:2.5px solid var(--chalk); background:linear-gradient(165deg,rgba(246,251,239,.08),rgba(246,251,239,.02)); box-shadow:0 8px 22px rgba(0,0,0,.22); cursor:pointer; text-align:left; transition:transform .12s, background .2s, border-color .2s, box-shadow .2s; }
-.cs-mode-btn:hover { transform:translateY(-3px); background:rgba(216,240,0,.1); border-color:var(--ball); box-shadow:0 14px 30px rgba(0,0,0,.3); }
-.cs-mode-btn.career { border-color:var(--chalk); background:rgba(246,251,239,.05); }
-.cs-mode-icon { font-size:30px; }
-.cs-mode-label { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:22px; text-transform:uppercase; color:var(--chalk); line-height:1; }
-.cs-mode-desc { font-size:13px; color:var(--dim); line-height:1.45; }
+.cs-mode-btn { display:flex; flex-direction:column; align-items:flex-start; gap:8px; padding:22px 20px; border-radius:10px; border:2.5px solid var(--chalk); background:linear-gradient(150deg,#b84a1a,#e07a3f); box-shadow:0 8px 22px rgba(0,0,0,.22); cursor:pointer; text-align:left; transition:transform .12s, filter .2s, border-color .2s, box-shadow .2s; }
+.cs-mode-btn:hover { transform:translateY(-3px); filter:brightness(1.12); border-color:var(--ball); box-shadow:0 14px 30px rgba(0,0,0,.32); }
+.cs-mode-btn.career { border-color:var(--chalk); background:linear-gradient(150deg,#3d1a6b,#5a2d82); }
+.cs-mode-btn.resume { border-color:#e0a13f; background:linear-gradient(150deg,#8a5a12,#c98a2e); }
+.cs-mode-btn.resume .cs-mode-icon { color:#fff; }
+.cs-mode-btn.career .cs-mode-icon { color:var(--ball); }
+.cs-mode-label { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:22px; text-transform:uppercase; color:#fff; line-height:1; }
+.cs-mode-desc { font-size:13px; color:rgba(255,255,255,.82); line-height:1.45; }
+.cs-mode-icon { width:30px; height:30px; color:var(--chalk); }
 
 /* Career badge in header */
 .cs-career-badge { font-size:11px; font-weight:700; color:var(--ball-soft); letter-spacing:.04em; white-space:nowrap; }
@@ -5204,7 +5312,8 @@ button.cs-trophy:focus-visible { outline:3px solid var(--ball); outline-offset:2
 .cs-player-card-grid { display:flex; flex-direction:column; }
 .cs-player-card-row {
   display:grid; grid-template-columns:1fr 1.6fr auto; align-items:center; gap:10px;
-  padding:9px 18px; border-bottom:1px solid rgba(246,251,239,.06); font-size:13px;
+  padding:9px 18px 9px 14px; border-bottom:1px solid rgba(246,251,239,.06);
+  border-left:3px solid var(--line-soft); font-size:13px;
 }
 .cs-player-card-row:last-child { border-bottom:none; }
 .cs-player-card-attr { font-weight:700; color:var(--dim); }
@@ -5256,20 +5365,29 @@ button.cs-trophy:focus-visible { outline:3px solid var(--ball); outline-offset:2
 .cs-diagnosis-body { font-size:14px; line-height:1.55; color:var(--chalk); margin:0; }
 
 .cs-gauntlet { display:flex; flex-direction:column; gap:10px; margin-bottom:22px; }
-.cs-leg { border:2px solid var(--line-soft); border-left-width:5px; border-radius:4px; padding:12px 14px; background:rgba(246,251,239,.04); }
-.cs-leg.s-clay  { border-left-color:var(--clay); }
-.cs-leg.s-grass { border-left-color:var(--grass); }
-.cs-leg.s-hard  { border-left-color:var(--hard); }
+.cs-leg {
+  border:2px solid transparent; border-radius:10px; padding:14px 16px;
+  background:rgba(246,251,239,.04); box-shadow:0 6px 16px rgba(0,0,0,.22);
+  transition:box-shadow .25s, filter .25s;
+}
+/* Same gradients as the live "now playing" card, so a slam looks the same
+   colour whether it's mid-reveal or sitting resolved in the list below. */
+.cs-leg.slam-ao  { background:linear-gradient(150deg,#1a5fb8,#2b7de9); }
+.cs-leg.slam-rg  { background:linear-gradient(150deg,#b84a1a,#e07a3f); }
+.cs-leg.slam-wim { background:linear-gradient(150deg,#3d1a6b,#5a2d82); }
+.cs-leg.slam-uso { background:linear-gradient(150deg,#0a2e63,#1456b0); }
+.cs-leg.cs-leg-olympics { background:linear-gradient(150deg,#9c7e00,#d8b500); }
+.cs-leg.cs-leg-olympics .cs-sim-champ { color:#fff; text-shadow:0 1px 3px rgba(0,0,0,.45); }
+/* Win vs loss reads through vividness rather than hue, since hue is now
+   spoken for by the surface: a title glows gold at the edge, a loss is
+   quietly desaturated. Still mid-round ("playing") stays full-strength with
+   a pulsing border so it reads as live, not yet decided. */
+.cs-leg.win { box-shadow:0 0 0 2px rgba(216,240,0,.55), 0 8px 20px rgba(0,0,0,.28); }
+.cs-leg.loss { filter:saturate(.55) brightness(.82); }
+.cs-leg.playing { border-color:var(--ball); filter:none; animation:cs-legin .3s ease; }
 .cs-leg-top { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; }
-.cs-leg-name { font-weight:700; font-size:15px; color:var(--chalk); }
-.cs-leg-surface { font-size:10px; letter-spacing:.12em; text-transform:uppercase; font-weight:700; color:var(--dim); }
-.cs-leg-bar-track { height:8px; background:rgba(7,28,16,.4); border-radius:4px; overflow:hidden; }
-.cs-leg-bar { height:100%; background:var(--dim); }
-.cs-leg.win .cs-leg-bar { background:var(--ball); }
-.cs-leg.loss .cs-leg-bar { background:var(--clay); }
-.cs-leg-bottom { display:flex; justify-content:space-between; font-size:12px; font-weight:600; margin-top:6px; color:var(--chalk); }
-.cs-leg.win .cs-leg-bottom span:first-child { color:var(--ball-soft); }
-.cs-leg.loss .cs-leg-bottom span:first-child { color:var(--clay); }
+.cs-leg-name { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:17px; text-transform:uppercase; letter-spacing:.02em; color:#fff; }
+.cs-leg-surface { font-size:10px; letter-spacing:.12em; text-transform:uppercase; font-weight:800; color:rgba(255,255,255,.8); }
 
 .cs-breakdown { margin-bottom:22px; }
 .cs-breakdown summary { cursor:pointer; font-weight:700; font-size:14px; padding:8px 0; color:var(--chalk); }
@@ -5294,7 +5412,6 @@ button.cs-trophy:focus-visible { outline:3px solid var(--ball); outline-offset:2
   .cs-sticky { padding-top:6px; }
 }
 
-.cs-mode-btn.resume { border-color:#e0a13f; background:rgba(224,161,63,.09); }
 
 /* --- Season approach (career) ----------------------------------------------- */
 .cs-approach { display:flex; flex-direction:column; align-items:center; gap:8px; margin:4px 0 16px; }
@@ -5341,7 +5458,17 @@ button.cs-trophy:focus-visible { outline:3px solid var(--ball); outline-offset:2
 .cs-newspaper-folio { font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:#7a6f5a; text-align:center; padding:4px 20px 6px; border-bottom:1px solid rgba(26,18,5,.25); margin:0 0 2px; }
 
 /* --- Retirement legacy block -------------------------------------------------- */
-.cs-legacy-block { background:linear-gradient(165deg,rgba(246,251,239,.08),rgba(246,251,239,.02)); box-shadow:0 10px 26px rgba(0,0,0,.22); border:1.5px solid var(--line-soft); border-radius:14px; padding:20px 18px; margin:0 0 22px; text-align:center; }
+.cs-legacy-block { box-shadow:0 10px 26px rgba(0,0,0,.22); border:1.5px solid var(--line-soft); border-radius:14px; padding:20px 18px; margin:0 0 22px; text-align:center; transition:box-shadow .3s; }
+.cs-legacy-t0 { background:linear-gradient(160deg,var(--ink),#081409); border-color:rgba(246,251,239,.12); }
+.cs-legacy-t1 { background:linear-gradient(160deg,var(--grass-dark),var(--ink)); }
+.cs-legacy-t2 { background:linear-gradient(160deg,var(--grass-mid),var(--grass-dark)); }
+.cs-legacy-t3 { background:linear-gradient(160deg,#3f9c5e,var(--grass-dark)); box-shadow:0 10px 26px rgba(0,0,0,.22), 0 0 0 1px rgba(216,240,0,.18); }
+.cs-legacy-t4 { background:linear-gradient(160deg,#6ca832,var(--grass-dark)); box-shadow:0 10px 26px rgba(0,0,0,.22), 0 0 0 2px rgba(216,240,0,.28); }
+.cs-legacy-t5 { background:linear-gradient(160deg,#8a7a00,var(--grass-dark)); border-color:var(--ball); box-shadow:0 0 0 3px rgba(216,240,0,.2), 0 14px 34px rgba(0,0,0,.32); }
+.cs-legacy-t0 .cs-legacy-title, .cs-legacy-t0 .cs-legacy-ladder { color:rgba(246,251,239,.5); }
+.cs-legacy-t5 .cs-legacy-title { color:var(--ball); }
+.cs-legacy-t1 .cs-legacy-score, .cs-legacy-t2 .cs-legacy-score, .cs-legacy-t3 .cs-legacy-score, .cs-legacy-t4 .cs-legacy-score, .cs-legacy-t5 .cs-legacy-score { color:#fff; }
+.cs-legacy-t1 .cs-legacy-ladder, .cs-legacy-t2 .cs-legacy-ladder, .cs-legacy-t3 .cs-legacy-ladder, .cs-legacy-t4 .cs-legacy-ladder, .cs-legacy-t5 .cs-legacy-ladder { color:rgba(255,255,255,.78); }
 .cs-legacy-title { font-family:"Barlow Condensed",sans-serif; font-weight:800; font-size:15px; letter-spacing:.14em; text-transform:uppercase; color:var(--dim); margin-bottom:14px; }
 .cs-legacy-slams { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:12px; }
 .cs-legacy-slam { border-radius:10px; padding:10px 4px; display:flex; flex-direction:column; gap:4px; background:rgba(246,251,239,.06); }
